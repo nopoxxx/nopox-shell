@@ -96,14 +96,18 @@ PKGS=(
 missing=()
 for p in "${PKGS[@]}"; do pacman -Qq "$p" &>/dev/null || missing+=("$p"); done
 
+# с --yes pacman тоже не спрашивает; без него — его вопрос остаётся: видно, что ставится
+noconfirm=()
+[ "$YES" = 1 ] && noconfirm=(--noconfirm)
+
 if [ ${#missing[@]} -eq 0 ]; then
     ok "всё уже установлено"
 else
     info "нужно поставить: ${missing[*]}"
     if ask "Обновить систему вместе с установкой (pacman -Syu)? На Arch так правильнее" y; then
-        sudo pacman -Syu --needed "${missing[@]}"
+        sudo pacman -Syu --needed "${noconfirm[@]}" "${missing[@]}"
     else
-        sudo pacman -S --needed "${missing[@]}"
+        sudo pacman -S --needed "${noconfirm[@]}" "${missing[@]}"
     fi
     ok "пакеты установлены"
 fi
