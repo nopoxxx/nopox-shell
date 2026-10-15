@@ -31,7 +31,7 @@ Scope {
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
             WlrLayershell.namespace: "nopox-settings"
 
-            readonly property var sections: S.sections(Settings.outputs)
+            readonly property var sections: S.sections(Settings.outputs, Settings.get("shell.bar.layout"))
             property int section: 0
             readonly property var rows: sections[section].rows
             property int cur: 1
@@ -56,7 +56,28 @@ Scope {
 
             // обои хранят заполнение сами, остальное — в Settings
             function value(r) { return r.key === "wallpaper.fill" ? Wallpaper.fill : Settings.get(r.key); }
-            function changed(r) { return r.key === "wallpaper.fill" ? Wallpaper.fill !== r.def : !Settings.isDefault(r.key); }
+            function changed(r) {
+                if (r.type === "module") return S.zoneOf(null, r.id) !== r.zone;
+                return r.key === "wallpaper.fill" ? Wallpaper.fill !== r.def : !Settings.isDefault(r.key);
+            }
+
+            // строки модулей панели пересоздаются при каждом изменении раскладки — выделение идёт за модулем
+            function selectModule(id) {
+                const i = rows.findIndex(x => x.type === "module" && x.id === id);
+                if (i >= 0) cur = i;
+            }
+
+            function moveModule(r, d) {
+                Settings.set("shell.bar.layout", S.moveModule(Settings.get("shell.bar.layout"), r.id, d));
+                selectModule(r.id);
+            }
+
+            function reorderModule(r, d) {
+                const l = S.reorderModule(Settings.get("shell.bar.layout"), r.id, d);
+                if (!l) return;
+                Settings.set("shell.bar.layout", l);
+                selectModule(r.id);
+            }
 
             function setValue(r, v) {
                 if (r.key === "wallpaper.fill") Wallpaper.setFill(v);
@@ -64,12 +85,17 @@ Scope {
             }
 
             function reset(r) {
-                if (r.key === "wallpaper.fill") Wallpaper.setFill(r.def);
+                if (r.type === "module") {
+                    Settings.reset(r.key);
+                    selectModule(r.id);
+                } else if (r.key === "wallpaper.fill") Wallpaper.setFill(r.def);
                 else Settings.reset(r.key);
             }
 
             function adjust(r, d) {
-                if (r.type === "bool") {
+                if (r.type === "module") {
+                    moveModule(r, d);
+                } else if (r.type === "bool") {
                     setValue(r, !value(r));
                 } else if (r.type === "enum") {
                     const o = r.options;
@@ -102,6 +128,7 @@ Scope {
             }
 
             function fmt(r) {
+                if (r.type === "module") return "‹ " + r.zone + " ›";
                 const v = value(r);
                 if (r.type === "bool") return v ? "[x]" : "[ ]";
                 if (r.type === "text") return JSON.stringify(v);
@@ -110,10 +137,13 @@ Scope {
                     const decimals = String(r.step).split(".")[1]?.length ?? 0;
                     return "‹ " + Number(v).toFixed(decimals) + " ›";
                 }
+                // значения с пробелами по краям (разделители) — в кавычках, иначе их не видно
+                if (typeof v === "string" && v !== v.trim()) return "‹ " + JSON.stringify(v) + " ›";
                 return "‹ " + v + " ›";
             }
 
             function valueColor(r) {
+                if (r.type === "module") return r.zone === "off" ? Theme.gray : Theme.blue;
                 if (r.type === "bool") return value(r) ? Theme.accent : Theme.gray;
                 if (r.type === "text") return Theme.aqua;
                 if (r.key === "shell.accent") return Theme.accent;
@@ -165,7 +195,13 @@ Scope {
                     Keys.onPressed: event => {
                         const r = win.row;
                         const k = event.key;
-                        if (k === Qt.Key_Escape || k === Qt.Key_Q) {
+                        const shift = event.modifiers & Qt.ShiftModifier;
+                        const isModule = r && r.type === "module";
+                        if (isModule && ((shift && k === Qt.Key_Up) || (shift && k === Qt.Key_K))) {
+                            win.reorderModule(r, -1);
+                        } else if (isModule && ((shift && k === Qt.Key_Down) || (shift && k === Qt.Key_J))) {
+                            win.reorderModule(r, 1);
+                        } else if (k === Qt.Key_Escape || k === Qt.Key_Q) {
                             Settings.open = false;
                         } else if (k === Qt.Key_Down || k === Qt.Key_J) {
                             win.move(1);
@@ -371,6 +407,7 @@ Scope {
                             text: {
                                 const r = win.row;
                                 if (!r) return "";
+                                if (r.type === "module") return r.hint + "  ·  ←→ зона, ⇧↑↓ или K/J — порядок";
                                 const def = r.type === "action" ? "" : "  ·  по умолчанию " + JSON.stringify(r.def);
                                 return (r.hint ? r.hint + "  ·  " : "") + r.key + def;
                             }

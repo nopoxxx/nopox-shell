@@ -17,8 +17,98 @@ const ACCENTS = {
 
 const WIDTHS = { "1/3": "0.33333", "1/2": "0.5", "2/3": "0.66667", "1": "1.0" };
 
+// ── модули панели ──────────────────────────────────────────────────
+// file — bar/<file>.qml; inline — часть prompt: между двумя inline-модулями пробел, а не разделитель
+
+const MODULES = [
+    { id: "user", file: "User", inline: true, desc: "user@host — стиль в shell/ → prompt" },
+    { id: "workspaces", file: "Workspaces", inline: true, desc: "~/ws/{1,[2],3}: клик — перейти, колёсико — листать" },
+    { id: "jobs", file: "Jobs", inline: true, desc: "[3] — число окон на текущем столе" },
+    { id: "command", file: "Command", inline: true, desc: "❯ активное окно как набранная команда" },
+    { id: "media", file: "Media", desc: "♪ плеер: клик — пауза, правый — следующий, средний — предыдущий" },
+    { id: "tray", file: "Tray", desc: "[трей] текстом: клик — открыть, правый — меню" },
+    { id: "cpu", file: "Cpu", desc: "загрузка cpu, клик — процессы" },
+    { id: "mem", file: "Mem", desc: "память, клик — процессы" },
+    { id: "gpu", file: "Gpu", desc: "загрузка и температура amdgpu" },
+    { id: "temp", file: "Temp", desc: "температура cpu (k10temp / coretemp)" },
+    { id: "netspeed", file: "NetSpeed", desc: "скорость сети ↓↑" },
+    { id: "net", file: "Net", desc: "сеть: eth / wifi / offline, клик — nmtui" },
+    { id: "vol", file: "Vol", desc: "громкость: колёсико, клик — микшер, правый — mute" },
+    { id: "bat", file: "Bat", desc: "батарея — видна только на ноутбуках" },
+    { id: "updates", file: "Upd", desc: "обновления: клик — paru -Syu, правый — проверить" },
+    { id: "kbd", file: "Kbd", desc: "раскладка, клик — переключить" },
+    { id: "clock", file: "Clock", desc: "часы, клик — календарь" }
+];
+
+const ZONES = ["left", "center", "right", "off"];
+
+const DEFAULT_LAYOUT = {
+    left: ["user", "workspaces", "jobs", "command"],
+    center: [],
+    right: ["media", "tray", "cpu", "mem", "net", "vol", "bat", "updates", "kbd", "clock"]
+};
+
+function moduleById(id) {
+    return MODULES.find(m => m.id === id) ?? null;
+}
+
+// убирает неизвестные и повторяющиеся id; off — всё, что не попало в зоны
+function normalizeLayout(l) {
+    const src = l ?? DEFAULT_LAYOUT;
+    const seen = new Set();
+    const out = { left: [], center: [], right: [] };
+    for (const z of ["left", "center", "right"])
+        for (const id of src[z] ?? [])
+            if (moduleById(id) && !seen.has(id)) {
+                seen.add(id);
+                out[z].push(id);
+            }
+    out.off = MODULES.map(m => m.id).filter(id => !seen.has(id));
+    return out;
+}
+
+function zoneOf(l, id) {
+    const n = normalizeLayout(l);
+    return ZONES.find(z => n[z].includes(id));
+}
+
+// перенос в соседнюю зону (по кругу left → center → right → off), модуль встаёт в конец
+function moveModule(l, id, d) {
+    const n = normalizeLayout(l);
+    const from = ZONES.find(z => n[z].includes(id));
+    const to = ZONES[(ZONES.indexOf(from) + d + ZONES.length) % ZONES.length];
+    n[from] = n[from].filter(x => x !== id);
+    if (to !== "off") n[to].push(id);
+    delete n.off;
+    return n;
+}
+
+// сдвиг внутри зоны; null — двигать некуда
+function reorderModule(l, id, d) {
+    const n = normalizeLayout(l);
+    const z = ["left", "center", "right"].find(z => n[z].includes(id));
+    if (!z) return null;
+    const a = n[z], i = a.indexOf(id), j = i + d;
+    if (j < 0 || j >= a.length) return null;
+    [a[i], a[j]] = [a[j], a[i]];
+    delete n.off;
+    return n;
+}
+
+function barRows(layout) {
+    const n = normalizeLayout(layout);
+    const rows = [];
+    for (const z of ZONES) {
+        rows.push({ header: z === "off" ? "выключены" : z });
+        for (const id of n[z])
+            rows.push({ type: "module", id, zone: z, label: id, key: "shell.bar.layout", hint: moduleById(id).desc });
+    }
+    return rows;
+}
+
 // outputs: [{ name, scale, make, model, mode }] из `niri msg --json outputs`
-function sections(outputs) {
+// layout: текущее значение shell.bar.layout — из него строится раздел bar/
+function sections(outputs, layout) {
     return [
         { id: "niri", rows: [
             { header: "клавиатура" },
@@ -67,17 +157,29 @@ function sections(outputs) {
             { key: "shell.accent", label: "акцентный цвет", type: "enum", options: Object.keys(ACCENTS), def: "yellow", hint: "рамки окон shell, prompt и рамка фокуса niri" },
             { key: "shell.fontSize", label: "размер шрифта", type: "int", min: 10, max: 28, step: 1, def: 16 },
 
+            { header: "меню" },
+            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12 }
+        ] },
+
+        { id: "bar", rows: [
+            ...barRows(layout),
+
             { header: "панель" },
             { key: "shell.bar.position", label: "положение", type: "enum", options: ["top", "bottom"], def: "top" },
             { key: "shell.bar.height", label: "высота", type: "int", min: 18, max: 48, step: 2, def: 26 },
-            { key: "shell.bar.title", label: "активное окно", type: "bool", def: true, hint: "приложение и заголовок после ❯" },
-            { key: "shell.bar.cpu", label: "загрузка cpu", type: "bool", def: true },
-            { key: "shell.bar.mem", label: "память", type: "bool", def: true },
-            { key: "shell.bar.layout", label: "раскладка", type: "bool", def: true },
-            { key: "shell.bar.clock", label: "формат часов", type: "enum", options: ["HH:mm", "HH:mm:ss", "ddd HH:mm", "dd.MM HH:mm"], def: "HH:mm" },
+            { key: "shell.bar.style", label: "стиль", type: "enum", options: ["full", "floating"], def: "full", hint: "floating — с отступами от краёв и рамкой цвета акцента" },
+            { key: "shell.bar.opacity", label: "непрозрачность, %", type: "int", min: 30, max: 100, step: 5, def: 100 },
+            { key: "shell.bar.autohide", label: "автоскрытие", type: "bool", def: false, hint: "панель появляется при наведении мыши на край экрана" },
+            { key: "shell.bar.monitors", label: "мониторы", type: "enum", options: ["all", "primary"], def: "all" },
 
-            { header: "меню" },
-            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12 }
+            { header: "prompt" },
+            { key: "shell.bar.prompt", label: "стиль prompt", type: "enum", options: ["user@host", "[user@host]", "user", "host"], def: "user@host" },
+            { key: "shell.bar.symbol", label: "символ", type: "enum", options: ["❯", "$", "#", "λ", ">", "→"], def: "❯", hint: "красный, если какое-то окно требует внимания — как $? в shell" },
+            { key: "shell.bar.separator", label: "разделитель", type: "enum", options: [" · ", " | ", " / ", " │ ", "  "], def: " · " },
+            { key: "shell.bar.typing", label: "эффект набора", type: "bool", def: true, hint: "новое активное окно «печатается» по символу" },
+            { key: "shell.bar.titleMax", label: "длина команды", type: "int", min: 20, max: 160, step: 10, def: 80, hint: "максимум символов для приложения и заголовка" },
+            { key: "shell.bar.cpuGraph", label: "график cpu", type: "bool", def: true, hint: "▂▃▅▇ — история загрузки, как в btop" },
+            { key: "shell.bar.clock", label: "формат часов", type: "enum", options: ["HH:mm", "HH:mm:ss", "ddd HH:mm", "dd.MM HH:mm"], def: "HH:mm" }
         ] },
 
         { id: "wallpaper", rows: [
@@ -89,13 +191,14 @@ function sections(outputs) {
 }
 
 function find(key, outputs) {
-    for (const s of sections(outputs))
+    for (const s of sections(outputs, null))
         for (const r of s.rows)
-            if (r.key === key) return r;
+            if (r.key === key && r.type !== "module") return r;
     return null;
 }
 
 function defaultOf(key, outputs) {
+    if (key === "shell.bar.layout") return JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
     return find(key, outputs)?.def;
 }
 

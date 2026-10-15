@@ -1,5 +1,6 @@
 import Quickshell
 import QtQuick
+import qs.services
 
 ShellRoot {
     Variants {
@@ -11,7 +12,7 @@ ShellRoot {
     }
 
     Variants {
-        model: Quickshell.screens
+        model: Settings.get("shell.bar.monitors") === "primary" ? [Quickshell.screens[0]] : Quickshell.screens
         Bar {
             required property var modelData
             screen: modelData

@@ -11,13 +11,37 @@ Singleton {
     property var windows: ({})
     property var layoutNames: []
     property int layoutIdx: 0
+    property bool overview: false
 
     readonly property var focusedWorkspace: workspaces.find(w => w.is_focused) ?? null
     readonly property var focusedWindow: Object.values(windows).find(w => w.is_focused) ?? null
     readonly property string layout: (layoutNames[layoutIdx] ?? "").slice(0, 2).toLowerCase()
+    readonly property bool urgent: workspaces.some(w => w.is_urgent) || Object.values(windows).some(w => w.is_urgent)
+
+    function windowsOn(wsId) {
+        return Object.values(windows).filter(w => w.workspace_id === wsId);
+    }
+
+    function action(...args) {
+        Quickshell.execDetached(["niri", "msg", "action", ...args]);
+    }
+
+    // номер стола относится к монитору, поэтому сначала фокусируем монитор
+    function focusWorkspace(ws) {
+        Quickshell.execDetached(["sh", "-c", 'niri msg action focus-monitor "$1" && niri msg action focus-workspace "$2"',
+            "sh", ws.output, String(ws.idx)]);
+    }
 
     function handle(ev) {
-        if (ev.WorkspacesChanged) {
+        if (ev.OverviewOpenedOrClosed) {
+            overview = ev.OverviewOpenedOrClosed.is_open;
+        } else if (ev.WorkspaceUrgencyChanged) {
+            const { id, urgent } = ev.WorkspaceUrgencyChanged;
+            workspaces = workspaces.map(w => w.id === id ? Object.assign({}, w, { is_urgent: urgent }) : w);
+        } else if (ev.WindowUrgencyChanged) {
+            const { id, urgent } = ev.WindowUrgencyChanged;
+            if (windows[id]) windows = Object.assign({}, windows, { [id]: Object.assign({}, windows[id], { is_urgent: urgent }) });
+        } else if (ev.WorkspacesChanged) {
             workspaces = ev.WorkspacesChanged.workspaces.sort((a, b) => a.idx - b.idx);
         } else if (ev.WorkspaceActivated) {
             const { id, focused } = ev.WorkspaceActivated;
