@@ -16,7 +16,9 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
 - **Меню** (`Mod+D`) в духе omarchy: `apps/`, `setup/`, `style/`, `install/`, `remove/`, `update`, `system/`.
   Нечёткий поиск, установка пакетов из репозиториев и AUR через paru.
 - **Обои** (`Mod+Shift+W`): локальная коллекция и поиск на wallhaven.cc, режимы fill / fit / stretch.
-- **Настройки** (`Mod+S`): niri (клавиатура, мышь, окна, курсор, анимации, масштаб экранов),
+- **Мониторы** (`setup/ → displays`): карта расположения, режим, масштаб, поворот, расположение относительно
+  других, VRR, основной монитор. Изменения ждут подтверждения 15 секунд и иначе откатываются.
+- **Настройки** (`Mod+S`): niri (клавиатура, мышь, окна, курсор, анимации),
   shell, раскладка панели. Изменения применяются сразу.
 
 ## Зависимости
@@ -77,6 +79,7 @@ Greeter работает под пользователем `greeter` и не в�
 qs ipc call launcher toggle     # меню; launcher apps — сразу программы
 qs ipc call wallpaper picker    # выбор обоев; wallpaper set <путь>, wallpaper fill <fill|fit|stretch>
 qs ipc call settings toggle     # настройки
+qs ipc call displays toggle     # мониторы
 qs ipc call lock lock           # блокировка; lock preview — предпросмотр без проверки пароля
 qs ipc call notify dnd          # «не беспокоить»; notify clear — очистить историю
 ```

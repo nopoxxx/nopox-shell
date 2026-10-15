@@ -149,13 +149,9 @@ function sections(outputs, layout) {
             { key: "niri.anim", label: "включены", type: "bool", def: true },
             { key: "niri.anim.slowdown", label: "замедление", type: "float", min: 0.25, max: 3, step: 0.25, def: 1 },
 
-            { header: "экраны" },
-            ...outputs.map(o => ({
-                key: "niri.out." + o.name + ".scale",
-                label: o.name + " масштаб",
-                type: "float", min: 0.5, max: 3, step: 0.25, def: o.scale,
-                hint: [o.make, o.model, o.mode].filter(x => x).join(" ")
-            }))
+            { header: "мониторы" },
+            { key: "niri.displays", label: "мониторы", type: "action", action: "displays",
+              hint: outputs.map(o => o.name).join(", ") + " — режим, масштаб, поворот, расположение, VRR" }
         ] },
 
         { id: "shell", rows: [
@@ -241,8 +237,29 @@ function defaultOf(key, outputs) {
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
 
-// get(key) — значение с учётом умолчаний; outputScales — { имя: масштаб } только для изменённых
-function niriKdl(get, outputScales) {
+// ── мониторы ───────────────────────────────────────────────────────
+
+var TRANSFORMS = ["normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270"];
+
+// transform из JSON niri («Normal», «_90», «Flipped90») → значение для конфига
+function niriTransform(t) {
+    const s = String(t ?? "normal").toLowerCase().replace(/^_/, "");
+    if (s === "flipped" || !s.startsWith("flipped")) return s;
+    return "flipped-" + s.slice(7);
+}
+
+// логический размер: пиксели режима / масштаб, при повороте на 90° стороны меняются
+function logicalSize(mode, scale, transform) {
+    const m = String(mode).match(/^(\d+)x(\d+)/);
+    if (!m) return { w: 0, h: 0 };
+    let w = Number(m[1]) / scale, h = Number(m[2]) / scale;
+    if (/90|270/.test(transform)) [w, h] = [h, w];
+    return { w: Math.round(w), h: Math.round(h) };
+}
+
+// get(key) — значение с учётом умолчаний;
+// outs — { имя: { enabled, mode, scale, transform, x, y, vrr, primary } }, только то, что задано вручную
+function niriKdl(get, outs) {
     const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
     const ring = get("niri.ring");
     const border = get("niri.border");
@@ -316,8 +333,21 @@ function niriKdl(get, outputScales) {
         "}"
     ];
 
-    for (const name in outputScales)
-        lines.push("", "output " + q(name) + " {", "    scale " + f(outputScales[name]), "}");
+    for (const name in outs) {
+        const o = outs[name];
+        const body = [];
+        if (o.enabled === false) {
+            body.push("    off");
+        } else {
+            if (o.mode) body.push("    mode " + q(o.mode));
+            if (o.scale !== undefined) body.push("    scale " + f(o.scale));
+            if (o.transform) body.push("    transform " + q(o.transform));
+            if (o.x !== undefined && o.y !== undefined) body.push("    position x=" + Math.round(o.x) + " y=" + Math.round(o.y));
+            if (o.vrr) body.push("    variable-refresh-rate");
+            if (o.primary) body.push("    focus-at-startup");
+        }
+        if (body.length) lines.push("", "output " + q(name) + " {", ...body, "}");
+    }
 
     return lines.filter(l => l !== null).join("\n") + "\n";
 }

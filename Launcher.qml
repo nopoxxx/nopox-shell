@@ -78,6 +78,7 @@ Scope {
             { label: "apps", icon: icons.apps, desc: "запуск программ", provider: "apps" },
             { label: "setup", icon: icons.setup, desc: "настройки, сеть, звук, конфиги", children: [
                 { label: "settings", desc: "настройки niri и shell (Mod+S)", run: () => Settings.open = true },
+                { label: "displays", desc: "мониторы: режим, масштаб, поворот, расположение", run: () => spawn(["qs", "ipc", "call", "displays", "toggle"]) },
                 { label: "wifi", desc: "nmtui", run: () => term("nmtui", false) },
                 { label: "audio", desc: "pavucontrol", run: () => spawn(["pavucontrol"]) },
                 { label: "keybindings", desc: "подсказка по клавишам niri", run: () => spawn(["niri", "msg", "action", "show-hotkey-overlay"]) },
