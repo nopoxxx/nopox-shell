@@ -1,0 +1,59 @@
+// Сгенерировано окном настроек nopox (Mod+S) из ~/.config/nopox/settings.json.
+// Ручные правки здесь перезапишутся — свои настройки пишите в config.kdl.
+
+input {
+    keyboard {
+        xkb {
+            layout "us,ru"
+            options "grp:alt_shift_toggle"
+        }
+        repeat-delay 600
+        repeat-rate 25
+        numlock
+    }
+    touchpad {
+        tap
+        natural-scroll
+    }
+    mouse {
+        accel-speed 0.00
+        accel-profile "adaptive"
+    }
+}
+
+layout {
+    // прозрачный фон: под рабочими столами видны обои quickshell
+    background-color "transparent"
+    gaps 8
+    center-focused-column "never"
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+    focus-ring {
+        width 2
+        active-color "#fabd2f"
+        inactive-color "#504945"
+    }
+    border {
+        off
+    }
+    shadow {
+        softness 30
+        spread 5
+        offset x=0 y=5
+        color "#0007"
+    }
+}
+
+cursor {
+    xcursor-size 24
+}
+
+prefer-no-csd true
+
+animations {
+    slowdown 1.00
+}
