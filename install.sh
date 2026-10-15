@@ -148,24 +148,29 @@ if [ ! -f "$NIRI_DIR/nopox.kdl" ]; then
     # стартовый: потом его перегенерирует окно настроек (Mod+S)
     cp "$DEST/extras/niri/nopox.kdl" "$NIRI_DIR/nopox.kdl"
 fi
+# клавиши и правила nopox — ссылкой на клон: обновляются вместе с shell
+ln -sfn "$DEST/extras/niri/nopox-binds.kdl" "$NIRI_DIR/nopox-binds.kdl"
 
-if [ -f "$conf" ] && grep -q 'include "nopox.kdl"' "$conf"; then
+if [ -f "$conf" ] && grep -q 'include "nopox-binds.kdl"' "$conf"; then
     ok "nopox уже подключён к вашему config.kdl"
 elif [ ! -f "$conf" ] || { [ "$KEEP_NIRI" = 0 ] && ask "Заменить ваш config.kdl конфигом nopox? Старый уйдёт в бэкап" y; }; then
     backup "$conf"
     cp "$DEST/extras/niri/config.kdl" "$conf"
     ok "config.kdl nopox установлен"
 else
+    # в одном файле может быть только один binds — поэтому всё своё nopox держит во включаемых файлах;
+    # они в конце, значит одноимённые клавиши (Mod+D и т.п.) берутся из nopox
     cp "$conf" "$conf.bak-$STAMP"
     info "старое — в $conf.bak-$STAMP"
     {
         echo
         echo "// >>> nopox-shell >>> (добавлено install.sh)"
-        grep -v '^// ' "$DEST/extras/niri.kdl"
+        echo 'include "nopox.kdl"'
+        echo 'include "nopox-binds.kdl"'
         echo "// <<< nopox-shell <<<"
     } >> "$conf"
-    ok "к вашему config.kdl дописан блок nopox"
-    warn "секции input / layout / cursor / animations в вашем config.kdl могут перебивать окно настроек (Mod+S)"
+    ok "к вашему config.kdl дописаны include nopox"
+    warn "флаги в ваших секциях input / layout (например, tap) окно настроек (Mod+S) выключить не сможет"
 fi
 
 if command -v niri >/dev/null && ! niri validate -c "$conf" >/dev/null 2>&1; then

@@ -21,23 +21,36 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
 - **Настройки** (`Mod+S`): niri (клавиатура, мышь, окна, курсор, анимации),
   shell, раскладка панели. Изменения применяются сразу.
 
-## Зависимости
-
-```
-niri quickshell kitty paru pacman-contrib networkmanager pipewire wireplumber upower
-ttf-terminus-nerd curl
-```
-
-`paru` — для `install/` и модуля `updates`, `pacman-contrib` — для `checkupdates`.
-
 ## Установка
 
+На Arch Linux и производных (CachyOS, EndeavourOS, …), от обычного пользователя:
+
 ```sh
+bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)
+```
+
+Установщик ставит пакеты (и `paru`, если его нет), клонирует shell в `~/.config/quickshell`,
+ставит конфиг niri (или дописывает к вашему два `include`), по желанию — kitty в Gruvbox и greeter.
+Всё, что заменяется, остаётся рядом как `*.bak-<дата>`.
+
+| Флаг | Что делает |
+|---|---|
+| `--yes` | без вопросов, всё по умолчанию |
+| `--keep-niri-config` | не заменять ваш `config.kdl`, только дописать `include` |
+| `--no-greeter` | не ставить greeter |
+| `--branch <ветка>` | другая ветка репозитория |
+
+<details>
+<summary>Вручную</summary>
+
+```sh
+sudo pacman -S --needed niri quickshell xwayland-satellite kitty git networkmanager pipewire \
+    pipewire-pulse wireplumber upower pacman-contrib libnotify polkit-gnome ttf-terminus-nerd paru
 git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell
 ```
 
-Затем подключите shell к niri — см. [`extras/niri.kdl`](extras/niri.kdl): автозапуск `qs`, клавиши,
-правила окон и `include "nopox.kdl"`. Файл `nopox.kdl` создаётся при первом запуске shell.
+Затем подключите shell к niri — см. [`extras/niri.kdl`](extras/niri.kdl).
+</details>
 
 ## Блокировка экрана и greeter
 

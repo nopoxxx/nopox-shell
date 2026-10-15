@@ -1,30 +1,14 @@
-// Подключение nopox-shell к niri — скопируйте нужное в ~/.config/niri/config.kdl.
+// Подключение nopox-shell к своему ~/.config/niri/config.kdl вручную (install.sh делает это сам).
+//
+// 1. Скопируйте стартовый nopox.kdl и сделайте ссылку на клавиши nopox:
+//      cp ~/.config/quickshell/extras/niri/nopox.kdl ~/.config/niri/
+//      ln -sfn ~/.config/quickshell/extras/niri/nopox-binds.kdl ~/.config/niri/
+// 2. Допишите в конец config.kdl две строки ниже.
+//
+// nopox.kdl — input, layout, cursor, prefer-no-csd, animations, мониторы: его генерирует окно
+// настроек (Mod+S). Если в config.kdl есть свои input / layout, флаги оттуда (tap и т.п.)
+// настройки выключить не смогут — такие секции лучше убрать.
+// nopox-binds.kdl — автозапуск qs, клавиши (Mod+D, Mod+S, …) и правила окон; приходит с обновлениями shell.
 
-// input, layout, cursor, prefer-no-csd и animations генерирует окно настроек (Mod+S)
-// из ~/.config/nopox/settings.json. Уберите эти секции из своего config.kdl,
-// иначе флаги из config.kdl нельзя будет выключить из настроек.
 include "nopox.kdl"
-
-spawn-at-startup "qs"
-
-binds {
-    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }
-    Mod+Shift+D hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }
-    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }
-    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }
-    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "qs" "ipc" "call" "lock" "lock"; }
-}
-
-// Терминалы, открытые из меню (install / remove / update и т.п.), — плавающие по центру
-window-rule {
-    match app-id="^nopox-term$"
-    open-floating true
-    default-column-width { fixed 960; }
-    default-window-height { fixed 600; }
-}
-
-// Обои quickshell видны и как фон режима обзора
-layer-rule {
-    match namespace="^nopox-wallpaper$"
-    place-within-backdrop true
-}
+include "nopox-binds.kdl"
