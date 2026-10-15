@@ -20,7 +20,8 @@ function match(query, str) {
         prev = i;
         si = i + 1;
     }
-    if (s.startsWith(q)) score += 20;
+    if (s === q) score += 50;
+    else if (s.startsWith(q)) score += 20;
     return { score, pos };
 }
 

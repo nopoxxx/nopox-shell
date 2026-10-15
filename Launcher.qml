@@ -6,28 +6,146 @@ import QtQuick.Layouts
 import qs.services
 import "services/fuzzy.js" as Fuzzy
 
-// Лаунчер в стиле fzf. Открывается через `qs ipc call launcher toggle`.
+// Меню в духе omarchy: сначала раздел (apps/, install/, system/ …), потом действие.
+// Разделы ведут себя как каталоги: путь в заголовке, Esc или ← — на уровень выше.
+//   qs ipc call launcher toggle — корень меню
+//   qs ipc call launcher apps   — сразу список программ
 Scope {
     id: root
 
     property bool open: false
+    property string startAt: ""
     readonly property int rows: 12
+    readonly property string home: Quickshell.env("HOME")
 
     IpcHandler {
         target: "launcher"
-        function toggle(): void { root.open = !root.open; }
         // не `show`: это имя занято подкомандой `qs ipc show`
-        function open(): void { root.open = true; }
+        function toggle(): void { root.startAt = ""; root.open = !root.open; }
+        function apps(): void { root.startAt = "apps"; root.open = !root.open; }
+        function open(): void { root.startAt = ""; root.open = true; }
         function close(): void { root.open = false; }
     }
 
-    function launch(entry) {
+    // ── действия ───────────────────────────────────────────────────
+
+    function shq(s) { return "'" + s.replace(/'/g, "'\\''") + "'"; }
+
+    // команда в плавающем окне kitty; с hold вывод остаётся на экране
+    function term(cmd, hold = true) {
+        const argv = ["kitty", "--class", "nopox-term"];
+        if (hold) argv.push("--hold");
+        Quickshell.execDetached(argv.concat(["-e", "bash", "-c", cmd]));
+    }
+
+    function spawn(argv) { Quickshell.execDetached(argv); }
+
+    function edit(path) { term("vim " + shq(path), false); }
+
+    function launchApp(entry) {
         if (entry.runInTerminal)
             Quickshell.execDetached(["kitty", "-e", ...entry.command]);
         else
             entry.execute();
-        root.open = false;
     }
+
+    // ── дерево меню ────────────────────────────────────────────────
+    // узел: { label, desc, icon, children | provider | run }
+
+    readonly property var icons: ({
+        apps: String.fromCodePoint(0xF003B),
+        setup: String.fromCodePoint(0xF0493),
+        install: String.fromCodePoint(0xF03D7),
+        remove: String.fromCodePoint(0xF01B4),
+        update: String.fromCodePoint(0xF06B0),
+        system: String.fromCodePoint(0xF0425),
+        about: String.fromCodePoint(0xF02FD)
+    })
+
+    readonly property var menu: ({
+        label: "~",
+        children: [
+            { label: "apps", icon: icons.apps, desc: "запуск программ", provider: "apps" },
+            { label: "setup", icon: icons.setup, desc: "сеть, звук, конфиги", children: [
+                { label: "wifi", desc: "nmtui", run: () => term("nmtui", false) },
+                { label: "audio", desc: "pavucontrol", run: () => spawn(["pavucontrol"]) },
+                { label: "keybindings", desc: "подсказка по клавишам niri", run: () => spawn(["niri", "msg", "action", "show-hotkey-overlay"]) },
+                { label: "config", desc: "редактировать конфиги", children: [
+                    { label: "niri", desc: "~/.config/niri/config.kdl", run: () => edit(home + "/.config/niri/config.kdl") },
+                    { label: "quickshell", desc: "~/.config/quickshell/", run: () => edit(home + "/.config/quickshell") },
+                    { label: "kitty", desc: "~/.config/kitty/kitty.conf", run: () => edit(home + "/.config/kitty/kitty.conf") }
+                ] },
+                { label: "restart shell", desc: "перезапустить quickshell", run: () => spawn(["sh", "-c", "pkill -x qs; sleep 0.3; niri msg action spawn -- qs"]) }
+            ] },
+            { label: "install", icon: icons.install, desc: "установить пакеты", children: [
+                { label: "package", desc: "из репозиториев: arch, chaotic-aur", provider: "repo" },
+                { label: "aur", desc: "поиск в AUR через paru", provider: "aur" }
+            ] },
+            { label: "remove", icon: icons.remove, desc: "удалить пакеты", provider: "installed" },
+            { label: "update", icon: icons.update, desc: "paru -Syu", run: () => term("paru -Syu") },
+            { label: "system", icon: icons.system, desc: "питание и сессия", children: [
+                { label: "suspend", desc: "сон", run: () => spawn(["systemctl", "suspend"]) },
+                { label: "reboot", desc: "перезагрузка", run: () => spawn(["systemctl", "reboot"]) },
+                { label: "poweroff", desc: "выключение", run: () => spawn(["systemctl", "poweroff"]) },
+                { label: "logout", desc: "выйти из niri", run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) }
+            ] },
+            { label: "about", icon: icons.about, desc: "fastfetch", run: () => term("fastfetch") }
+        ]
+    })
+
+    // ── источники динамических списков ─────────────────────────────
+
+    property var cache: ({})
+
+    onOpenChanged: if (open) cache = {}   // после install/remove списки устаревают
+
+    function providerItems(name, query) {
+        if (name === "apps")
+            return DesktopEntries.applications.values
+                .filter(e => !e.noDisplay)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(e => ({
+                    label: e.name,
+                    desc: e.genericName,
+                    search: [e.genericName, e.comment, ...e.keywords].join(" "),
+                    run: () => launchApp(e)
+                }));
+        if (name === "aur")
+            return query ? [{ label: "paru " + query, desc: "найти и установить из AUR", run: () => term("paru " + shq(query)) }] : [];
+        return cache[name] ?? null; // null — ещё загружается
+    }
+
+    function load(name) {
+        if (!["repo", "installed"].includes(name) || cache[name] || pkgProc.running) return;
+        pkgProc.target = name;
+        pkgProc.command = name === "repo" ? ["pacman", "-Sl"] : ["pacman", "-Qe"];
+        pkgProc.running = true;
+    }
+
+    Process {
+        id: pkgProc
+
+        property string target
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const items = [];
+                for (const line of this.text.split("\n")) {
+                    const f = line.split(" ");
+                    if (pkgProc.target === "repo" && f.length >= 3) {
+                        const [repo, name, ver] = f;
+                        items.push({ label: name, desc: repo + " " + ver + (f[3] ? "  [installed]" : ""), run: () => root.term("paru -S " + name) });
+                    } else if (pkgProc.target === "installed" && f.length >= 2) {
+                        const [name, ver] = f;
+                        items.push({ label: name, desc: ver, run: () => root.term("sudo pacman -Rns " + name) });
+                    }
+                }
+                root.cache = Object.assign({}, root.cache, { [pkgProc.target]: items });
+            }
+        }
+    }
+
+    // ── окно ───────────────────────────────────────────────────────
 
     LazyLoader {
         active: root.open
@@ -43,30 +161,58 @@ Scope {
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
             WlrLayershell.namespace: "nopox-launcher"
 
-            readonly property var apps: DesktopEntries.applications.values
-                .filter(e => !e.noDisplay)
-                .sort((a, b) => a.name.localeCompare(b.name))
+            property var stack: []
+            readonly property var node: stack[stack.length - 1] ?? null
+            readonly property string path: "~/" + stack.slice(1).map(n => n.label + "/").join("")
+            readonly property var items: node ? (node.children ?? root.providerItems(node.provider, input.text.trim())) : []
 
-            // по имени — с подсветкой; по описанию и ключевым словам — слабее и без неё
             readonly property var results: {
+                if (!items) return [];
                 const q = input.text.trim();
-                if (!q) return apps.map(e => ({ entry: e, pos: [] }));
+                if (!q || node.provider === "aur") return items.map(it => ({ item: it, pos: [] }));
                 const out = [];
-                for (const e of apps) {
-                    const byName = Fuzzy.match(q, e.name);
-                    const extra = [e.genericName, e.comment, ...e.keywords].join(" ");
-                    const byExtra = Fuzzy.match(q, extra);
+                for (const it of items) {
+                    const byName = Fuzzy.match(q, it.label);
+                    const byExtra = Fuzzy.match(q, it.search ?? it.desc ?? "");
                     const nameScore = byName ? byName.score + 5 : -Infinity;
                     const extraScore = byExtra ? byExtra.score * 0.8 : -Infinity;
                     if (byName && nameScore >= extraScore)
-                        out.push({ entry: e, pos: byName.pos, score: nameScore });
+                        out.push({ item: it, pos: byName.pos, score: nameScore });
                     else if (byExtra)
-                        out.push({ entry: e, pos: [], score: extraScore });
+                        out.push({ item: it, pos: [], score: extraScore });
                 }
-                return out.sort((a, b) => b.score - a.score);
+                // при равном счёте — более короткое имя выше (neovim раньше neovim-qt)
+                return out.sort((a, b) => (b.score - a.score) || (a.item.label.length - b.item.label.length));
             }
 
+            Component.onCompleted: {
+                const s = [root.menu];
+                const start = root.menu.children.find(c => c.label === root.startAt);
+                if (start) s.push(start);
+                stack = s;
+            }
+
+            onNodeChanged: if (node?.provider) root.load(node.provider)
             onResultsChanged: list.currentIndex = 0
+
+            function enter(it) {
+                if (it.children || it.provider) {
+                    stack = stack.concat([it]);
+                    input.text = "";
+                } else {
+                    it.run();
+                    root.open = false;
+                }
+            }
+
+            function back() {
+                if (stack.length > 1) {
+                    stack = stack.slice(0, -1);
+                    input.text = "";
+                } else {
+                    root.open = false;
+                }
+            }
 
             property point lastMouse
             property bool lastMouseSet: false
@@ -78,7 +224,7 @@ Scope {
                 text: "M"
             }
 
-            // клик мимо окна закрывает лаунчер
+            // клик мимо окна закрывает меню
             MouseArea {
                 anchors.fill: parent
                 onClicked: root.open = false
@@ -96,14 +242,14 @@ Scope {
 
                 MouseArea { anchors.fill: parent }
 
-                // заголовок на линии рамки: ┌─[ run ]────
+                // заголовок на линии рамки: ┌─[ ~/install/ ]────
                 Rectangle {
                     x: Theme.pad
                     y: -height / 2
                     width: title.implicitWidth
                     height: title.implicitHeight
                     color: Theme.bg
-                    T { id: title; text: "[ run ]"; color: Theme.yellow; font.bold: true }
+                    T { id: title; text: "[ " + win.path + " ]"; color: Theme.yellow; font.bold: true }
                 }
 
                 ColumnLayout {
@@ -143,15 +289,20 @@ Scope {
 
                             Keys.onPressed: event => {
                                 const ctrl = event.modifiers & Qt.ControlModifier;
+                                const empty = input.text.length === 0;
+                                const cur = win.results[list.currentIndex];
                                 if (event.key === Qt.Key_Escape) {
-                                    root.open = false;
+                                    win.back();
+                                } else if (empty && (event.key === Qt.Key_Backspace || event.key === Qt.Key_Left) && win.stack.length > 1) {
+                                    win.back();
                                 } else if (event.key === Qt.Key_Down || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
                                     list.incrementCurrentIndex();
                                 } else if (event.key === Qt.Key_Up || (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
                                     list.decrementCurrentIndex();
                                 } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                    const r = win.results[list.currentIndex];
-                                    if (r) root.launch(r.entry);
+                                    if (cur) win.enter(cur.item);
+                                } else if (event.key === Qt.Key_Right && cur && (cur.item.children || cur.item.provider)) {
+                                    win.enter(cur.item);
                                 } else {
                                     return;
                                 }
@@ -159,7 +310,10 @@ Scope {
                             }
                         }
 
-                        T { text: win.results.length + "/" + win.apps.length; color: Theme.gray }
+                        T {
+                            text: win.items === null ? "загрузка…" : win.results.length + "/" + win.items.length
+                            color: Theme.gray
+                        }
                     }
 
                     Rectangle {
@@ -183,6 +337,8 @@ Scope {
 
                             required property var modelData
                             required property int index
+                            readonly property var item: modelData.item
+                            readonly property bool isDir: !!(item.children || item.provider)
                             readonly property bool current: ListView.isCurrentItem
 
                             width: list.width
@@ -198,15 +354,21 @@ Scope {
                                     color: Theme.yellow
                                 }
                                 T {
+                                    visible: !!row.item.icon
+                                    text: (row.item.icon ?? "") + " "
+                                    color: row.current ? Theme.yellow : Theme.gray
+                                }
+                                // разделы — как каталоги в ls: синие и со слешем
+                                T {
                                     textFormat: Text.StyledText
-                                    text: Fuzzy.highlight(row.modelData.entry.name, row.modelData.pos, Theme.orange)
-                                    color: row.current ? Theme.fg : Qt.darker(Theme.fg, 1.15)
+                                    text: Fuzzy.highlight(row.item.label, row.modelData.pos, Theme.orange) + (row.isDir ? "/" : "")
+                                    color: row.isDir ? Theme.blue : row.current ? Theme.fg : Qt.darker(Theme.fg, 1.15)
                                     font.bold: row.current
                                 }
                                 T {
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 0
-                                    text: row.modelData.entry.genericName ? "  " + row.modelData.entry.genericName : ""
+                                    text: row.item.desc ? "  " + row.item.desc : ""
                                     color: Theme.gray
                                     elide: Text.ElideRight
                                 }
@@ -224,7 +386,7 @@ Scope {
                                     win.lastMouse = p;
                                     win.lastMouseSet = true;
                                 }
-                                onClicked: root.launch(row.modelData.entry)
+                                onClicked: win.enter(row.item)
                             }
                         }
                     }
