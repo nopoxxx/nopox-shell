@@ -129,7 +129,15 @@ fi
 # ── сам shell ────────────────────────────────────────────────────────
 step "nopox-shell → $DEST"
 if [ -d "$DEST/.git" ] && git -C "$DEST" remote get-url origin 2>/dev/null | grep -q "nopox-shell"; then
-    git -C "$DEST" pull --ff-only --quiet
+    git -C "$DEST" fetch --quiet origin "$BRANCH" || die "не удалось скачать ветку $BRANCH"
+    # клон мог быть на другой ветке (или его ветку удалили) — тогда переключаем на нужную
+    if [ "$(git -C "$DEST" rev-parse --abbrev-ref HEAD)" != "$BRANCH" ] \
+        || ! git -C "$DEST" rev-parse --abbrev-ref '@{u}' &>/dev/null; then
+        git -C "$DEST" checkout -q -B "$BRANCH" "origin/$BRANCH" || die "в $DEST локальные правки мешают переключиться на $BRANCH"
+        git -C "$DEST" branch -q -u "origin/$BRANCH"
+    else
+        git -C "$DEST" merge -q --ff-only "origin/$BRANCH" || die "в $DEST локальные правки мешают обновиться (git status)"
+    fi
     ok "уже установлен — обновлён до $(git -C "$DEST" log --oneline -1)"
 else
     backup "$DEST"
