@@ -22,4 +22,5 @@ ShellRoot {
     Launcher {}
     WallPicker {}
     SettingsWindow {}
+    NotifPopups {}
 }

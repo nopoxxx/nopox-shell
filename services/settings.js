@@ -36,6 +36,7 @@ const MODULES = [
     { id: "vol", file: "Vol", desc: "громкость: колёсико, клик — микшер, правый — mute" },
     { id: "bat", file: "Bat", desc: "батарея — видна только на ноутбуках" },
     { id: "updates", file: "Upd", desc: "обновления: клик — paru -Syu, правый — проверить" },
+    { id: "notify", file: "Notify", desc: "уведомления: клик — история, правый — «не беспокоить»" },
     { id: "kbd", file: "Kbd", desc: "раскладка, клик — переключить" },
     { id: "clock", file: "Clock", desc: "часы, клик — календарь" }
 ];
@@ -45,25 +46,31 @@ const ZONES = ["left", "center", "right", "off"];
 const DEFAULT_LAYOUT = {
     left: ["user", "workspaces", "jobs", "command"],
     center: [],
-    right: ["media", "tray", "cpu", "mem", "net", "vol", "bat", "updates", "kbd", "clock"]
+    right: ["media", "tray", "cpu", "mem", "net", "vol", "bat", "updates", "notify", "kbd", "clock"]
 };
 
 function moduleById(id) {
     return MODULES.find(m => m.id === id) ?? null;
 }
 
-// убирает неизвестные и повторяющиеся id; off — всё, что не попало в зоны
+// убирает неизвестные и повторяющиеся id.
+// off хранится явно: модуль, которого нет ни в одной зоне и ни в off, — новый (появился после обновления)
+// и встаёт в свою зону по умолчанию, а не пропадает в «выключенных».
 function normalizeLayout(l) {
     const src = l ?? DEFAULT_LAYOUT;
     const seen = new Set();
-    const out = { left: [], center: [], right: [] };
-    for (const z of ["left", "center", "right"])
+    const out = { left: [], center: [], right: [], off: [] };
+    for (const z of ZONES)
         for (const id of src[z] ?? [])
             if (moduleById(id) && !seen.has(id)) {
                 seen.add(id);
                 out[z].push(id);
             }
-    out.off = MODULES.map(m => m.id).filter(id => !seen.has(id));
+    for (const m of MODULES) {
+        if (seen.has(m.id)) continue;
+        const z = ["left", "center", "right"].find(z => DEFAULT_LAYOUT[z].includes(m.id)) ?? "off";
+        out[z].push(m.id);
+    }
     return out;
 }
 
@@ -78,8 +85,7 @@ function moveModule(l, id, d) {
     const from = ZONES.find(z => n[z].includes(id));
     const to = ZONES[(ZONES.indexOf(from) + d + ZONES.length) % ZONES.length];
     n[from] = n[from].filter(x => x !== id);
-    if (to !== "off") n[to].push(id);
-    delete n.off;
+    n[to].push(id);
     return n;
 }
 
@@ -91,7 +97,6 @@ function reorderModule(l, id, d) {
     const a = n[z], i = a.indexOf(id), j = i + d;
     if (j < 0 || j >= a.length) return null;
     [a[i], a[j]] = [a[j], a[i]];
-    delete n.off;
     return n;
 }
 
@@ -182,6 +187,16 @@ function sections(outputs, layout) {
             { key: "shell.bar.titleMax", label: "длина команды", type: "int", min: 20, max: 160, step: 10, def: 80, hint: "максимум символов для приложения и заголовка" },
             { key: "shell.bar.cpuGraph", label: "график cpu", type: "bool", def: true, hint: "▂▃▅▇ — история загрузки, как в btop" },
             { key: "shell.bar.clock", label: "формат часов", type: "enum", options: ["HH:mm", "HH:mm:ss", "ddd HH:mm", "dd.MM HH:mm"], def: "HH:mm" }
+        ] },
+
+        { id: "notify", rows: [
+            { header: "уведомления" },
+            { key: "shell.notify.position", label: "положение", type: "enum", options: ["top-right", "top-left", "bottom-right", "bottom-left"], def: "top-right" },
+            { key: "shell.notify.timeout", label: "время показа, с", type: "int", min: 2, max: 60, step: 1, def: 6, hint: "если приложение не задало своё" },
+            { key: "shell.notify.max", label: "максимум на экране", type: "int", min: 1, max: 10, step: 1, def: 4 },
+            { key: "shell.notify.criticalSticky", label: "критичные не исчезают", type: "bool", def: true, hint: "ERROR висит, пока не закроете" },
+            { key: "shell.notify.typing", label: "эффект набора", type: "bool", def: true, hint: "заголовок уведомления печатается по символу" },
+            { key: "shell.notify.dnd", label: "не беспокоить", type: "bool", def: false, hint: "показывать только критичные; остальные — в истории (log на панели)" }
         ] },
 
         { id: "wallpaper", rows: [
