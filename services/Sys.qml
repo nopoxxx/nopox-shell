@@ -18,6 +18,7 @@ Singleton {
     property int cpuTemp: -1
     property string user: Quickshell.env("USER") ?? "user"
     property string host: hostFile.text().trim()
+    property string kernel: kernelFile.text().trim()
 
     readonly property int interval: 2000
     property var _prevCpu: null
@@ -31,6 +32,11 @@ Singleton {
     FileView {
         id: hostFile
         path: "/etc/hostname"
+    }
+
+    FileView {
+        id: kernelFile
+        path: "/proc/sys/kernel/osrelease"
     }
 
     FileView {

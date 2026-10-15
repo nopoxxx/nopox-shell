@@ -104,7 +104,8 @@ Scope {
             { label: "remove", icon: icons.remove, desc: "удалить пакеты", provider: "installed" },
             { label: "update", icon: icons.update, desc: "paru -Syu", run: () => term("paru -Syu") },
             { label: "system", icon: icons.system, desc: "питание и сессия", children: [
-                { label: "suspend", desc: "сон", run: () => spawn(["systemctl", "suspend"]) },
+                { label: "lock", desc: "заблокировать экран (Super+Alt+L)", run: () => spawn(["qs", "ipc", "call", "lock", "lock"]) },
+                { label: "suspend", desc: "заблокировать и уснуть", run: () => spawn(["sh", "-c", "qs ipc call lock lock; sleep 0.5; systemctl suspend"]) },
                 { label: "reboot", desc: "перезагрузка", run: () => spawn(["systemctl", "reboot"]) },
                 { label: "poweroff", desc: "выключение", run: () => spawn(["systemctl", "poweroff"]) },
                 { label: "logout", desc: "выйти из niri", run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) }

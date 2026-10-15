@@ -114,8 +114,12 @@ Scope {
                     editor.forceActiveFocus();
                 } else if (r.type === "action") {
                     Settings.open = false;
-                    Wallpaper.pickerSource = "local";
-                    Wallpaper.pickerOpen = true;
+                    if (r.action === "lock" || r.action === "lockPreview") {
+                        Quickshell.execDetached(["qs", "ipc", "call", "lock", r.action === "lock" ? "lock" : "preview"]);
+                    } else {
+                        Wallpaper.pickerSource = "local";
+                        Wallpaper.pickerOpen = true;
+                    }
                 } else {
                     adjust(r, 1);
                 }

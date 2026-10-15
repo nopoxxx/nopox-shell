@@ -23,4 +23,5 @@ ShellRoot {
     WallPicker {}
     SettingsWindow {}
     NotifPopups {}
+    LockScreen {}
 }

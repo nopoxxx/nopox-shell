@@ -199,10 +199,20 @@ function sections(outputs, layout) {
             { key: "shell.notify.dnd", label: "не беспокоить", type: "bool", def: false, hint: "показывать только критичные; остальные — в истории (log на панели)" }
         ] },
 
+        { id: "lock", rows: [
+            { header: "блокировка экрана" },
+            { key: "shell.lock.idle", label: "блокировать через, мин", type: "int", min: 0, max: 60, step: 1, def: 10, hint: "после бездействия; 0 — не блокировать; видеоплееры могут запретить" },
+            { key: "shell.lock.echo", label: "эхо пароля", type: "enum", options: ["*", "●", "none"], def: "*", hint: "none — как в консоли: ничего не видно при вводе" },
+            { key: "shell.lock.clock", label: "часы", type: "bool", def: true, hint: "крупные часы как tty-clock" },
+            { key: "shell.lock.wallpaper", label: "обои на фоне", type: "bool", def: true, hint: "приглушённые текущие обои под приглашением" },
+            { key: "shell.lock.preview", label: "предпросмотр", type: "action", action: "lockPreview", hint: "экран блокировки без проверки пароля; Esc — закрыть" },
+            { key: "shell.lock.now", label: "заблокировать сейчас", type: "action", action: "lock", hint: "Super+Alt+L" }
+        ] },
+
         { id: "wallpaper", rows: [
             { header: "обои" },
             { key: "wallpaper.fill", label: "заполнение", type: "enum", options: ["fill", "fit", "stretch"], def: "fill", hint: "fill — обрезать, fit — вписать с полосами, stretch — растянуть" },
-            { key: "wallpaper.picker", label: "выбрать обои", type: "action", hint: "открыть окно выбора (Mod+Shift+W)" }
+            { key: "wallpaper.picker", label: "выбрать обои", type: "action", action: "picker", hint: "открыть окно выбора (Mod+Shift+W)" }
         ] }
     ];
 }
