@@ -11,6 +11,8 @@ Singleton {
     readonly property string stateFile: Quickshell.env("HOME") + "/.local/state/nopox/wallpaper"
 
     property string current: ""
+    property string fill: "fill"           // fill | fit | stretch
+    readonly property var fillModes: ["fill", "fit", "stretch"]
     property var local: []                 // пути к файлам в dir
     property string downloading: ""        // id обоев, которые сейчас качаются
 
@@ -21,6 +23,16 @@ Singleton {
     function set(path) {
         current = path;
         state.setText(path + "\n");
+    }
+
+    function setFill(mode) {
+        if (!fillModes.includes(mode)) return;
+        fill = mode;
+        fillState.setText(mode + "\n");
+    }
+
+    function cycleFill() {
+        setFill(fillModes[(fillModes.indexOf(fill) + 1) % fillModes.length]);
     }
 
     function refresh() { lister.running = true; }
@@ -73,6 +85,15 @@ Singleton {
         id: state
         path: root.stateFile
         onLoaded: root.current = text().trim()
+    }
+
+    FileView {
+        id: fillState
+        path: root.stateFile + "-fill"
+        onLoaded: {
+            const m = text().trim();
+            if (root.fillModes.includes(m)) root.fill = m;
+        }
     }
 
     Process {

@@ -42,6 +42,10 @@ Scope {
 
     function edit(path) { term("vim " + shq(path), false); }
 
+    function fillDesc(mode, text) {
+        return (Wallpaper.fill === mode ? "● " : "  ") + text;
+    }
+
     function openPicker(source) {
         Wallpaper.pickerSource = source;
         Wallpaper.pickerOpen = true;
@@ -85,7 +89,12 @@ Scope {
             ] },
             { label: "style", icon: icons.style, desc: "обои", children: [
                 { label: "wallpaper", desc: "локальная коллекция", run: () => openPicker("local") },
-                { label: "wallhaven", desc: "поиск на wallhaven.cc", run: () => openPicker("wallhaven") }
+                { label: "wallhaven", desc: "поиск на wallhaven.cc", run: () => openPicker("wallhaven") },
+                { label: "fill", desc: "заполнение обоев: " + Wallpaper.fill, children: [
+                    { label: "fill", desc: fillDesc("fill", "заполнить экран, лишнее обрезать"), run: () => Wallpaper.setFill("fill") },
+                    { label: "fit", desc: fillDesc("fit", "вписать целиком, по краям полосы"), run: () => Wallpaper.setFill("fit") },
+                    { label: "stretch", desc: fillDesc("stretch", "растянуть без сохранения пропорций"), run: () => Wallpaper.setFill("stretch") }
+                ] }
             ] },
             { label: "install", icon: icons.install, desc: "установить пакеты", children: [
                 { label: "package", desc: "из репозиториев: arch, chaotic-aur", provider: "repo" },

@@ -11,9 +11,12 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Background
     WlrLayershell.namespace: "nopox-wallpaper"
-    color: "#282828"
+    color: "#282828"   // виден по краям в режиме fit
 
     readonly property string src: Wallpaper.current ? "file://" + encodeURI(Wallpaper.current) : ""
+    readonly property int mode: Wallpaper.fill === "fit" ? Image.PreserveAspectFit
+        : Wallpaper.fill === "stretch" ? Image.Stretch
+        : Image.PreserveAspectCrop
 
     onSrcChanged: {
         prev.source = cur.source;
@@ -24,7 +27,7 @@ PanelWindow {
     Image {
         id: prev
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
+        fillMode: bg.mode
         asynchronous: true
     }
 
@@ -32,7 +35,7 @@ PanelWindow {
         id: cur
 
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
+        fillMode: bg.mode
         asynchronous: true
         opacity: 0
         source: bg.src
@@ -45,6 +48,8 @@ PanelWindow {
             to: 1
             duration: 450
             easing.type: Easing.OutCubic
+            // иначе в режиме fit старая картинка торчала бы из-под новой по краям
+            onFinished: prev.source = ""
         }
     }
 }

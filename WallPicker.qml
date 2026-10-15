@@ -17,6 +17,7 @@ Scope {
         target: "wallpaper"
         function picker(): void { Wallpaper.pickerOpen = !Wallpaper.pickerOpen; }
         function set(path: string): void { Wallpaper.set(path); }
+        function fill(mode: string): void { Wallpaper.setFill(mode); }
     }
 
     LazyLoader {
@@ -196,6 +197,8 @@ Scope {
                                 const ctrl = event.modifiers & Qt.ControlModifier;
                                 if (event.key === Qt.Key_Escape) {
                                     Wallpaper.pickerOpen = false;
+                                } else if (ctrl && event.key === Qt.Key_F) {
+                                    Wallpaper.cycleFill();
                                 } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
                                     win.switchSource();
                                 } else if (event.key === Qt.Key_Left || (ctrl && event.key === Qt.Key_H)) {
@@ -355,6 +358,17 @@ Scope {
                                 + (win.loading && grid.count ? "  загрузка…" : "")
                             color: Theme.gray
                         }
+                        // режим заполнения: fill [fit] stretch — Ctrl+F или клик
+                        T {
+                            textFormat: Text.StyledText
+                            text: "   " + Wallpaper.fillModes.map(m => m === Wallpaper.fill
+                                ? `<font color="${Theme.yellow}"><b>[${m}]</b></font>`
+                                : `<font color="${Theme.gray}"> ${m} </font>`).join("")
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: Wallpaper.cycleFill()
+                            }
+                        }
                         T {
                             Layout.fillWidth: true
                             Layout.minimumWidth: 0
@@ -364,7 +378,7 @@ Scope {
                         }
                         T {
                             textFormat: Text.StyledText
-                            text: [["↵", "применить"], ["⇥", "источник"], ["←↑↓→", "выбор"], ["esc", "выход"]]
+                            text: [["↵", "применить"], ["⇥", "источник"], ["^f", "заполнение"], ["←↑↓→", "выбор"], ["esc", "выход"]]
                                 .map(([k, v]) => `<font color="${Theme.yellow}">${k}</font> ${v}`).join("   ")
                             color: Theme.gray
                         }
