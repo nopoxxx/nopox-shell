@@ -142,7 +142,7 @@ Scope {
                 width: grid.cellWidth * win.cols + Theme.pad * 2
                 height: col.implicitHeight + Theme.pad * 2
                 color: Theme.bg
-                border.color: Theme.yellow
+                border.color: Theme.accent
                 border.width: 2
 
                 MouseArea { anchors.fill: parent }
@@ -153,7 +153,7 @@ Scope {
                     width: title.implicitWidth
                     height: title.implicitHeight
                     color: Theme.bg
-                    T { id: title; text: "[ ~/style/wallpaper/" + win.source + "/ ]"; color: Theme.yellow; font.bold: true }
+                    T { id: title; text: "[ ~/style/wallpaper/" + win.source + "/ ]"; color: Theme.accent; font.bold: true }
                 }
 
                 ColumnLayout {
@@ -166,7 +166,7 @@ Scope {
                         Layout.fillWidth: true
                         spacing: 0
 
-                        T { text: "❯ "; color: Theme.yellow; font.bold: true }
+                        T { text: "❯ "; color: Theme.accent; font.bold: true }
 
                         TextInput {
                             id: input
@@ -222,7 +222,7 @@ Scope {
                         T {
                             textFormat: Text.StyledText
                             text: ["local", "wallhaven"].map(s => s === win.source
-                                ? `<font color="${Theme.yellow}"><b>[${s}]</b></font>`
+                                ? `<font color="${Theme.accent}"><b>[${s}]</b></font>`
                                 : `<font color="${Theme.gray}"> ${s} </font>`).join(" ")
                         }
                     }
@@ -270,7 +270,7 @@ Scope {
                                 height: win.thumbH
                                 color: Theme.bg1
                                 border.width: 2
-                                border.color: tile.sel ? Theme.yellow : tile.applied ? Theme.green : Theme.bg2
+                                border.color: tile.sel ? Theme.accent : tile.applied ? Theme.green : Theme.bg2
 
                                 Image {
                                     id: img
@@ -362,7 +362,7 @@ Scope {
                         T {
                             textFormat: Text.StyledText
                             text: "   " + Wallpaper.fillModes.map(m => m === Wallpaper.fill
-                                ? `<font color="${Theme.yellow}"><b>[${m}]</b></font>`
+                                ? `<font color="${Theme.accent}"><b>[${m}]</b></font>`
                                 : `<font color="${Theme.gray}"> ${m} </font>`).join("")
                             MouseArea {
                                 anchors.fill: parent
@@ -373,13 +373,13 @@ Scope {
                             Layout.fillWidth: true
                             Layout.minimumWidth: 0
                             text: win.status ? "  " + win.status : ""
-                            color: win.status.startsWith("✓") ? Theme.green : Theme.yellow
+                            color: win.status.startsWith("✓") ? Theme.green : Theme.accent
                             elide: Text.ElideRight
                         }
                         T {
                             textFormat: Text.StyledText
                             text: [["↵", "применить"], ["⇥", "источник"], ["^f", "заполнение"], ["←↑↓→", "выбор"], ["esc", "выход"]]
-                                .map(([k, v]) => `<font color="${Theme.yellow}">${k}</font> ${v}`).join("   ")
+                                .map(([k, v]) => `<font color="${Theme.accent}">${k}</font> ${v}`).join("   ")
                             color: Theme.gray
                         }
                     }

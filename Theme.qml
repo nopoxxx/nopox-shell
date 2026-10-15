@@ -1,6 +1,7 @@
 pragma Singleton
 import Quickshell
 import QtQuick
+import qs.services
 
 // Gruvbox dark (hard) — единая палитра nopox-os
 Singleton {
@@ -17,8 +18,14 @@ Singleton {
     readonly property color aqua: "#8ec07c"
     readonly property color orange: "#fe8019"
 
+    // акцент из настроек: рамки, prompt (и рамка фокуса niri — см. services/settings.js)
+    readonly property color accent: ({
+        yellow: yellow, orange: orange, green: green, aqua: aqua,
+        blue: blue, purple: purple, red: red
+    })[Settings.get("shell.accent")] ?? yellow
+
     readonly property string font: "Terminess Nerd Font Mono"
-    readonly property int fontSize: 16
-    readonly property int barHeight: 26
+    readonly property int fontSize: Settings.get("shell.fontSize")
+    readonly property int barHeight: Settings.get("shell.bar.height")
     readonly property int pad: 10
 }

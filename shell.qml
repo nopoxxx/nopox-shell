@@ -20,4 +20,5 @@ ShellRoot {
 
     Launcher {}
     WallPicker {}
+    SettingsWindow {}
 }

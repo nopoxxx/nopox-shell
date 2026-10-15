@@ -15,7 +15,7 @@ Scope {
 
     property bool open: false
     property string startAt: ""
-    readonly property int rows: 12
+    readonly property int rows: Settings.get("shell.launcher.rows")
     readonly property string home: Quickshell.env("HOME")
 
     IpcHandler {
@@ -76,7 +76,8 @@ Scope {
         label: "~",
         children: [
             { label: "apps", icon: icons.apps, desc: "запуск программ", provider: "apps" },
-            { label: "setup", icon: icons.setup, desc: "сеть, звук, конфиги", children: [
+            { label: "setup", icon: icons.setup, desc: "настройки, сеть, звук, конфиги", children: [
+                { label: "settings", desc: "настройки niri и shell (Mod+S)", run: () => Settings.open = true },
                 { label: "wifi", desc: "nmtui", run: () => term("nmtui", false) },
                 { label: "audio", desc: "pavucontrol", run: () => spawn(["pavucontrol"]) },
                 { label: "keybindings", desc: "подсказка по клавишам niri", run: () => spawn(["niri", "msg", "action", "show-hotkey-overlay"]) },
@@ -256,7 +257,7 @@ Scope {
                 width: cell.advanceWidth * 64 + Theme.pad * 2
                 height: col.implicitHeight + Theme.pad * 2
                 color: Theme.bg
-                border.color: Theme.yellow
+                border.color: Theme.accent
                 border.width: 2
 
                 MouseArea { anchors.fill: parent }
@@ -268,7 +269,7 @@ Scope {
                     width: title.implicitWidth
                     height: title.implicitHeight
                     color: Theme.bg
-                    T { id: title; text: "[ " + win.path + " ]"; color: Theme.yellow; font.bold: true }
+                    T { id: title; text: "[ " + win.path + " ]"; color: Theme.accent; font.bold: true }
                 }
 
                 ColumnLayout {
@@ -281,7 +282,7 @@ Scope {
                         Layout.fillWidth: true
                         spacing: 0
 
-                        T { text: "❯ "; color: Theme.yellow; font.bold: true }
+                        T { text: "❯ "; color: Theme.accent; font.bold: true }
 
                         TextInput {
                             id: input
@@ -370,12 +371,12 @@ Scope {
 
                                 T {
                                     text: row.current ? "▌ " : "  "
-                                    color: Theme.yellow
+                                    color: Theme.accent
                                 }
                                 T {
                                     visible: !!row.item.icon
                                     text: (row.item.icon ?? "") + " "
-                                    color: row.current ? Theme.yellow : Theme.gray
+                                    color: row.current ? Theme.accent : Theme.gray
                                 }
                                 // разделы — как каталоги в ls: синие и со слешем
                                 T {

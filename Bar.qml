@@ -8,13 +8,30 @@ import qs.services
 PanelWindow {
     id: bar
 
-    anchors { top: true; left: true; right: true }
+    readonly property bool onTop: Settings.get("shell.bar.position") === "top"
+    readonly property string clockFormat: Settings.get("shell.bar.clock")
+    readonly property bool showTitle: Settings.get("shell.bar.title") && Niri.focusedWindow !== null
+
+    anchors { top: onTop; bottom: !onTop; left: true; right: true }
     implicitHeight: Theme.barHeight
     color: Theme.bg
 
     SystemClock {
         id: clock
-        precision: SystemClock.Minutes
+        precision: bar.clockFormat.includes("ss") ? SystemClock.Seconds : SystemClock.Minutes
+    }
+
+    // сегменты RPROMPT, которые включены в настройках
+    readonly property var segments: {
+        const s = [];
+        if (Settings.get("shell.bar.cpu"))
+            s.push({ label: "cpu", value: Sys.cpu + "%", color: Sys.cpu > 80 ? Theme.red : Sys.cpu > 50 ? Theme.yellow : Theme.fg });
+        if (Settings.get("shell.bar.mem"))
+            s.push({ label: "mem", value: Sys.memUsed.toFixed(1) + "G", color: Sys.memUsed / Sys.memTotal > 0.85 ? Theme.red : Theme.fg });
+        if (Settings.get("shell.bar.layout"))
+            s.push({ value: Niri.layout, color: Theme.purple });
+        s.push({ value: Qt.formatDateTime(clock.date, clockFormat), color: Theme.orange, bold: true });
+        return s;
     }
 
     // ── PS1 + команда ──────────────────────────────────────────────
@@ -32,15 +49,15 @@ PanelWindow {
         T { text: "@"; color: Theme.gray }
         T { text: Sys.host; color: Theme.aqua; font.bold: true }
         T { text: " ~/ws/" + (Niri.focusedWorkspace?.name ?? Niri.focusedWorkspace?.idx ?? "?"); color: Theme.blue }
-        T { text: " ❯ "; color: Theme.yellow; font.bold: true }
+        T { text: " ❯ "; color: Theme.accent; font.bold: true }
 
         T {
-            visible: Niri.focusedWindow !== null
+            visible: bar.showTitle
             text: Niri.focusedWindow?.app_id ?? ""
             color: Theme.fg
         }
         T {
-            visible: Niri.focusedWindow !== null
+            visible: bar.showTitle
             Layout.fillWidth: true
             Layout.minimumWidth: 0
             text: "  # " + (Niri.focusedWindow?.title ?? "")
@@ -51,7 +68,7 @@ PanelWindow {
         // мигающий курсор, когда «команды» нет
         T {
             id: cursor
-            visible: Niri.focusedWindow === null
+            visible: !bar.showTitle
             text: "█"
             color: Theme.fg
             Timer {
@@ -61,7 +78,7 @@ PanelWindow {
                 onTriggered: cursor.opacity = cursor.opacity > 0 ? 0 : 1
             }
         }
-        Item { visible: Niri.focusedWindow === null; Layout.fillWidth: true }
+        Item { visible: !bar.showTitle; Layout.fillWidth: true }
     }
 
     // ── RPROMPT ────────────────────────────────────────────────────
@@ -73,20 +90,17 @@ PanelWindow {
             verticalCenter: parent.verticalCenter
         }
 
-        T { text: "cpu "; color: Theme.gray }
-        T {
-            text: Sys.cpu + "%"
-            color: Sys.cpu > 80 ? Theme.red : Sys.cpu > 50 ? Theme.yellow : Theme.fg
+        Repeater {
+            model: bar.segments
+
+            Row {
+                required property var modelData
+                required property int index
+
+                T { visible: index > 0; text: " · "; color: Theme.bg2 }
+                T { visible: !!modelData.label; text: (modelData.label ?? "") + " "; color: Theme.gray }
+                T { text: modelData.value; color: modelData.color; font.bold: !!modelData.bold }
+            }
         }
-        T { text: " · "; color: Theme.bg2 }
-        T { text: "mem "; color: Theme.gray }
-        T {
-            text: Sys.memUsed.toFixed(1) + "G"
-            color: Sys.memUsed / Sys.memTotal > 0.85 ? Theme.red : Theme.fg
-        }
-        T { text: " · "; color: Theme.bg2 }
-        T { text: Niri.layout; color: Theme.purple }
-        T { text: " · "; color: Theme.bg2 }
-        T { text: Qt.formatDateTime(clock.date, "HH:mm"); color: Theme.orange; font.bold: true }
     }
 }
