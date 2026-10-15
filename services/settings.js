@@ -1,6 +1,6 @@
 .pragma library
 
-// Схема окна настроек и генерация ~/.config/niri/nopox.kdl.
+// Схема окна настроек и генерация ~/.config/niri/nopox/*.kdl.
 //   niri.*      — уходят в конфиг niri
 //   shell.*     — читает quickshell
 //   wallpaper.* — хранится в сервисе Wallpaper
@@ -140,6 +140,10 @@ function sections(outputs, layout) {
             { key: "niri.border", label: "обводка окон", type: "int", min: 0, max: 12, step: 1, def: 0, hint: "толщина в px, 0 — выключить" },
             { key: "niri.shadow", label: "тени", type: "bool", def: false },
             { key: "niri.csd", label: "без декораций приложений", type: "bool", def: true, hint: "prefer-no-csd: просить приложения не рисовать свои заголовки" },
+
+            { header: "правила окон" },
+            { key: "niri.rules.radius", label: "скругление углов", type: "int", min: 0, max: 24, step: 2, def: 0, hint: "радиус в px, 0 — прямые углы" },
+            { key: "niri.rules.inactiveOpacity", label: "прозрачность неактивных, %", type: "int", min: 50, max: 100, step: 5, def: 100, hint: "100 — непрозрачные" },
 
             { header: "курсор" },
             { key: "niri.cursor.size", label: "размер", type: "int", min: 16, max: 64, step: 4, def: 24 },
@@ -294,8 +298,9 @@ function actionKdl(a) {
 // keys: { comboKey: { combo, action, title } }; action "off" — сочетание отключено
 function keysKdl(keys) {
     const lines = [
-        "// Сгенерировано окном биндов nopox (Mod+S → бинды) из ~/.config/nopox/settings.json.",
-        "// Подключается в config.kdl последним и перекрывает одноимённые бинды. Ручные правки перезапишутся.",
+        "// nopox: свои бинды — окно биндов (Mod+S → бинды), из ~/.config/nopox/settings.json.",
+        "// Подключается в config.kdl последним (include \"nopox/keys.kdl\") и перекрывает одноимённые бинды.",
+        "// Ручные правки перезапишутся.",
         "",
         "binds {"
     ];
@@ -331,17 +336,57 @@ function logicalSize(mode, scale, transform) {
     return { w: Math.round(w), h: Math.round(h) };
 }
 
+// ── файлы ~/.config/niri/nopox/ ───────────────────────────────────
+// main.kdl подключает остальные; в config.kdl — include "nopox/main.kdl" и в самом конце include "nopox/keys.kdl"
+
+var NIRI_FILES = ["input", "displays", "layout", "window-rules", "cursor", "animations", "misc", "binds"];
+
+// в каком файле живёт настройка — для подсказки в окне настроек
+function niriFileOf(key) {
+    if (/^niri\.(kb|tp|mouse)\.|^niri\.(ffm|warp)$/.test(key)) return "input.kdl";
+    if (/^niri\.(gaps|colWidth|center|ring|border|shadow)$/.test(key) || key === "shell.accent") return "layout.kdl";
+    if (/^niri\.rules\./.test(key)) return "window-rules.kdl";
+    if (/^niri\.cursor\./.test(key)) return "cursor.kdl";
+    if (/^niri\.anim/.test(key)) return "animations.kdl";
+    if (key === "niri.csd") return "misc.kdl";
+    if (/^niri\.out\./.test(key) || key === "niri.displays") return "displays.kdl";
+    if (key === "niri.binds") return "keys.kdl";
+    return "";
+}
+
+function head(what) {
+    return [
+        "// nopox: " + what,
+        "// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.",
+        "// Свои настройки пишите в ~/.config/niri/config.kdl.",
+        ""
+    ];
+}
+
+function text(lines) {
+    return lines.filter(l => l !== null).join("\n") + "\n";
+}
+
 // get(key) — значение с учётом умолчаний;
-// outs — { имя: { enabled, mode, scale, transform, x, y, vrr, primary } }, только то, что задано вручную
-function niriKdl(get, outs) {
+// outs — { имя: { enabled, mode, scale, transform, x, y, vrr, primary } }, только то, что задано вручную.
+// Возвращает { "input.kdl": текст, … } — все файлы папки nopox/, кроме keys.kdl (его пишет Binds).
+function niriFiles(get, outs) {
     const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
     const ring = get("niri.ring");
     const border = get("niri.border");
+    const radius = get("niri.rules.radius");
+    const inactive = get("niri.rules.inactiveOpacity");
+    const files = {};
 
-    const lines = [
-        "// Сгенерировано окном настроек nopox (Mod+S) из ~/.config/nopox/settings.json.",
-        "// Ручные правки здесь перезапишутся — свои настройки пишите в config.kdl.",
+    files["main.kdl"] = text([
+        "// nopox: все настройки niri из nopox-shell — по файлу на раздел.",
+        "// Подключается из config.kdl: include \"nopox/main.kdl\". Свои бинды (keys.kdl) — отдельно, в конце config.kdl.",
         "",
+        ...NIRI_FILES.map(n => "include " + q(n + ".kdl"))
+    ]);
+
+    files["input.kdl"] = text([
+        ...head("ввод — клавиатура, мышь, тачпад"),
         "input {",
         "    keyboard {",
         "        xkb {",
@@ -362,8 +407,30 @@ function niriKdl(get, outs) {
         "    }",
         get("niri.ffm") ? "    focus-follows-mouse" : null,
         get("niri.warp") ? "    warp-mouse-to-focus" : null,
-        "}",
-        "",
+        "}"
+    ]);
+
+    const displays = head("мониторы — окно мониторов (setup/ → displays)");
+    for (const name in outs) {
+        const o = outs[name];
+        const body = [];
+        if (o.enabled === false) {
+            body.push("    off");
+        } else {
+            if (o.mode) body.push("    mode " + q(o.mode));
+            if (o.scale !== undefined) body.push("    scale " + f(o.scale));
+            if (o.transform) body.push("    transform " + q(o.transform));
+            if (o.x !== undefined && o.y !== undefined) body.push("    position x=" + Math.round(o.x) + " y=" + Math.round(o.y));
+            if (o.vrr) body.push("    variable-refresh-rate");
+            if (o.primary) body.push("    focus-at-startup");
+        }
+        if (body.length) displays.push("output " + q(name) + " {", ...body, "}", "");
+    }
+    if (displays.length === 4) displays.push("// ничего не задано — niri настраивает мониторы сам");
+    files["displays.kdl"] = text(displays);
+
+    files["layout.kdl"] = text([
+        ...head("раскладка окон — отступы, колонки, рамка фокуса, обводка, тени"),
         "layout {",
         "    // прозрачный фон: под рабочими столами видны обои quickshell",
         '    background-color "transparent"',
@@ -392,36 +459,74 @@ function niriKdl(get, outs) {
         "        offset x=0 y=5",
         '        color "#0007"',
         "    }",
+        "}"
+    ]);
+
+    files["window-rules.kdl"] = text([
+        ...head("правила окон"),
+        ...(radius > 0 ? [
+            "// скруглённые углы у всех окон",
+            "window-rule {",
+            "    geometry-corner-radius " + radius,
+            "    clip-to-geometry true",
+            "}",
+            ""] : []),
+        ...(inactive < 100 ? [
+            "// неактивные окна полупрозрачные",
+            "window-rule {",
+            "    match is-active=false",
+            "    opacity " + (inactive / 100).toFixed(2),
+            "}",
+            ""] : []),
+        "// терминалы, открытые из меню nopox (install / remove / update …), — плавающие по центру",
+        "window-rule {",
+        '    match app-id="^nopox-term$"',
+        "    open-floating true",
+        "    default-column-width { fixed 960; }",
+        "    default-window-height { fixed 600; }",
         "}",
         "",
+        "// обои quickshell видны и как фон режима обзора",
+        "layer-rule {",
+        '    match namespace="^nopox-wallpaper$"',
+        "    place-within-backdrop true",
+        "}"
+    ]);
+
+    files["cursor.kdl"] = text([
+        ...head("курсор"),
         "cursor {",
         "    xcursor-size " + get("niri.cursor.size"),
         get("niri.cursor.hide") ? "    hide-when-typing" : null,
-        "}",
-        "",
-        "prefer-no-csd " + (get("niri.csd") ? "true" : "false"),
-        "",
+        "}"
+    ]);
+
+    files["animations.kdl"] = text([
+        ...head("анимации"),
         "animations {",
         get("niri.anim") ? null : "    off",
         "    slowdown " + f(get("niri.anim.slowdown")),
         "}"
-    ];
+    ]);
 
-    for (const name in outs) {
-        const o = outs[name];
-        const body = [];
-        if (o.enabled === false) {
-            body.push("    off");
-        } else {
-            if (o.mode) body.push("    mode " + q(o.mode));
-            if (o.scale !== undefined) body.push("    scale " + f(o.scale));
-            if (o.transform) body.push("    transform " + q(o.transform));
-            if (o.x !== undefined && o.y !== undefined) body.push("    position x=" + Math.round(o.x) + " y=" + Math.round(o.y));
-            if (o.vrr) body.push("    variable-refresh-rate");
-            if (o.primary) body.push("    focus-at-startup");
-        }
-        if (body.length) lines.push("", "output " + q(name) + " {", ...body, "}");
-    }
+    files["misc.kdl"] = text([
+        ...head("прочее"),
+        "// просить приложения не рисовать свои заголовки",
+        "prefer-no-csd " + (get("niri.csd") ? "true" : "false")
+    ]);
 
-    return lines.filter(l => l !== null).join("\n") + "\n";
+    files["binds.kdl"] = text([
+        ...head("клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → бинды), они в keys.kdl"),
+        'spawn-at-startup "qs"',
+        "",
+        "binds {",
+        '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
+        '    Mod+Shift+D hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
+        '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',
+        '    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }',
+        '    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "qs" "ipc" "call" "lock" "lock"; }',
+        "}"
+    ]);
+
+    return files;
 }

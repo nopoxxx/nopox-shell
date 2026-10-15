@@ -241,7 +241,7 @@ Scope {
                         visible: !Binds.included
                         wrapMode: Text.Wrap
                         textFormat: Text.StyledText
-                        text: `<font color="${Theme.yellow}">! в config.kdl нет include "nopox-keys.kdl" — свои бинды не применятся.</font> `
+                        text: `<font color="${Theme.yellow}">! в config.kdl нет include "nopox/keys.kdl" — свои бинды не применятся.</font> `
                             + `<font color="${Theme.accent}">[подключить]</font>`
 
                         MouseArea {

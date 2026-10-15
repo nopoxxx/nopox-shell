@@ -6,11 +6,10 @@
 // Input device configuration.
 // Find the full list of options on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Input
-// input, layout, cursor, prefer-no-csd и animations живут в nopox.kdl —
-// его генерирует окно настроек (Mod+S) из ~/.config/nopox/settings.json.
-include "nopox.kdl"
-// клавиши, автозапуск qs и правила окон nopox — обновляются вместе с shell
-include "nopox-binds.kdl"
+// Настройки nopox живут в ~/.config/niri/nopox/ — по файлу на раздел: input, displays, layout,
+// window-rules, cursor, animations, misc, binds. Их генерирует shell из ~/.config/nopox/settings.json
+// (окно настроек Mod+S), поэтому этих секций здесь нет. Свои настройки пишите в этот файл.
+include "nopox/main.kdl"
 
 // You can configure outputs by their name, which you can find
 // by running `niri msg outputs` while inside a niri instance.
@@ -413,4 +412,4 @@ binds {
 }
 
 // свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные
-include "nopox-keys.kdl"
+include "nopox/keys.kdl"

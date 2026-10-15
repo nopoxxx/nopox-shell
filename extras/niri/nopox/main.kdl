@@ -1,0 +1,11 @@
+// nopox: все настройки niri из nopox-shell — по файлу на раздел.
+// Подключается из config.kdl: include "nopox/main.kdl". Свои бинды (keys.kdl) — отдельно, в конце config.kdl.
+
+include "input.kdl"
+include "displays.kdl"
+include "layout.kdl"
+include "window-rules.kdl"
+include "cursor.kdl"
+include "animations.kdl"
+include "misc.kdl"
+include "binds.kdl"

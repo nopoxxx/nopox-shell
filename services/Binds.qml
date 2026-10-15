@@ -4,8 +4,8 @@ import Quickshell.Io
 import QtQuick
 import "settings.js" as S
 
-// Бинды niri: что действует сейчас (config.kdl + nopox-binds.kdl + свои) и свои изменения.
-// Свои хранятся в настройке niri.keys и генерируются в ~/.config/niri/nopox-keys.kdl,
+// Бинды niri: что действует сейчас (config.kdl + nopox/binds.kdl + свои) и свои изменения.
+// Свои хранятся в настройке niri.keys и генерируются в ~/.config/niri/nopox/keys.kdl,
 // который подключается в config.kdl последним — поэтому перекрывает одноимённые бинды.
 // После записи — niri validate; если конфиг не прошёл, изменение откатывается.
 Singleton {
@@ -21,9 +21,9 @@ Singleton {
     property string error: ""
     property var _prevKeys: null      // до последнего изменения — для отката
 
-    readonly property bool included: /^\s*include\s+"nopox-keys\.kdl"/m.test(configText)
+    readonly property bool included: /^\s*include\s+"nopox\/keys\.kdl"/m.test(configText)
 
-    // действующие бинды: config.kdl, поверх — nopox-binds.kdl, поверх — свои
+    // действующие бинды: config.kdl, поверх — nopox/binds.kdl, поверх — свои
     readonly property var all: {
         const map = {};
         for (const b of configBinds) map[S.comboKey(b.combo)] = Object.assign({}, b);
@@ -78,7 +78,7 @@ Singleton {
         set(k);
     }
 
-    // для старых установок: в config.kdl ещё нет include "nopox-keys.kdl"
+    // для старых установок: в config.kdl ещё нет include "nopox/keys.kdl"
     function ensureIncluded() {
         includer.running = true;
     }
@@ -114,7 +114,7 @@ Singleton {
 
     FileView {
         id: nopoxFile
-        path: Settings.greeterMode ? "" : root.dir + "/nopox-binds.kdl"
+        path: Settings.greeterMode ? "" : root.dir + "/nopox/binds.kdl"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: root.nopoxBinds = S.parseBinds(text(), "nopox")
@@ -122,7 +122,7 @@ Singleton {
 
     FileView {
         id: keysFile
-        path: Settings.greeterMode ? "" : root.dir + "/nopox-keys.kdl"
+        path: Settings.greeterMode ? "" : root.dir + "/nopox/keys.kdl"
     }
 
     // niri перечитывает конфиг сам; проверяем, что новый вариант корректен
@@ -156,7 +156,7 @@ Singleton {
 
     Process {
         id: includer
-        command: ["sh", "-c", 'grep -q "^include \\"nopox-keys.kdl\\"" "$1/config.kdl" || printf "\\n// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные\\ninclude \\"nopox-keys.kdl\\"\\n" >> "$1/config.kdl"', "sh", root.dir]
+        command: ["sh", "-c", 'grep -q "^include \\"nopox/keys.kdl\\"" "$1/config.kdl" || printf "\\n// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные\\ninclude \\"nopox/keys.kdl\\"\\n" >> "$1/config.kdl"', "sh", root.dir]
     }
 
     Process {

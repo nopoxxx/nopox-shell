@@ -1,0 +1,5 @@
+// nopox: свои бинды — окно биндов (Mod+S → бинды).
+// Подключается в config.kdl последним (include "nopox/keys.kdl"); его пишет nopox-shell.
+
+binds {
+}

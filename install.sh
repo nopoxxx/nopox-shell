@@ -141,25 +141,18 @@ mkdir -p "$HOME/Pictures/Wallpapers"
 
 # ── niri ─────────────────────────────────────────────────────────────
 step "Конфиг niri"
-mkdir -p "$NIRI_DIR"
 conf="$NIRI_DIR/config.kdl"
+# ~/.config/niri/nopox/ — по файлу на раздел (input, displays, layout, window-rules, …).
+# Shell перегенерирует их при запуске; стартовые нужны, чтобы niri загрузил конфиг ещё до shell.
+mkdir -p "$NIRI_DIR/nopox"
+for f in "$DEST"/extras/niri/nopox/*.kdl; do
+    [ -f "$NIRI_DIR/nopox/$(basename "$f")" ] || cp "$f" "$NIRI_DIR/nopox/"
+done
 
-if [ ! -f "$NIRI_DIR/nopox.kdl" ]; then
-    # стартовый: потом его перегенерирует окно настроек (Mod+S)
-    cp "$DEST/extras/niri/nopox.kdl" "$NIRI_DIR/nopox.kdl"
-fi
-# клавиши и правила nopox — ссылкой на клон: обновляются вместе с shell
-ln -sfn "$DEST/extras/niri/nopox-binds.kdl" "$NIRI_DIR/nopox-binds.kdl"
-# свои бинды (окно биндов) — стартовый пустой, дальше его пишет shell
-[ -f "$NIRI_DIR/nopox-keys.kdl" ] || cp "$DEST/extras/niri/nopox-keys.kdl" "$NIRI_DIR/nopox-keys.kdl"
-
-if [ -f "$conf" ] && grep -q 'include "nopox-binds.kdl"' "$conf"; then
+if [ -f "$conf" ] && grep -q '^include "nopox/main.kdl"' "$conf"; then
     ok "nopox уже подключён к вашему config.kdl"
-    # установки до окна биндов: свои бинды подключаются последними
-    if ! grep -q 'include "nopox-keys.kdl"' "$conf"; then
-        printf '\n// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные\ninclude "nopox-keys.kdl"\n' >> "$conf"
-        ok "добавлен include \"nopox-keys.kdl\" для окна биндов"
-    fi
+elif [ -f "$conf" ] && grep -qE '^include "nopox(-binds)?\.kdl"' "$conf"; then
+    ok "старая схема nopox — shell сам переложит её в ~/.config/niri/nopox/ при запуске"
 elif [ ! -f "$conf" ] || { [ "$KEEP_NIRI" = 0 ] && ask "Заменить ваш config.kdl конфигом nopox? Старый уйдёт в бэкап" y; }; then
     backup "$conf"
     cp "$DEST/extras/niri/config.kdl" "$conf"
@@ -172,9 +165,8 @@ else
     {
         echo
         echo "// >>> nopox-shell >>> (добавлено install.sh)"
-        echo 'include "nopox.kdl"'
-        echo 'include "nopox-binds.kdl"'
-        echo 'include "nopox-keys.kdl"'
+        echo 'include "nopox/main.kdl"'
+        echo 'include "nopox/keys.kdl"'
         echo "// <<< nopox-shell <<<"
     } >> "$conf"
     ok "к вашему config.kdl дописаны include nopox"

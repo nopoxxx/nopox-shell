@@ -1,17 +1,21 @@
 // Подключение nopox-shell к своему ~/.config/niri/config.kdl вручную (install.sh делает это сам).
 //
-// 1. Скопируйте стартовый nopox.kdl и сделайте ссылку на клавиши nopox:
-//      cp ~/.config/quickshell/extras/niri/nopox.kdl ~/.config/niri/
-//      ln -sfn ~/.config/quickshell/extras/niri/nopox-binds.kdl ~/.config/niri/
-//      cp ~/.config/quickshell/extras/niri/nopox-keys.kdl ~/.config/niri/
-// 2. Допишите в конец config.kdl три строки ниже — именно в конец, чтобы бинды nopox перекрывали ваши.
+// 1. Скопируйте стартовые файлы — shell перезапишет их при запуске:
+//      mkdir -p ~/.config/niri/nopox && cp -n ~/.config/quickshell/extras/niri/nopox/*.kdl ~/.config/niri/nopox/
+// 2. Допишите в конец config.kdl две строки ниже — именно в конец, чтобы бинды nopox перекрывали ваши.
 //
-// nopox.kdl — input, layout, cursor, prefer-no-csd, animations, мониторы: его генерирует окно
-// настроек (Mod+S). Если в config.kdl есть свои input / layout, флаги оттуда (tap и т.п.)
-// настройки выключить не смогут — такие секции лучше убрать.
-// nopox-binds.kdl — автозапуск qs, клавиши (Mod+D, Mod+S, …) и правила окон; приходит с обновлениями shell.
-// nopox-keys.kdl — свои бинды из окна биндов (Mod+S → бинды); его пишет shell.
+// ~/.config/niri/nopox/ — по файлу на раздел, все генерирует shell из настроек (Mod+S):
+//   main.kdl          подключает остальные
+//   input.kdl         клавиатура, мышь, тачпад
+//   displays.kdl      мониторы
+//   layout.kdl        отступы, колонки, рамка фокуса, обводка, тени
+//   window-rules.kdl  скругление, прозрачность неактивных, правила окон nopox
+//   cursor.kdl, animations.kdl, misc.kdl
+//   binds.kdl         клавиши nopox (Mod+D, Mod+S, …) и автозапуск qs
+//   keys.kdl          свои бинды из окна биндов — подключается отдельно, последним
+//
+// Если в config.kdl есть свои input / layout, флаги оттуда (tap и т.п.) настройки выключить не смогут —
+// такие секции лучше убрать.
 
-include "nopox.kdl"
-include "nopox-binds.kdl"
-include "nopox-keys.kdl"
+include "nopox/main.kdl"
+include "nopox/keys.kdl"

@@ -82,9 +82,8 @@ Greeter работает под пользователем `greeter` и не в�
 | Путь | Что |
 |---|---|
 | `~/.config/nopox/settings.json` | настройки — только отличия от умолчаний |
-| `~/.config/niri/nopox.kdl` | сгенерирован из настроек, не редактировать вручную |
-| `~/.config/niri/nopox-keys.kdl` | свои бинды из окна биндов, подключён в `config.kdl` последним |
-| `~/.config/niri/nopox-binds.kdl` | ссылка на клавиши и правила nopox из клона shell |
+| `~/.config/niri/nopox/` | настройки niri по файлу на раздел: `input`, `displays`, `layout`, `window-rules`, `cursor`, `animations`, `misc`, `binds` — генерирует shell, вручную не править |
+| `~/.config/niri/nopox/keys.kdl` | свои бинды из окна биндов, подключён в `config.kdl` последним |
 | `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим заполнения |
 | `~/Pictures/Wallpapers/` | коллекция обоев, сюда же скачивается с wallhaven |
 | `/var/lib/nopox-greeter/<user>/` | копия настроек и обоев для greeter |

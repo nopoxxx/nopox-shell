@@ -419,7 +419,9 @@ Scope {
                                 if (!r) return "";
                                 if (r.type === "module") return r.hint + "  ·  ←→ зона, ⇧↑↓ или K/J — порядок";
                                 const def = r.type === "action" ? "" : "  ·  по умолчанию " + JSON.stringify(r.def);
-                                return (r.hint ? r.hint + "  ·  " : "") + r.key + def;
+                                const file = S.niriFileOf(r.key);
+                                // файл первым: подсказка длинная и обрезается справа
+                                return (file ? "niri/nopox/" + file + "  ·  " : "") + (r.hint ? r.hint + "  ·  " : "") + r.key + def;
                             }
                         }
                     }

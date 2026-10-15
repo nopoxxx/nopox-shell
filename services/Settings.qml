@@ -5,7 +5,7 @@ import QtQuick
 import "settings.js" as S
 
 // Настройки nopox: ~/.config/nopox/settings.json (только отличия от умолчаний)
-// и сгенерированный из них ~/.config/niri/nopox.kdl.
+// и сгенерированные из них файлы ~/.config/niri/nopox/*.kdl — по файлу на раздел.
 // В greeter (NOPOX_GREETER=1) — только чтение копии настроек пользователя profile
 // из /var/lib/nopox-greeter/<user>/, её туда кладёт GreeterSync из сессии пользователя.
 Singleton {
@@ -16,7 +16,7 @@ Singleton {
     readonly property string file: greeterMode
         ? (profile ? "/var/lib/nopox-greeter/" + profile + "/settings.json" : "")
         : Quickshell.env("HOME") + "/.config/nopox/settings.json"
-    readonly property string niriFile: Quickshell.env("HOME") + "/.config/niri/nopox.kdl"
+    readonly property string niriDir: Quickshell.env("HOME") + "/.config/niri/nopox"
 
     property var values: ({})
     property bool loaded: false
@@ -75,10 +75,31 @@ Singleton {
             if (!outs[m[1]]) outs[m[1]] = {};
             outs[m[1]][m[2]] = values[k];
         }
-        niriView.setText(S.niriKdl(get, outs));
+        // пишем только изменившиеся файлы: niri перечитывает конфиг при каждой записи
+        const files = S.niriFiles(get, outs);
+        const args = [];
+        for (const name in files)
+            if (_written[name] !== files[name]) args.push(name, files[name]);
+        if (!args.length) return;
+        _pending = args;
+        flushNiri();
     }
 
-    Component.onCompleted: if (!greeterMode) Quickshell.execDetached(["mkdir", "-p", file.slice(0, file.lastIndexOf("/"))])
+    property var _written: ({})
+    property var _pending: null
+
+    function flushNiri() {
+        if (writer.running || !_pending) return;
+        const args = _pending;
+        _pending = null;
+        for (let i = 0; i < args.length; i += 2) _written[args[i]] = args[i + 1];
+        // через временный файл и mv — niri не увидит наполовину записанный файл
+        writer.command = ["sh", "-c", 'd=$1; shift; mkdir -p "$d"; while [ $# -gt 1 ]; do printf "%s" "$2" > "$d/.$1.tmp" && mv -f "$d/.$1.tmp" "$d/$1"; shift 2; done',
+            "sh", niriDir].concat(args);
+        writer.running = true;
+    }
+
+    Component.onCompleted: if (!greeterMode) Quickshell.execDetached(["mkdir", "-p", file.slice(0, file.lastIndexOf("/")), niriDir])
 
     // небольшая задержка: стрелкой можно пролистать несколько значений подряд, а niri перечитает конфиг один раз
     Timer {
@@ -107,10 +128,39 @@ Singleton {
         }
     }
 
-    FileView {
-        id: niriView
-        path: root.greeterMode ? "" : root.niriFile
-        blockLoading: false
+    property bool _migrated: false
+
+    Process {
+        id: writer
+        onExited: {
+            if (!root._migrated) {
+                root._migrated = true;
+                migrate.running = true;
+            }
+            root.flushNiri();
+        }
+    }
+
+    // Старая схема (до разбиения): nopox.kdl, nopox-binds.kdl, nopox-keys.kdl рядом с config.kdl.
+    // Переводим include на nopox/…, проверяем niri validate и только тогда удаляем старые файлы;
+    // если не прошло — возвращаем config.kdl как был.
+    Process {
+        id: migrate
+        command: ["sh", "-c", `
+            cd "$1/.." || exit 0
+            [ -f config.kdl ] && grep -qE '^include "nopox(-binds|-keys)?\.kdl"' config.kdl || exit 0
+            cp config.kdl config.kdl.bak-nopox-split
+            sed -i -e 's#^include "nopox\.kdl"#include "nopox/main.kdl"#' \
+                   -e '/^include "nopox-binds\.kdl"/d' \
+                   -e 's#^include "nopox-keys\.kdl"#include "nopox/keys.kdl"#' config.kdl
+            # main.kdl уже подключает binds.kdl; keys.kdl мог ещё не успеть записаться — пустой на время проверки
+            [ -f "$1/keys.kdl" ] || printf 'binds {\\n}\\n' > "$1/keys.kdl"
+            if niri validate -c config.kdl >/dev/null 2>&1; then
+                rm -f nopox.kdl nopox-binds.kdl nopox-keys.kdl
+                notify-send -a nopox-shell "Настройки niri разложены по файлам" "~/.config/niri/nopox/ — input, displays, layout, window-rules, …"
+            else
+                mv -f config.kdl.bak-nopox-split config.kdl
+            fi`, "sh", root.niriDir]
     }
 
     Process {
