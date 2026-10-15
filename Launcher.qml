@@ -42,6 +42,11 @@ Scope {
 
     function edit(path) { term("vim " + shq(path), false); }
 
+    function openPicker(source) {
+        Wallpaper.pickerSource = source;
+        Wallpaper.pickerOpen = true;
+    }
+
     function launchApp(entry) {
         if (entry.runInTerminal)
             Quickshell.execDetached(["kitty", "-e", ...entry.command]);
@@ -55,6 +60,7 @@ Scope {
     readonly property var icons: ({
         apps: String.fromCodePoint(0xF003B),
         setup: String.fromCodePoint(0xF0493),
+        style: String.fromCodePoint(0xF03D8),
         install: String.fromCodePoint(0xF03D7),
         remove: String.fromCodePoint(0xF01B4),
         update: String.fromCodePoint(0xF06B0),
@@ -76,6 +82,10 @@ Scope {
                     { label: "kitty", desc: "~/.config/kitty/kitty.conf", run: () => edit(home + "/.config/kitty/kitty.conf") }
                 ] },
                 { label: "restart shell", desc: "перезапустить quickshell", run: () => spawn(["sh", "-c", "pkill -x qs; sleep 0.3; niri msg action spawn -- qs"]) }
+            ] },
+            { label: "style", icon: icons.style, desc: "обои", children: [
+                { label: "wallpaper", desc: "локальная коллекция", run: () => openPicker("local") },
+                { label: "wallhaven", desc: "поиск на wallhaven.cc", run: () => openPicker("wallhaven") }
             ] },
             { label: "install", icon: icons.install, desc: "установить пакеты", children: [
                 { label: "package", desc: "из репозиториев: arch, chaotic-aur", provider: "repo" },
