@@ -114,7 +114,9 @@ Scope {
                     editor.forceActiveFocus();
                 } else if (r.type === "action") {
                     Settings.open = false;
-                    if (r.action === "displays") {
+                    if (r.action === "binds") {
+                        Quickshell.execDetached(["qs", "ipc", "call", "binds", "toggle"]);
+                    } else if (r.action === "displays") {
                         Quickshell.execDetached(["qs", "ipc", "call", "displays", "toggle"]);
                     } else if (r.action === "shellUpdate") {
                         ShellUpdate.check(true);

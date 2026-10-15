@@ -149,6 +149,9 @@ function sections(outputs, layout) {
             { key: "niri.anim", label: "включены", type: "bool", def: true },
             { key: "niri.anim.slowdown", label: "замедление", type: "float", min: 0.25, max: 3, step: 0.25, def: 1 },
 
+            { header: "клавиши" },
+            { key: "niri.binds", label: "бинды", type: "action", action: "binds", hint: "все сочетания niri и nopox: изменить, добавить, отключить" },
+
             { header: "мониторы" },
             { key: "niri.displays", label: "мониторы", type: "action", action: "displays",
               hint: outputs.map(o => o.name).join(", ") + " — режим, масштаб, поворот, расположение, VRR" }
@@ -236,6 +239,77 @@ function defaultOf(key, outputs) {
 
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
+
+// ── бинды ──────────────────────────────────────────────────────────
+
+var MODS = ["mod", "super", "ctrl", "alt", "shift", "iso_level3_shift", "iso_level5_shift"];
+
+// ключ для сравнения: регистр и порядок модификаторов не важны, Control = Ctrl
+function comboKey(c) {
+    const parts = String(c).split("+").map(s => s.trim().toLowerCase()).filter(s => s);
+    const key = parts.pop() ?? "";
+    const mods = parts.map(m => m === "control" ? "ctrl" : m)
+        .sort((a, b) => MODS.indexOf(a) - MODS.indexOf(b));
+    return mods.concat([key]).join("+");
+}
+
+// однострочные бинды из блоков binds { … }: [{ combo, title, hidden, action, source }]
+function parseBinds(text, source) {
+    const out = [];
+    let inBinds = false;
+    for (const raw of String(text ?? "").split("\n")) {
+        const line = raw.trim();
+        if (!inBinds) {
+            if (/^binds\s*\{\s*$/.test(line)) inBinds = true;
+            continue;
+        }
+        if (line === "}") { inBinds = false; continue; }
+        if (line.startsWith("//") || line.startsWith("/-")) continue;
+        const m = line.match(/^([A-Za-z0-9_]+(?:\+[A-Za-z0-9_]+)*)((?:\s+[a-z-]+=(?:"[^"]*"|[^\s{]+))*)\s*\{\s*(.*?)\s*\}\s*(?:\/\/.*)?$/);
+        if (!m) continue;
+        const t = m[2].match(/hotkey-overlay-title=(?:"([^"]*)"|null)/);
+        out.push({
+            combo: m[1],
+            title: t?.[1] ?? "",
+            hidden: /hotkey-overlay-title=null/.test(m[2]),
+            action: m[3].replace(/;\s*$/, ""),
+            source
+        });
+    }
+    return out;
+}
+
+// действие, как его ввёл человек, → KDL:
+//   close-window → close-window      focus-workspace 3 → focus-workspace 3
+//   spawn kitty → spawn "kitty"      spawn kitty -e btop → spawn-sh "kitty -e btop"
+//   с кавычками — как есть
+function actionKdl(a) {
+    a = String(a ?? "").trim().replace(/;\s*$/, "");
+    if (!a || a.includes('"')) return a;
+    const [name, ...args] = a.split(/\s+/);
+    if (name === "spawn-sh" || (name === "spawn" && args.length > 1)) return "spawn-sh " + JSON.stringify(args.join(" "));
+    return [name, ...args.map(x => /^-?\d+(\.\d+)?$/.test(x) ? x : JSON.stringify(x))].join(" ");
+}
+
+// keys: { comboKey: { combo, action, title } }; action "off" — сочетание отключено
+function keysKdl(keys) {
+    const lines = [
+        "// Сгенерировано окном биндов nopox (Mod+S → бинды) из ~/.config/nopox/settings.json.",
+        "// Подключается в config.kdl последним и перекрывает одноимённые бинды. Ручные правки перезапишутся.",
+        "",
+        "binds {"
+    ];
+    for (const k in keys) {
+        const b = keys[k];
+        if (b.action === "off")
+            lines.push("    " + b.combo + ' hotkey-overlay-title=null { spawn "true"; }');
+        else
+            lines.push("    " + b.combo + (b.title ? " hotkey-overlay-title=" + JSON.stringify(b.title) : "")
+                + " { " + actionKdl(b.action) + "; }");
+    }
+    lines.push("}");
+    return lines.join("\n") + "\n";
+}
 
 // ── мониторы ───────────────────────────────────────────────────────
 

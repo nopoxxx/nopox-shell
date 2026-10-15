@@ -150,9 +150,16 @@ if [ ! -f "$NIRI_DIR/nopox.kdl" ]; then
 fi
 # клавиши и правила nopox — ссылкой на клон: обновляются вместе с shell
 ln -sfn "$DEST/extras/niri/nopox-binds.kdl" "$NIRI_DIR/nopox-binds.kdl"
+# свои бинды (окно биндов) — стартовый пустой, дальше его пишет shell
+[ -f "$NIRI_DIR/nopox-keys.kdl" ] || cp "$DEST/extras/niri/nopox-keys.kdl" "$NIRI_DIR/nopox-keys.kdl"
 
 if [ -f "$conf" ] && grep -q 'include "nopox-binds.kdl"' "$conf"; then
     ok "nopox уже подключён к вашему config.kdl"
+    # установки до окна биндов: свои бинды подключаются последними
+    if ! grep -q 'include "nopox-keys.kdl"' "$conf"; then
+        printf '\n// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные\ninclude "nopox-keys.kdl"\n' >> "$conf"
+        ok "добавлен include \"nopox-keys.kdl\" для окна биндов"
+    fi
 elif [ ! -f "$conf" ] || { [ "$KEEP_NIRI" = 0 ] && ask "Заменить ваш config.kdl конфигом nopox? Старый уйдёт в бэкап" y; }; then
     backup "$conf"
     cp "$DEST/extras/niri/config.kdl" "$conf"
@@ -167,6 +174,7 @@ else
         echo "// >>> nopox-shell >>> (добавлено install.sh)"
         echo 'include "nopox.kdl"'
         echo 'include "nopox-binds.kdl"'
+        echo 'include "nopox-keys.kdl"'
         echo "// <<< nopox-shell <<<"
     } >> "$conf"
     ok "к вашему config.kdl дописаны include nopox"

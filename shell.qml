@@ -6,6 +6,7 @@ ShellRoot {
     // синглтоны создаются при первом обращении — проверка обновлений должна работать,
     // даже если модуль nopox ↑ убран с панели
     readonly property var _shellUpdate: ShellUpdate
+    readonly property var _binds: Binds   // пишет nopox-keys.kdl при старте
 
     Variants {
         model: Quickshell.screens
@@ -30,4 +31,5 @@ ShellRoot {
     LockScreen {}
     GreeterSync {}
     DisplaysWindow {}
+    BindsWindow {}
 }

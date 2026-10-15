@@ -3,12 +3,15 @@
 // 1. Скопируйте стартовый nopox.kdl и сделайте ссылку на клавиши nopox:
 //      cp ~/.config/quickshell/extras/niri/nopox.kdl ~/.config/niri/
 //      ln -sfn ~/.config/quickshell/extras/niri/nopox-binds.kdl ~/.config/niri/
-// 2. Допишите в конец config.kdl две строки ниже.
+//      cp ~/.config/quickshell/extras/niri/nopox-keys.kdl ~/.config/niri/
+// 2. Допишите в конец config.kdl три строки ниже — именно в конец, чтобы бинды nopox перекрывали ваши.
 //
 // nopox.kdl — input, layout, cursor, prefer-no-csd, animations, мониторы: его генерирует окно
 // настроек (Mod+S). Если в config.kdl есть свои input / layout, флаги оттуда (tap и т.п.)
 // настройки выключить не смогут — такие секции лучше убрать.
 // nopox-binds.kdl — автозапуск qs, клавиши (Mod+D, Mod+S, …) и правила окон; приходит с обновлениями shell.
+// nopox-keys.kdl — свои бинды из окна биндов (Mod+S → бинды); его пишет shell.
 
 include "nopox.kdl"
 include "nopox-binds.kdl"
+include "nopox-keys.kdl"

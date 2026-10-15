@@ -18,6 +18,8 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
 - **Обои** (`Mod+Shift+W`): локальная коллекция и поиск на wallhaven.cc, режимы fill / fit / stretch.
 - **Мониторы** (`setup/ → displays`): карта расположения, режим, масштаб, поворот, расположение относительно
   других, VRR, основной монитор. Изменения ждут подтверждения 15 секунд и иначе откатываются.
+- **Бинды** (`Mod+S → бинды`, `setup/ → binds`): все сочетания niri и nopox с поиском — изменить, добавить,
+  отключить, вернуть. Сочетание можно нажать или ввести текстом; перед применением — `niri validate`.
 - **Настройки** (`Mod+S`): niri (клавиатура, мышь, окна, курсор, анимации),
   shell, раскладка панели. Изменения применяются сразу.
 
@@ -81,6 +83,8 @@ Greeter работает под пользователем `greeter` и не в�
 |---|---|
 | `~/.config/nopox/settings.json` | настройки — только отличия от умолчаний |
 | `~/.config/niri/nopox.kdl` | сгенерирован из настроек, не редактировать вручную |
+| `~/.config/niri/nopox-keys.kdl` | свои бинды из окна биндов, подключён в `config.kdl` последним |
+| `~/.config/niri/nopox-binds.kdl` | ссылка на клавиши и правила nopox из клона shell |
 | `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим заполнения |
 | `~/Pictures/Wallpapers/` | коллекция обоев, сюда же скачивается с wallhaven |
 | `/var/lib/nopox-greeter/<user>/` | копия настроек и обоев для greeter |
@@ -93,6 +97,7 @@ qs ipc call launcher toggle     # меню; launcher apps — сразу про�
 qs ipc call wallpaper picker    # выбор обоев; wallpaper set <путь>, wallpaper fill <fill|fit|stretch>
 qs ipc call settings toggle     # настройки
 qs ipc call displays toggle     # мониторы
+qs ipc call binds toggle        # бинды
 qs ipc call lock lock           # блокировка; lock preview — предпросмотр без проверки пароля
 qs ipc call notify dnd          # «не беспокоить»; notify clear — очистить историю
 ```

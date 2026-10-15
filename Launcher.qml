@@ -81,6 +81,7 @@ Scope {
                 { label: "displays", desc: "мониторы: режим, масштаб, поворот, расположение", run: () => spawn(["qs", "ipc", "call", "displays", "toggle"]) },
                 { label: "wifi", desc: "nmtui", run: () => term("nmtui", false) },
                 { label: "audio", desc: "pavucontrol", run: () => spawn(["pavucontrol"]) },
+                { label: "binds", desc: "изменить бинды niri и nopox", run: () => spawn(["qs", "ipc", "call", "binds", "toggle"]) },
                 { label: "keybindings", desc: "подсказка по клавишам niri", run: () => spawn(["niri", "msg", "action", "show-hotkey-overlay"]) },
                 { label: "config", desc: "редактировать конфиги", children: [
                     { label: "niri", desc: "~/.config/niri/config.kdl", run: () => edit(home + "/.config/niri/config.kdl") },

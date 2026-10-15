@@ -411,3 +411,6 @@ binds {
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
 }
+
+// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные
+include "nopox-keys.kdl"
