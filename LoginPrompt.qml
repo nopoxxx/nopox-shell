@@ -7,15 +7,18 @@ import qs.services
 //
 //          ██████  ██████    ██████  ██  ██
 //          ...                                    (tty-clock)
-//               четверг, 16 октября 2026
+//               пятница, 16 октября 2026
 //
 //     nopox-os 7.2.9-arch1-1 (tty1)
 //     nopox-os login: nopox
 //     Password: ****█
+//     session: Niri
 //     Login incorrect
 //
 // Общий для блокировки экрана (PAM) и greeter (greetd): сам ничего не проверяет,
-// только отдаёт пароль сигналом submit.
+// только отдаёт имя и пароль сигналами.
+//   askUser: false — блокировка: имя известно, сразу пароль
+//   askUser: true  — greeter: сначала имя (подставлено последнее), потом пароль; Tab — сессия, F11/F12 — питание
 Item {
     id: root
 
@@ -26,14 +29,34 @@ Item {
     property bool busy: false
     property int failures: 0
     property int attempt: 0          // меняется после каждой проверки — поле очищается
+    property bool askUser: false
+    property var sessions: []        // [{ name, exec }]
+    property int sessionIndex: 0
+
+    // 0 — ввод имени (только askUser), 1 — ввод пароля
+    property int stage: 1
 
     signal submit(string password)
-    signal cancel()     // Esc на пустом поле — для предпросмотра и greeter
+    signal userChosen(string name)
+    signal power(string action)      // reboot | poweroff
+    signal cancel()                  // Esc на пустом поле пароля без askUser — для предпросмотра
 
     readonly property string echo: Settings.get("shell.lock.echo")
     readonly property string masked: echo === "none" ? "" : echo.repeat(input.text.length)
 
-    onAttemptChanged: input.text = ""
+    function restart() {
+        stage = askUser ? 0 : 1;
+        input.text = askUser ? user : "";
+        input.forceActiveFocus();
+    }
+
+    // подставить имя, пока пользователь его ещё не трогал
+    function preset(name) {
+        if (stage === 0) input.text = name;
+    }
+
+    onAttemptChanged: restart()
+    Component.onCompleted: restart()
 
     function c(color, s) { return `<font color="${color}">${s}</font>`; }
 
@@ -49,7 +72,7 @@ Item {
         text: "M"
     }
 
-    // настоящий ввод невидим — на экране своё «эхо» пароля
+    // настоящий ввод невидим — на экране своё «эхо»
     TextInput {
         id: input
 
@@ -59,11 +82,29 @@ Item {
         enabled: !root.busy
 
         Keys.onPressed: event => {
-            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                if (input.text.length) root.submit(input.text);
-            } else if (event.key === Qt.Key_Escape) {
-                if (input.text.length) input.text = "";
-                else root.cancel();
+            const k = event.key;
+            if (k === Qt.Key_Return || k === Qt.Key_Enter) {
+                if (root.stage === 0) {
+                    const name = input.text.trim();
+                    if (!name) return;
+                    root.user = name;
+                    root.userChosen(name);
+                    root.stage = 1;
+                    input.text = "";
+                } else if (input.text.length) {
+                    root.submit(input.text);
+                }
+            } else if (k === Qt.Key_Escape) {
+                if (input.text.length && root.stage === 1) input.text = "";
+                else if (root.stage === 1 && root.askUser) root.restart();
+                else if (root.stage === 1) root.cancel();
+                else input.text = "";
+            } else if (k === Qt.Key_Tab && root.sessions.length > 1) {
+                root.sessionIndex = (root.sessionIndex + 1) % root.sessions.length;
+            } else if (root.askUser && k === Qt.Key_F11) {
+                root.power("reboot");
+            } else if (root.askUser && k === Qt.Key_F12) {
+                root.power("poweroff");
             } else {
                 return;
             }
@@ -71,7 +112,7 @@ Item {
         }
     }
 
-    // клик в любом месте возвращает фокус полю пароля
+    // клик в любом месте возвращает фокус полю ввода
     MouseArea {
         anchors.fill: parent
         onClicked: input.forceActiveFocus()
@@ -111,28 +152,33 @@ Item {
 
             Item { implicitHeight: Theme.pad }
 
-            T {
-                textFormat: Text.StyledText
-                text: root.c(Theme.aqua, root.host) + root.c(Theme.fg, " login: ") + root.c(Theme.green, "<b>" + root.user + "</b>")
+            Row {
+                T {
+                    textFormat: Text.StyledText
+                    text: root.c(Theme.aqua, root.host) + root.c(Theme.fg, " login: ")
+                }
+                T {
+                    text: root.stage === 0 ? input.text : root.user
+                    color: Theme.green
+                    font.bold: true
+                }
+                BlinkCursor { visible: root.stage === 0 && !root.busy }
             }
 
             Row {
+                visible: root.stage === 1
+
                 T { text: "Password: "; color: Theme.fg }
                 T { text: root.masked; color: Theme.accent }
+                BlinkCursor { visible: !root.busy }
+            }
 
-                T {
-                    id: cursor
-                    text: "█"
-                    color: Theme.fg
-                    visible: !root.busy
-
-                    Timer {
-                        interval: 530
-                        running: cursor.visible
-                        repeat: true
-                        onTriggered: cursor.opacity = cursor.opacity > 0 ? 0 : 1
-                    }
-                }
+            T {
+                visible: root.sessions.length > 0
+                textFormat: Text.StyledText
+                text: root.c(Theme.gray, "session: ")
+                    + root.c(Theme.blue, root.sessions[root.sessionIndex]?.name ?? "")
+                    + (root.sessions.length > 1 ? root.c(Theme.gray, "  (tab — сменить)") : "")
             }
 
             Item { implicitHeight: Theme.pad }
@@ -155,7 +201,10 @@ Item {
         anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter; bottomMargin: Theme.pad * 3 }
         textFormat: Text.StyledText
         color: Theme.gray
-        text: [["↵", "войти"], ["esc", "очистить"]]
+        text: (root.askUser
+            ? [["↵", "далее"], ["esc", "назад"], ["tab", "сессия"], ["F11", "перезагрузка"], ["F12", "выключение"]]
+            : [["↵", "войти"], ["esc", "очистить"]])
             .map(([k, v]) => `<font color="${Theme.accent}">${k}</font> ${v}`).join("   ")
     }
+
 }

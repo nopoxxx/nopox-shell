@@ -5,11 +5,17 @@ import QtQuick
 import "settings.js" as S
 
 // Настройки nopox: ~/.config/nopox/settings.json (только отличия от умолчаний)
-// и сгенерированный из них ~/.config/niri/nopox.kdl
+// и сгенерированный из них ~/.config/niri/nopox.kdl.
+// В greeter (NOPOX_GREETER=1) — только чтение копии настроек пользователя profile
+// из /var/lib/nopox-greeter/<user>/, её туда кладёт GreeterSync из сессии пользователя.
 Singleton {
     id: root
 
-    readonly property string file: Quickshell.env("HOME") + "/.config/nopox/settings.json"
+    readonly property bool greeterMode: Quickshell.env("NOPOX_GREETER") === "1"
+    property string profile: ""
+    readonly property string file: greeterMode
+        ? (profile ? "/var/lib/nopox-greeter/" + profile + "/settings.json" : "")
+        : Quickshell.env("HOME") + "/.config/nopox/settings.json"
     readonly property string niriFile: Quickshell.env("HOME") + "/.config/niri/nopox.kdl"
 
     property var values: ({})
@@ -44,6 +50,7 @@ Singleton {
     function refreshOutputs() { outputsProc.running = true; }
 
     function writeNiri() {
+        if (greeterMode) return;
         const scales = {};
         for (const k in values) {
             const m = k.match(/^niri\.out\.(.+)\.scale$/);
@@ -52,13 +59,14 @@ Singleton {
         niriView.setText(S.niriKdl(get, scales));
     }
 
-    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", file.slice(0, file.lastIndexOf("/"))])
+    Component.onCompleted: if (!greeterMode) Quickshell.execDetached(["mkdir", "-p", file.slice(0, file.lastIndexOf("/"))])
 
     // небольшая задержка: стрелкой можно пролистать несколько значений подряд, а niri перечитает конфиг один раз
     Timer {
         id: save
         interval: 250
         onTriggered: {
+            if (root.greeterMode) return;
             json.setText(JSON.stringify(root.values, null, 2) + "\n");
             root.writeNiri();
         }
@@ -73,6 +81,8 @@ Singleton {
             root.writeNiri();   // схема могла измениться после обновления
         }
         onLoadFailed: {
+            // greeter: у этого пользователя нет копии — умолчания, а не настройки предыдущего
+            if (root.greeterMode) root.values = {};
             root.loaded = true;
             root.writeNiri();
         }
@@ -80,7 +90,7 @@ Singleton {
 
     FileView {
         id: niriView
-        path: root.niriFile
+        path: root.greeterMode ? "" : root.niriFile
         blockLoading: false
     }
 

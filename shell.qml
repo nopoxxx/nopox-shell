@@ -24,4 +24,5 @@ ShellRoot {
     SettingsWindow {}
     NotifPopups {}
     LockScreen {}
+    GreeterSync {}
 }

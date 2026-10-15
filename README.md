@@ -37,6 +37,22 @@ git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell
 Затем подключите shell к niri — см. [`extras/niri.kdl`](extras/niri.kdl): автозапуск `qs`, клавиши,
 правила окон и `include "nopox.kdl"`. Файл `nopox.kdl` создаётся при первом запуске shell.
 
+## Блокировка экрана и greeter
+
+Блокировка (`Super+Alt+L`, `system/ → lock`, после бездействия) и greeter для greetd — один и тот же экран
+в духе getty: часы как `tty-clock`, `login:` / `Password:`. Блокировка проверяет пароль через PAM,
+greeter — через greetd; в greeter сначала вводится имя (подставлено последнее), `Tab` — сессия,
+`F11` / `F12` — перезагрузка / выключение.
+
+```sh
+sudo ./extras/install-greeter.sh   # shell → /usr/share/nopox-shell, niri для greeter, [default_session] в greetd
+sudo systemctl restart greetd
+```
+
+Greeter работает под пользователем `greeter` и не видит домашнюю папку, поэтому сессия пользователя
+копирует настройки, обои и режим заполнения в `/var/lib/nopox-greeter/<user>/` — greeter выглядит так же,
+как shell последнего вошедшего пользователя. После обновления shell установку нужно повторить.
+
 ## Где что хранится
 
 | Путь | Что |
@@ -45,6 +61,8 @@ git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell
 | `~/.config/niri/nopox.kdl` | сгенерирован из настроек, не редактировать вручную |
 | `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим заполнения |
 | `~/Pictures/Wallpapers/` | коллекция обоев, сюда же скачивается с wallhaven |
+| `/var/lib/nopox-greeter/<user>/` | копия настроек и обоев для greeter |
+| `/var/lib/nopox-greeter/.greeter/last` | последний пользователь и сессия в greeter |
 
 ## IPC
 
@@ -52,4 +70,6 @@ git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell
 qs ipc call launcher toggle     # меню; launcher apps — сразу программы
 qs ipc call wallpaper picker    # выбор обоев; wallpaper set <путь>, wallpaper fill <fill|fit|stretch>
 qs ipc call settings toggle     # настройки
+qs ipc call lock lock           # блокировка; lock preview — предпросмотр без проверки пароля
+qs ipc call notify dnd          # «не беспокоить»; notify clear — очистить историю
 ```
