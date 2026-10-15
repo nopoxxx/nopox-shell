@@ -36,6 +36,7 @@ const MODULES = [
     { id: "vol", file: "Vol", desc: "громкость: колёсико, клик — микшер, правый — mute" },
     { id: "bat", file: "Bat", desc: "батарея — видна только на ноутбуках" },
     { id: "updates", file: "Upd", desc: "обновления: клик — paru -Syu, правый — проверить" },
+    { id: "shellupd", file: "ShellUpd", desc: "nopox ↑3 — обновления nopox-shell с GitHub: клик — список и [обновить]" },
     { id: "notify", file: "Notify", desc: "уведомления: клик — история, правый — «не беспокоить»" },
     { id: "kbd", file: "Kbd", desc: "раскладка, клик — переключить" },
     { id: "clock", file: "Clock", desc: "часы, клик — календарь" }
@@ -46,7 +47,7 @@ const ZONES = ["left", "center", "right", "off"];
 const DEFAULT_LAYOUT = {
     left: ["user", "workspaces", "jobs", "command"],
     center: [],
-    right: ["media", "tray", "cpu", "mem", "net", "vol", "bat", "updates", "notify", "kbd", "clock"]
+    right: ["media", "tray", "cpu", "mem", "net", "vol", "bat", "shellupd", "updates", "notify", "kbd", "clock"]
 };
 
 function moduleById(id) {
@@ -163,7 +164,13 @@ function sections(outputs, layout) {
             { key: "shell.fontSize", label: "размер шрифта", type: "int", min: 10, max: 28, step: 1, def: 16 },
 
             { header: "меню" },
-            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12 }
+            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12 },
+
+            { header: "обновления nopox-shell" },
+            { key: "shell.update.check", label: "проверять", type: "bool", def: true, hint: "git fetch в папке shell; нужен git-клон и доступ к репозиторию" },
+            { key: "shell.update.hours", label: "раз в, ч", type: "int", min: 1, max: 48, step: 1, def: 6 },
+            { key: "shell.update.notify", label: "уведомлять", type: "bool", def: true, hint: "уведомление, когда появились новые коммиты" },
+            { key: "shell.update.now", label: "проверить сейчас", type: "action", action: "shellUpdate", hint: "результат — модуль nopox ↑ на панели" }
         ] },
 
         { id: "bar", rows: [

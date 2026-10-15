@@ -3,6 +3,10 @@ import QtQuick
 import qs.services
 
 ShellRoot {
+    // синглтоны создаются при первом обращении — проверка обновлений должна работать,
+    // даже если модуль nopox ↑ убран с панели
+    readonly property var _shellUpdate: ShellUpdate
+
     Variants {
         model: Quickshell.screens
         Background {

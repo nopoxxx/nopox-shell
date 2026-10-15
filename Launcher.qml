@@ -86,7 +86,9 @@ Scope {
                     { label: "quickshell", desc: "~/.config/quickshell/", run: () => edit(home + "/.config/quickshell") },
                     { label: "kitty", desc: "~/.config/kitty/kitty.conf", run: () => edit(home + "/.config/kitty/kitty.conf") }
                 ] },
-                { label: "restart shell", desc: "перезапустить quickshell", run: () => spawn(["sh", "-c", "pkill -x qs; sleep 0.3; niri msg action spawn -- qs"]) }
+                { label: "restart shell", desc: "перезапустить quickshell", run: () => spawn(["sh", "-c", "pkill -x qs; sleep 0.3; niri msg action spawn -- qs"]) },
+                { label: "shell update", desc: "обновить nopox-shell с GitHub (git pull)", run: () => ShellUpdate.behind > 0 ? ShellUpdate.update() : ShellUpdate.check(true) },
+                { label: "greeter update", desc: "переустановить greeter из текущего shell (sudo)", run: () => ShellUpdate.updateGreeter() }
             ] },
             { label: "style", icon: icons.style, desc: "обои", children: [
                 { label: "wallpaper", desc: "локальная коллекция", run: () => openPicker("local") },
