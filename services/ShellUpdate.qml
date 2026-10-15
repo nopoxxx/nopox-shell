@@ -36,9 +36,12 @@ Singleton {
         updater.running = true;
     }
 
-    // перезапуск через отвязанный процесс: он переживёт выход самого quickshell
-    function restartShell() {
-        Quickshell.execDetached(["sh", "-c", "sleep 0.5; pkill -x qs; sleep 0.5; niri msg action spawn -- qs"]);
+    // перезапуск через отвязанный процесс: он переживёт выход самого quickshell.
+    // Уведомление — уже новому shell: старый вместе с историей уведомлений закрывается.
+    function restartShell(title, body) {
+        Quickshell.execDetached(["sh", "-c",
+            'sleep 0.5; pkill -x qs; sleep 0.5; niri msg action spawn -- qs; sleep 3; [ -n "$1" ] && notify-send -a nopox-shell "$1" "$2"',
+            "sh", title ?? "", body ?? ""]);
     }
 
     function updateGreeter() {
@@ -103,9 +106,8 @@ Singleton {
             }
             root.commits = [];
             root.updated = true;
-            Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "nopox-shell обновлён",
-                root.greeterInstalled ? "Перезапускаю shell. Greeter обновляется отдельно — setup/ → shell update" : "Перезапускаю shell"]);
-            root.restartShell();
+            root.restartShell("nopox-shell обновлён",
+                root.greeterInstalled ? "Greeter обновляется отдельно: setup/ → greeter update" : "");
         }
     }
 
