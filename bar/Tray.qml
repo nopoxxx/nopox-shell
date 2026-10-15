@@ -2,13 +2,18 @@ import Quickshell.Services.SystemTray
 import QtQuick
 import qs
 import qs.bar
+import qs.services
 
-// [telegram discord] — трей текстом: клик — открыть, правый клик — меню
+// [‹ telegram discord] — трей текстом: клик — открыть, правый клик — меню.
+// ‹ сворачивает трей в [+2]; приложения, которые просят внимания, видны и в свёрнутом.
 Item {
     id: root
 
     property var bar
     readonly property var items: SystemTray.items.values
+    readonly property bool collapsed: Settings.get("shell.bar.trayCollapsed")
+    readonly property var shown: collapsed ? items.filter(it => it.status === Status.NeedsAttention) : items
+    readonly property int hidden: items.length - shown.length
     property bool available: items.length > 0
 
     function shortName(it) {
@@ -21,18 +26,29 @@ Item {
     Row {
         id: row
 
-        T { text: "["; color: Theme.gray }
+        // переключатель «[‹» / «[+N»: ‹ — свернуть, +N — развернуть.
+        // Кликабельна и скобка, и немного вокруг — один символ слишком мелкая цель.
+        T {
+            textFormat: Text.StyledText
+            text: `<font color="${Theme.gray}">[</font>`
+                + `<font color="${root.collapsed ? Theme.accent : Theme.gray}">${root.collapsed ? "+" + root.hidden : "‹"}</font>`
+
+            MouseArea {
+                anchors { fill: parent; margins: -6 }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: Settings.set("shell.bar.trayCollapsed", !root.collapsed)
+            }
+        }
 
         Repeater {
-            model: root.items
+            model: root.shown
 
             T {
                 id: item
 
                 required property var modelData
-                required property int index
 
-                text: (index > 0 ? " " : "") + root.shortName(modelData)
+                text: " " + root.shortName(modelData)
                 color: modelData.status === Status.NeedsAttention ? Theme.accent : Theme.fg
 
                 MouseArea {
