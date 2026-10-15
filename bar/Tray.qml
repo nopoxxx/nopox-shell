@@ -1,6 +1,7 @@
 import Quickshell.Services.SystemTray
 import QtQuick
 import qs
+import qs.bar
 
 // [telegram discord] — трей текстом: клик — открыть, правый клик — меню
 Item {
@@ -41,9 +42,7 @@ Item {
                     onClicked: mouse => {
                         const it = item.modelData;
                         if (mouse.button === Qt.RightButton || it.onlyMenu) {
-                            if (!it.hasMenu) return;
-                            const p = item.mapToItem(null, 0, 0);
-                            it.display(root.bar, p.x, root.bar.onTop ? root.bar.height : 0);
+                            if (it.hasMenu) menu.openFor(item, it, root.shortName(it));
                         } else {
                             it.activate();
                         }
@@ -54,4 +53,7 @@ Item {
 
         T { text: "]"; color: Theme.gray }
     }
+
+    // своё меню вместо it.display(): нативному QMenu нужен режим QApplication, и он не в стиле shell
+    TrayMenu { id: menu; bar: root.bar; owner: root }
 }
