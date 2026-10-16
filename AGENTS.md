@@ -491,13 +491,18 @@ Bash, `set -euo pipefail`, запуск от обычного пользоват
 программы и иконки `gruvbox-plus-icon-theme` через **`install_pkgs`**: что есть в репозиториях (официальные, chaotic-aur,
 CachyOS) — одним `pacman -S`, чего нет нигде — `build_aur` (`makepkg`); «`a/b`» в списке — варианты имени (первый из
 репозиториев, иначе последний, обычно `-bin`), «стоит ли» — `pacman -T` (учитывает provides); не поставилось — честный
-список и команда повтора → **paru только для shell** (обновления AUR, меню packages/): из репозитория или `paru-bin`
+список и команда повтора; для Steam Vulkan-драйвер ставится явно в той же транзакции (`vulkan_drivers` по PCI vendor из
+`/sys/class/drm/card*/device/vendor`: AMD → `vulkan-radeon`, Intel → `vulkan-intel`, NVIDIA → `nvidia-utils` только при модуле
+nvidia (он отключает nouveau), иначе `vulkan-nouveau`; ни одной известной карты (VM) → `vulkan-swrast`; всё с `lib32-`),
+иначе с `--noconfirm` pacman молча берёт первого поставщика — `nvidia-utils` →
+**paru только для shell** (обновления AUR, меню packages/): из репозитория или `paru-bin`
 через `makepkg`, не запустился — предупреждение; **сам установщик paru не пользуется** →
 клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files/sh/browser` →
 конфиг niri (замена или дописать два include; если nopox уже подключён — предлагает закомментировать
 встроенный `Mod+Shift+S`/`Print { screenshot; }` старого эталона: он перекрыл бы скриншот nopox; затем `niri validate`,
 при ошибке — откат; стартовые `nopox/*.kdl` — вывод генератора с настройками по умолчанию, пересобирать при его изменении) → конфиг
-терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию → Discord →
+терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию (`desktop_of <пакет> <mime>`: тот
+`.desktop`, у которого есть нужный MimeType, — у thunar первым по алфавиту идёт `thunar-bulk-rename.desktop`) → Discord →
 **Steam: уведомления** (если стоит steam, флаг `--no-steam-notify` пропускает): `install_pkgs millennium bun`, симлинки
 `libXtst.so.6` → bootstrap Millennium (пакет ставит их сам, только если Steam уже запускался), клон
 `~/.local/share/nopox-notify`, `bun run build`, включение в `~/.config/millennium/config.json` → `plugins.enabledPlugins`

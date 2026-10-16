@@ -135,8 +135,43 @@ set_setting() {
 }
 
 # .desktop-файл пакета — для браузера и файлового менеджера по умолчанию
+# desktop_of <пакет> [mime] — .desktop пакета; с mime — тот, что его открывает: у thunar первым по алфавиту
+# идёт thunar-bulk-rename.desktop, а папки открывает thunar.desktop (MimeType=inode/directory)
 desktop_of() {
-    pacman -Qlq "$1" 2>/dev/null | grep -m1 '^/usr/share/applications/.*\.desktop$' | xargs -r basename
+    local files f
+    files=$(pacman -Qlq "$1" 2>/dev/null | grep '^/usr/share/applications/.*\.desktop$' || true)
+    [ -n "$files" ] || return 0
+    if [ -n "${2:-}" ]; then
+        for f in $files; do
+            grep -qE "^MimeType=(.*;)?$2(;|$)" "$f" && { basename "$f"; return 0; }
+        done
+    fi
+    basename "$(head -1 <<<"$files")"
+}
+
+# vulkan_drivers — Vulkan-драйверы под видеокарты машины (по PCI vendor из /sys: lspci на минимальном Arch может не быть).
+# Steam требует vulkan-driver и lib32-vulkan-driver; с --noconfirm pacman молча взял бы первый вариант — nvidia-utils.
+# nvidia-utils — только при проприетарном модуле: пакет отключает nouveau, и без модуля nvidia карта осталась бы без драйвера.
+# Программный (lavapipe) — только если известных карт нет вовсе (виртуалка): рядом с настоящим Steam может выбрать его
+vulkan_drivers() {
+    local dev vendor known=0
+    {
+        for dev in /sys/class/drm/card*/device; do
+            vendor=$(cat "$dev/vendor" 2>/dev/null) || continue
+            case "$vendor" in
+                0x1002) echo vulkan-radeon lib32-vulkan-radeon; known=1 ;;
+                0x8086) echo vulkan-intel lib32-vulkan-intel; known=1 ;;
+                0x10de)
+                    if [ "$(basename "$(readlink "$dev/driver" 2>/dev/null)")" = nvidia ] || modinfo nvidia >/dev/null 2>&1; then
+                        echo nvidia-utils lib32-nvidia-utils
+                    else
+                        echo vulkan-nouveau lib32-vulkan-nouveau
+                    fi
+                    known=1 ;;
+            esac
+        done
+        [ "$known" = 1 ] || echo vulkan-swrast lib32-vulkan-swrast
+    } | tr ' ' '\n' | sort -u
 }
 
 printf '%s' "$Y"
@@ -410,6 +445,11 @@ if printf '%s\n' "${EXTRA[@]}" | grep -qx steam && ! grep -q '^\[multilib\]' /et
     fi
 fi
 
+# Steam: Vulkan-драйвер — явно и в той же транзакции, иначе pacman выберет поставщика сам
+if printf '%s\n' "${EXTRA[@]}" | grep -qx steam && ! installed vulkan-driver; then
+    mapfile -t vk < <(vulkan_drivers)
+    [ ${#vk[@]} -gt 0 ] && { EXTRA=("${vk[@]}" "${EXTRA[@]}"); info "Vulkan для Steam: ${vk[*]}"; }
+fi
 install_pkgs "${EXTRA[@]}"
 if [ ${#FAILED[@]} -eq 0 ]; then
     ok "программы установлены"
@@ -592,10 +632,10 @@ fi
 
 # ── приложения по умолчанию ──────────────────────────────────────────
 step "Приложения по умолчанию"
-if [ -n "${BROWSER_PKG[$BROWSER]}" ] && d=$(desktop_of "${BROWSER_PKG[$BROWSER]}") && [ -n "$d" ]; then
+if [ -n "${BROWSER_PKG[$BROWSER]}" ] && d=$(desktop_of "${BROWSER_PKG[$BROWSER]}" x-scheme-handler/https) && [ -n "$d" ]; then
     xdg-settings set default-web-browser "$d" && ok "браузер: $d"
 fi
-if [ -n "${FILES_PKG[$FILES]}" ] && [ "$FILES" != yazi ] && d=$(desktop_of "${FILES_PKG[$FILES]}") && [ -n "$d" ]; then
+if [ -n "${FILES_PKG[$FILES]}" ] && [ "$FILES" != yazi ] && d=$(desktop_of "${FILES_PKG[$FILES]}" inode/directory) && [ -n "$d" ]; then
     xdg-mime default "$d" inode/directory && ok "папки открывает: $d"
 fi
 [ "$FILES" = yazi ] && ok "файлы: yazi в терминале (Mod+E)"
