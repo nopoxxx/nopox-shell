@@ -22,7 +22,7 @@ const WIDTHS = { "1/3": "0.33333", "1/2": "0.5", "2/3": "0.66667", "1": "1.0" };
 
 const MODULES = [
     { id: "user", file: "User", inline: true, desc: "user@host — стиль в bar/ → prompt" },
-    { id: "workspaces", file: "Workspaces", inline: true, desc: "~/ws/{1,[2],3}: клик — перейти, колёсико — листать" },
+    { id: "workspaces", file: "Workspaces", inline: true, desc: "~/ws/{1,[2],3}: клик — перейти; колёсико по панели — листать" },
     { id: "jobs", file: "Jobs", inline: true, desc: "[3] — число окон на текущем столе" },
     { id: "command", file: "Command", inline: true, desc: "❯ активное окно как набранная команда" },
     { id: "media", file: "Media", desc: "♪ плеер: клик — пауза, правый — следующий, средний — предыдущий" },
@@ -200,6 +200,7 @@ function sections(outputs, layout) {
             { key: "shell.bar.opacity", label: "непрозрачность, %", type: "int", min: 30, max: 100, step: 5, def: 100 },
             { key: "shell.bar.autohide", label: "автоскрытие", type: "bool", def: false, hint: "панель появляется при наведении мыши на край экрана" },
             { key: "shell.bar.monitors", label: "мониторы", type: "enum", options: ["all", "primary"], def: "all" },
+            { key: "shell.bar.wheelWorkspaces", label: "колёсико — рабочие столы", type: "bool", def: true, hint: "прокрутка по панели листает столы её монитора; vol и kbd — своё колёсико" },
             { key: "shell.bar.separator", label: "разделитель", type: "enum", options: [" · ", " | ", " / ", " │ ", "  "], def: " · " },
 
             { header: "prompt" },

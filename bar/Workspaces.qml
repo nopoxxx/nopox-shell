@@ -3,7 +3,7 @@ import qs
 import qs.services
 
 // ~/ws/{1,[2],3} — как раскрытие скобок в shell.
-// Показаны столы с окнами и активный; клик — перейти, колёсико — листать.
+// Показаны столы с окнами и активный; клик — перейти. Колёсико листает столы по всей панели (Bar.qml).
 Item {
     id: root
 
@@ -20,12 +20,6 @@ Item {
 
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
-
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.NoButton
-        onWheel: wheel => Niri.action(wheel.angleDelta.y > 0 ? "focus-workspace-up" : "focus-workspace-down")
-    }
 
     Row {
         id: row

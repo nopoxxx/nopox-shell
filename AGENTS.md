@@ -75,7 +75,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
 bar/                 модули панели и их попапы
-  Seg.qml            базовый сегмент «label value» + сигналы leftClicked/rightClicked/middleClicked/scrolled
+  Seg.qml            базовый сегмент «label value» + сигналы leftClicked/rightClicked/middleClicked/scrolled (при scrollable)
   User Workspaces Jobs Command          inline-модули (часть «приглашения»)
   Media Tray Cpu Mem Gpu Temp NetSpeed Net Vol Bat Upd ShellUpd Notify Kbd Clock
   CalPopup ProcsPopup MixerPopup VolBar TrayMenu NotifyCenter ShellUpdPopup   попапы/части
@@ -206,6 +206,11 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
   У каждой панели **свои экземпляры модулей и попапов**.
 - `BarZone` грузит `bar/<file>.qml` через `Loader.setSource(url, {bar})`. Импорт `qs.bar` в BarZone
   нужен, чтобы Quickshell просканировал каталог.
+- **Колёсико по панели** листает столы её монитора (`Bar.scroll()` → `Niri.scrollWorkspace(output, dir)`,
+  настройка `shell.bar.wheelWorkspaces`). Обработчик — `MouseArea` с `acceptedButtons: Qt.NoButton` под зонами
+  (не `WheelHandler` на фоне: он событие не получал). Тачпад копится до шага 120. Модуль, которому колёсико
+  нужно самому, ставит `scrollable: true` (Seg) и принимает событие; остальные `MouseArea` без `onWheel`
+  или `Seg` без `scrollable` его пропускают — `wheel.accepted = false`.
 - **Контракт модуля**: корневой элемент имеет `property var bar` и `property bool available`
   (false — модуль скрыт и не порождает разделитель). Большинство модулей — `Seg { label; value; valueColor; bold }`
   с сигналами кликов/колёсика. Разделитель между модулями — `shell.bar.separator`, между двумя
@@ -215,7 +220,7 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 | id | файл | что показывает / клики |
 |---|---|---|
 | user | User | `user@host`, стиль `shell.bar.prompt` |
-| workspaces | Workspaces | `~/ws/{1,[2]}` — столы этого монитора с окнами + активный; клик, колёсико |
+| workspaces | Workspaces | `~/ws/{1,[2]}` — столы этого монитора с окнами + активный; клик (колёсико — вся панель) |
 | jobs | Jobs | `[N]` окон на активном столе |
 | command | Command | `❯ app  # title` активного окна, эффект набора; ❯ красный при urgent |
 | media | Media | MPRIS: клик пауза, правый next, средний prev |
@@ -224,12 +229,12 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 | gpu / temp | Gpu / Temp | amdgpu busy+temp / k10temp·coretemp·zenpower; без датчика скрыты |
 | netspeed | NetSpeed | ↓↑ по всем интерфейсам кроме lo |
 | net | Net | eth / wifi ssid % / offline (Quickshell.Networking); клик — nmtui |
-| vol | Vol | Pipewire; колёсико ±5%, клик — MixerPopup, правый — mute |
+| vol | Vol | Pipewire; колёсико ±5% (`scrollable`), клик — MixerPopup, правый — mute |
 | bat | Bat | UPower, только если есть батарея ноутбука |
 | updates | Upd | число обновлений; клик paru -Syu, правый — проверить |
 | shellupd | ShellUpd | `nopox ↑N` — новые коммиты shell; клик — ShellUpdPopup |
 | notify | Notify | `log N` / `dnd`; клик — NotifyCenter, правый — DND |
-| kbd | Kbd | раскладка niri; клик/колёсико — переключить |
+| kbd | Kbd | раскладка niri; клик/колёсико (`scrollable`) — переключить |
 | clock | Clock | `shell.bar.clock` по Qt.locale(); клик — CalPopup |
 
 - Попап: `SomePopup { id: p; owner: root; bar: root.bar }` и `p.toggle()`. `TuiPopup` сам
@@ -388,8 +393,9 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
   из niri: переменная, добавленная в `misc.kdl`, дойдёт до них после перезапуска shell или нового входа.
 - `normalizeLayout` хранит `off` явно: модуль, которого нет ни в одной зоне, считается новым.
 - Repeater отдаёт копии объектов — сравнивать по `name`/`id`, а не `===` (см. DisplaysWindow).
-- `Niri.windows` — объект по id; `Niri.workspaces` отсортированы по `idx`; номер стола относится к монитору,
-  поэтому `focusWorkspace` сначала фокусирует монитор.
+- `Niri.windows` — объект по id; `Niri.workspaces` отсортированы по `idx`; номер стола относится к монитору.
+  `niri msg action focus-monitor` **переносит курсор в центр монитора** — вызывать его только для другого
+  монитора (`Niri.focusWorkspaceOn`), иначе курсор уходит с панели и следующая прокрутка попадает в окно.
 - Qt шлёт hover, когда список прокручивается под неподвижным курсором, — см. `lastMouse`.
 - `Qt.formatDate` игнорирует локаль — использовать `Qt.locale().toString(date, fmt)`.
 - Нативное меню трея (`display()`) не используется: нужен QApplication и оно не в стиле — свой `TrayMenu`.

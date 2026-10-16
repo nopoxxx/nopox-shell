@@ -9,5 +9,6 @@ Seg {
     value: Niri.layout
     valueColor: Theme.purple
     onLeftClicked: Niri.action("switch-layout", "next")
+    scrollable: true
     onScrolled: dir => Niri.action("switch-layout", dir > 0 ? "prev" : "next")
 }

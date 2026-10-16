@@ -17,6 +17,7 @@ Seg {
 
     onLeftClicked: mixer.toggle()
     onRightClicked: if (audio) audio.muted = !audio.muted
+    scrollable: true
     onScrolled: dir => {
         if (audio) audio.volume = Math.max(0, Math.min(1, audio.volume + dir * 0.05));
     }

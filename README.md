@@ -13,6 +13,7 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
   `user`, `workspaces`, `jobs`, `command`, `media`, `tray`, `cpu`, `mem`, `gpu`, `temp`,
   `netspeed`, `net`, `vol`, `bat`, `updates`, `kbd`, `clock`.
   По клику — TUI-попапы: календарь как `cal`, процессы как `ps`, микшер, меню трея.
+  Колёсико по панели листает рабочие столы её монитора (над `vol` и `kbd` — громкость и раскладка).
 - **Меню** (`Mod+D`) в духе omarchy — для действий: `apps/`, `wallpaper`, `setup` (открывает настройки),
   `packages/` (install, aur, remove, update), `system/` (lock, suspend, logout, reboot, poweroff), `about`.
   Нечёткий поиск, установка пакетов из репозиториев и AUR через paru.

@@ -11,6 +11,8 @@ Item {
     property string value: ""
     property color valueColor: Theme.fg
     property bool bold: false
+    // своё колёсико (vol, kbd); у остальных прокрутка уходит панели — листать рабочие столы
+    property bool scrollable: false
 
     signal leftClicked()
     signal rightClicked()
@@ -35,6 +37,9 @@ Item {
             else if (mouse.button === Qt.MiddleButton) seg.middleClicked();
             else seg.leftClicked();
         }
-        onWheel: wheel => seg.scrolled(wheel.angleDelta.y > 0 ? 1 : -1)
+        onWheel: wheel => {
+            if (!seg.scrollable) { wheel.accepted = false; return; }
+            seg.scrolled(wheel.angleDelta.y > 0 ? 1 : -1);
+        }
     }
 }

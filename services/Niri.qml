@@ -26,10 +26,25 @@ Singleton {
         Quickshell.execDetached(["niri", "msg", "action", ...args]);
     }
 
-    // номер стола относится к монитору, поэтому сначала фокусируем монитор
-    function focusWorkspace(ws) {
-        Quickshell.execDetached(["sh", "-c", 'niri msg action focus-monitor "$1" && niri msg action focus-workspace "$2"',
-            "sh", ws.output, String(ws.idx)]);
+    // Номер стола относится к монитору, поэтому для стола на другом мониторе сначала focus-monitor.
+    // На своём мониторе — без него: focus-monitor переносит курсор в центр монитора, и он уходит
+    // с панели (следующая прокрутка колёсиком попала бы уже в окно).
+    function focusWorkspaceOn(output, idx) {
+        if (!output || focusedWorkspace?.output === output)
+            action("focus-workspace", String(idx));
+        else
+            Quickshell.execDetached(["sh", "-c", 'niri msg action focus-monitor "$1" && niri msg action focus-workspace "$2"',
+                "sh", output, String(idx)]);
+    }
+
+    function focusWorkspace(ws) { focusWorkspaceOn(ws.output, ws.idx); }
+
+    // соседний стол (dir: up | down) на мониторе output — для колёсика по панели
+    function scrollWorkspace(output, dir) {
+        const list = workspaces.filter(w => w.output === output);
+        if (!list.length) { action("focus-workspace-" + dir); return; }
+        const next = list[list.findIndex(w => w.is_active) + (dir === "up" ? -1 : 1)];
+        if (next) focusWorkspaceOn(output, next.idx);
     }
 
     function handle(ev) {
