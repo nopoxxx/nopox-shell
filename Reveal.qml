@@ -18,7 +18,7 @@ Scope {
     property int duration: 160
     property string edge: "top"       // откуда выезжает slide: left, right, top, bottom
     property real distance: 40        // на сколько px
-    property real typeScale: 2.5      // печать (type) дольше остальных стилей: окно набирается по символу
+    property real typeScale: 1.5      // печать (type) дольше остальных стилей: окно набирается по символу
     // общая скорость анимаций shell (look/ → анимации)
     readonly property real speed: Settings.get("shell.anim.speed")
 

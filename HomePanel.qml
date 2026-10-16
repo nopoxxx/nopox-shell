@@ -22,7 +22,7 @@ Scope {
         open: Home.open
         style: Settings.get("shell.home.anim")
         duration: 180
-        typeScale: 3
+        typeScale: 2
         edge: Settings.get("shell.home.side")
     }
 
