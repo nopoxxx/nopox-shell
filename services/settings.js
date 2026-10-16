@@ -208,7 +208,11 @@ function sections(outputs, layout, home) {
 
             { header: "индикаторы" },
             { key: "shell.osd", label: "громкость и яркость", type: "bool", def: true, hint: "полоска на экране при изменении громкости или яркости — клавишами, колёсиком, из других программ" },
-            { key: "shell.osd.position", label: "положение", type: "enum", options: ["bottom", "top", "center"], def: "bottom" }
+            { key: "shell.osd.position", label: "положение", type: "enum", options: ["bottom", "top", "center"], def: "bottom" },
+
+            { header: "анимации" },
+            { key: "shell.anim.speed", label: "скорость анимаций shell", type: "float", min: 0.25, max: 4, step: 0.25, def: 1,
+              hint: "меню, home, уведомления: 2 — вдвое быстрее, 0.5 — вдвое медленнее; стили — в их разделах; окна niri — windows/ → анимации" }
         ] },
 
         { id: "windows", title: "окна", rows: [

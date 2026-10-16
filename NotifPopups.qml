@@ -31,7 +31,7 @@ PanelWindow {
         // ушедшая карточка — остальные съезжают на её место, а не прыгают
         move: Transition {
             enabled: Settings.get("shell.notify.anim") !== "none"
-            NumberAnimation { properties: "y"; duration: 160; easing.type: Easing.OutCubic }
+            NumberAnimation { properties: "y"; duration: 160 / Math.max(0.25, Settings.get("shell.anim.speed")); easing.type: Easing.OutCubic }
         }
 
         Repeater {

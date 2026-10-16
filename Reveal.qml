@@ -1,5 +1,6 @@
 import Quickshell
 import QtQuick
+import qs.services
 
 // Появление и исчезновение окна shell: p идёт 0 → 1, пока open, и обратно, когда open снят.
 // Стили (S.SHELL_ANIMS): slide — выезжает от edge, fade — проявляется, pop — вырастает из центра,
@@ -18,6 +19,8 @@ Scope {
     property string edge: "top"       // откуда выезжает slide: left, right, top, bottom
     property real distance: 40        // на сколько px
     property real typeScale: 2.5      // печать (type) дольше остальных стилей: окно набирается по символу
+    // общая скорость анимаций shell (look/ → анимации)
+    readonly property real speed: Settings.get("shell.anim.speed")
 
     property real p: 0
     readonly property bool loaded: open || p > 0
@@ -51,7 +54,7 @@ Scope {
         // прерванная на середине анимация доигрывает только остаток пути;
         // печать — ровным темпом и дольше: окно набирается по символу
         const type = style === "type";
-        anim.duration = duration * (type ? typeScale : 1) * Math.abs(to - p);
+        anim.duration = duration * (type ? typeScale : 1) * Math.abs(to - p) / Math.max(0.25, speed);
         anim.easing.type = type ? Easing.Linear : open ? Easing.OutCubic : Easing.InCubic;
         anim.start();
     }
