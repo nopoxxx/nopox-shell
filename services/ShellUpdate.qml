@@ -45,8 +45,7 @@ Singleton {
     }
 
     function updateGreeter() {
-        Quickshell.execDetached(["kitty", "--class", "nopox-term", "--hold", "-e",
-            "sudo", dir + "/extras/install-greeter.sh"]);
+        Term.float(["sudo", dir + "/extras/install-greeter.sh"], { hold: true });
     }
 
     // файл-маркер: greeter установлен из этого shell

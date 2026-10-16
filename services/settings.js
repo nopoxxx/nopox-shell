@@ -166,6 +166,10 @@ function sections(outputs, layout) {
             { key: "shell.accent", label: "акцентный цвет", type: "enum", options: Object.keys(ACCENTS), def: "yellow", hint: "рамки окон shell, prompt и рамка фокуса niri" },
             { key: "shell.fontSize", label: "размер шрифта", type: "int", min: 10, max: 28, step: 1, def: 16 },
 
+            { header: "приложения" },
+            { key: "shell.terminal", label: "терминал", type: "enum", options: TERMINALS, def: "kitty", hint: "Mod+T и окна, которые открывает shell (обновления, nmtui, …)" },
+            { key: "shell.files", label: "файловый менеджер", type: "enum", options: FILE_MANAGERS, def: "none", hint: "Mod+E; yazi — в терминале" },
+
             { header: "меню" },
             { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12 },
 
@@ -243,6 +247,39 @@ function defaultOf(key, outputs) {
 
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
+
+// ── терминал и файловый менеджер ───────────────────────────────────
+
+var TERMINALS = ["kitty", "alacritty", "ghostty", "foot"];
+var FILE_MANAGERS = ["none", "thunar", "nautilus", "dolphin", "nemo", "yazi"];
+
+// ghostty принимает только идентификатор приложения с точкой
+function termClass(term, c) {
+    return term === "ghostty" ? "dev.nopox." + c.replace(/^nopox-/, "") : c;
+}
+
+// argv — команда; opts: { cls, hold }. Общая для Term.qml и binds.kdl
+function termCmd(term, argv, opts) {
+    argv = argv ?? [];
+    const hold = opts?.hold ?? false;
+    const c = opts?.cls ? termClass(term, opts.cls) : "";
+    switch (term) {
+    case "foot":
+        return ["foot"].concat(c ? ["--app-id=" + c] : [], hold ? ["--hold"] : [], argv);
+    case "alacritty":
+        return ["alacritty"].concat(c ? ["--class", c] : [], hold ? ["--hold"] : [], argv.length ? ["-e"].concat(argv) : []);
+    case "ghostty":
+        return ["ghostty"].concat(c ? ["--class=" + c] : [], hold ? ["--wait-after-command=true"] : [], argv.length ? ["-e"].concat(argv) : []);
+    default:
+        return ["kitty"].concat(c ? ["--class", c] : [], hold ? ["--hold"] : [], argv.length ? ["-e"].concat(argv) : []);
+    }
+}
+
+// файловый менеджер: yazi — терминальный, остальные — свой бинарник
+function filesCmd(term, fm) {
+    if (!fm || fm === "none") return null;
+    return fm === "yazi" ? termCmd(term, ["yazi"]) : [fm];
+}
 
 // ── бинды ──────────────────────────────────────────────────────────
 
@@ -351,6 +388,7 @@ function niriFileOf(key) {
     if (key === "niri.csd") return "misc.kdl";
     if (/^niri\.out\./.test(key) || key === "niri.displays") return "displays.kdl";
     if (key === "niri.binds") return "keys.kdl";
+    if (key === "shell.terminal" || key === "shell.files") return "binds.kdl";
     return "";
 }
 
@@ -480,7 +518,8 @@ function niriFiles(get, outs) {
             ""] : []),
         "// терминалы, открытые из меню nopox (install / remove / update …), — плавающие по центру",
         "window-rule {",
-        '    match app-id="^nopox-term$"',
+        // [.] вместо \. — в строках KDL такой escape недопустим
+        '    match app-id="^(nopox-term|dev[.]nopox[.]term)$"',
         "    open-floating true",
         "    default-column-width { fixed 960; }",
         "    default-window-height { fixed 600; }",
@@ -520,6 +559,10 @@ function niriFiles(get, outs) {
         'spawn-at-startup "qs"',
         "",
         "binds {",
+        "    Mod+T hotkey-overlay-title=" + q("Open a Terminal: " + get("shell.terminal")) + " { spawn " + termCmd(get("shell.terminal")).map(q).join(" ") + "; }",
+        ...(filesCmd(get("shell.terminal"), get("shell.files"))
+            ? ["    Mod+E hotkey-overlay-title=" + q("Files: " + get("shell.files")) + " { spawn " + filesCmd(get("shell.terminal"), get("shell.files")).map(q).join(" ") + "; }"]
+            : []),
         '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
         '    Mod+Shift+D hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
         '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',

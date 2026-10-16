@@ -3,6 +3,7 @@ import Quickshell.Networking
 import QtQuick
 import qs
 import qs.bar
+import qs.services
 
 // net eth / net home 74% / net offline — клик: nmtui
 Seg {
@@ -21,5 +22,5 @@ Seg {
         : isWifi ? (wifi ? wifi.name + " " + pct(wifi.signalStrength) : "wifi")
         : "eth"
     valueColor: !dev ? Theme.red : limited ? Theme.yellow : Theme.fg
-    onLeftClicked: Quickshell.execDetached(["kitty", "--class", "nopox-term", "-e", "nmtui"])
+    onLeftClicked: Term.float(["nmtui"])
 }

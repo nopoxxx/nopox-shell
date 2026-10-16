@@ -31,11 +31,9 @@ Scope {
 
     function shq(s) { return "'" + s.replace(/'/g, "'\\''") + "'"; }
 
-    // команда в плавающем окне kitty; с hold вывод остаётся на экране
+    // команда в плавающем окне терминала (Term); с hold вывод остаётся на экране
     function term(cmd, hold = true) {
-        const argv = ["kitty", "--class", "nopox-term"];
-        if (hold) argv.push("--hold");
-        Quickshell.execDetached(argv.concat(["-e", "bash", "-c", cmd]));
+        Term.float(["bash", "-c", cmd], { hold });
     }
 
     function spawn(argv) { Quickshell.execDetached(argv); }
@@ -53,7 +51,7 @@ Scope {
 
     function launchApp(entry) {
         if (entry.runInTerminal)
-            Quickshell.execDetached(["kitty", "-e", ...entry.command]);
+            Term.open(entry.command);
         else
             entry.execute();
     }
@@ -86,7 +84,9 @@ Scope {
                 { label: "config", desc: "редактировать конфиги", children: [
                     { label: "niri", desc: "~/.config/niri/config.kdl", run: () => edit(home + "/.config/niri/config.kdl") },
                     { label: "quickshell", desc: "~/.config/quickshell/", run: () => edit(home + "/.config/quickshell") },
-                    { label: "kitty", desc: "~/.config/kitty/kitty.conf", run: () => edit(home + "/.config/kitty/kitty.conf") }
+                    { label: "terminal", desc: "конфиг терминала (" + Term.name + ")", run: () => edit(home + ({
+                        kitty: "/.config/kitty/kitty.conf", alacritty: "/.config/alacritty/alacritty.toml",
+                        ghostty: "/.config/ghostty/config", foot: "/.config/foot/foot.ini" })[Term.name]) }
                 ] },
                 { label: "restart shell", desc: "перезапустить quickshell", run: () => spawn(["sh", "-c", "pkill -x qs; sleep 0.3; niri msg action spawn -- qs"]) },
                 { label: "shell update", desc: "обновить nopox-shell с GitHub (git pull)", run: () => ShellUpdate.behind > 0 ? ShellUpdate.update() : ShellUpdate.check(true) },

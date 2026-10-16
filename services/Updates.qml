@@ -14,7 +14,7 @@ Singleton {
         if (!checker.running) checker.running = true;
     }
 
-    // обновление в отдельном kitty; после закрытия окна — перепроверить
+    // обновление в отдельном окне терминала; после закрытия окна — перепроверить
     function run() {
         if (!upgrade.running) upgrade.running = true;
     }
@@ -29,8 +29,7 @@ Singleton {
 
     Process {
         id: upgrade
-        command: ["kitty", "--class", "nopox-term", "-e", "bash", "-c",
-            "paru -Syu; echo; read -n1 -rsp 'готово, нажмите любую клавишу'"]
+        command: Term.cmd(["bash", "-c", "paru -Syu; echo; read -n1 -rsp 'готово, нажмите любую клавишу'"], { cls: "nopox-term" })
         onExited: root.check()
     }
 

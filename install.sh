@@ -3,11 +3,17 @@
 #
 #   bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)
 #
-# Флаги:
-#   --yes               не задавать вопросов, всё по умолчанию
-#   --no-greeter        не ставить greeter (greetd)
-#   --keep-niri-config  не заменять config.kdl niri, только дописать блок nopox
-#   --branch <ветка>    ветка репозитория (по умолчанию main)
+# Флаги (всё, что не задано флагом, установщик спросит; с --yes — возьмёт по умолчанию):
+#   --yes                    не задавать вопросов
+#   --terminal <t>           kitty | alacritty | ghostty | foot
+#   --shell <s>              zsh | fish | bash
+#   --browser <b>            helium | firefox | zen | chromium | brave | vivaldi | none
+#   --files <f>              thunar | nautilus | dolphin | nemo | yazi | none
+#   --apps <a,b,…>           программы (список — в начале установки), none — никаких
+#   --discord-mod <m>        none | vencord | betterdiscord | vesktop
+#   --no-greeter             не ставить greeter (greetd)
+#   --keep-niri-config       не заменять config.kdl niri, только дописать include
+#   --branch <ветка>         ветка репозитория (по умолчанию main)
 #
 # Ничего не удаляет: всё, что заменяется, переезжает в *.bak-<дата>.
 set -euo pipefail
@@ -17,6 +23,7 @@ BRANCH=main
 YES=0
 GREETER=ask
 KEEP_NIRI=0
+TERMINAL="" SHELL_CHOICE="" BROWSER="" FILES="" APPS="" DISCORD_MOD=""
 DEST="$HOME/.config/quickshell"
 NIRI_DIR="$HOME/.config/niri"
 STAMP=$(date +%Y%m%d-%H%M%S)
@@ -24,10 +31,16 @@ STAMP=$(date +%Y%m%d-%H%M%S)
 while [ $# -gt 0 ]; do
     case "$1" in
         --yes|-y) YES=1 ;;
+        --terminal) TERMINAL=${2:?}; shift ;;
+        --shell) SHELL_CHOICE=${2:?}; shift ;;
+        --browser) BROWSER=${2:?}; shift ;;
+        --files) FILES=${2:?}; shift ;;
+        --apps) APPS=${2:?}; shift ;;
+        --discord-mod) DISCORD_MOD=${2:?}; shift ;;
         --no-greeter) GREETER=no ;;
         --keep-niri-config) KEEP_NIRI=1 ;;
         --branch) BRANCH=${2:?нужно имя ветки}; shift ;;
-        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "неизвестный флаг: $1" >&2; exit 1 ;;
     esac
     shift
@@ -64,6 +77,62 @@ backup() {
     fi
 }
 
+# choose ПЕРЕМЕННАЯ "заголовок" умолчание "id|описание" … — нумерованный выбор одного варианта.
+# Если переменная уже задана флагом — только проверяет, что такой вариант есть.
+choose() {
+    local var=$1 title=$2 def=$3 ans i line id
+    shift 3
+    local ids=()
+    for line in "$@"; do ids+=("${line%%|*}"); done
+    if [ -n "${!var}" ]; then
+        printf '%s\n' "${ids[@]}" | grep -qx "${!var}" || die "$title: нет варианта «${!var}» (есть: ${ids[*]})"
+        ok "$title: ${!var}"
+        return
+    fi
+    if [ "$YES" = 1 ]; then
+        printf -v "$var" '%s' "$def"
+        ok "$title: $def"
+        return
+    fi
+    printf '\n  %s%s%s\n' "$BOLD" "$title" "$N"
+    i=1
+    for line in "$@"; do
+        id=${line%%|*}
+        printf '   %s%2d)%s %-12s %s%s%s%s\n' "$A" "$i" "$N" "$id" "$D" "${line#*|}" "$N" \
+            "$([ "$id" = "$def" ] && printf '  %s← по умолчанию%s' "$Y" "$N")"
+        i=$((i + 1))
+    done
+    while true; do
+        printf '  %s?%s номер [Enter — %s] ' "$A" "$N" "$def"
+        read -r ans </dev/tty || ans=""
+        if [ -z "$ans" ]; then printf -v "$var" '%s' "$def"; break; fi
+        if [[ $ans =~ ^[0-9]+$ ]] && [ "$ans" -ge 1 ] && [ "$ans" -le ${#ids[@]} ]; then
+            printf -v "$var" '%s' "${ids[$((ans - 1))]}"
+            break
+        fi
+        warn "нужен номер от 1 до ${#ids[@]}"
+    done
+    ok "$title: ${!var}"
+}
+
+# set_setting ключ значение — в ~/.config/nopox/settings.json (shell пишет его по ключу на строку)
+set_setting() {
+    local f="$HOME/.config/nopox/settings.json" k=$1 v=$2
+    mkdir -p "${f%/*}"
+    if [ ! -s "$f" ] || ! grep -q '"' "$f"; then
+        printf '{\n  "%s": "%s"\n}\n' "$k" "$v" > "$f"
+    elif grep -q "\"$k\":" "$f"; then
+        sed -i "s|\"$k\": *\"[^\"]*\"|\"$k\": \"$v\"|" "$f"
+    else
+        sed -i "0,/{/s//{\n  \"$k\": \"$v\",/" "$f"
+    fi
+}
+
+# .desktop-файл пакета — для браузера и файлового менеджера по умолчанию
+desktop_of() {
+    pacman -Qlq "$1" 2>/dev/null | grep -m1 '^/usr/share/applications/.*\.desktop$' | xargs -r basename
+}
+
 printf '%s' "$Y"
 cat <<'EOF'
 
@@ -80,28 +149,161 @@ command -v pacman >/dev/null || die "нужен Arch Linux или произво
 command -v sudo >/dev/null || die "нужен sudo"
 curl -fsS --max-time 15 -o /dev/null https://github.com || die "нет доступа к github.com"
 ok "Arch-подобная система, $(uname -r)"
+
+# ── выбор ────────────────────────────────────────────────────────────
+step "Что ставим"
+
+choose TERMINAL "Терминал" kitty \
+    "kitty|быстрый, GPU, вкладки и картинки" \
+    "alacritty|минималистичный, GPU" \
+    "ghostty|новый, GPU, нативный GTK" \
+    "foot|лёгкий, только Wayland"
+
+choose SHELL_CHOICE "Оболочка" zsh \
+    "zsh|подсказки по истории и подсветка команд" \
+    "fish|удобный сразу, без настройки" \
+    "bash|стандартный"
+
+choose BROWSER "Браузер" helium \
+    "helium|Chromium без телеметрии и лишнего" \
+    "firefox|Firefox" \
+    "zen|Zen — Firefox с вертикальными вкладками" \
+    "chromium|Chromium" \
+    "brave|Brave — со встроенным блокировщиком" \
+    "vivaldi|Vivaldi — много настроек" \
+    "none|не ставить"
+
+choose FILES "Файловый менеджер" thunar \
+    "thunar|лёгкий, из Xfce" \
+    "nautilus|GNOME Files" \
+    "dolphin|KDE, много возможностей" \
+    "nemo|из Cinnamon" \
+    "yazi|в терминале — в стиле shell" \
+    "none|не ставить"
+
+# группа|id|описание|пакеты|по умолчанию
+APP_CATALOG=(
+    "Медиа|mpv|mpv — видеоплеер|mpv|1"
+    "Медиа|obs|OBS Studio — запись и стримы|obs-studio|0"
+    "Медиа|spotify|Spotify|spotify-launcher|0"
+    "Медиа|qbittorrent|qBittorrent|qbittorrent|0"
+    "Медиа|imv|imv — просмотр картинок|imv|0"
+    "Общение|discord|Discord (моды — следующий вопрос)|discord|1"
+    "Общение|telegram|Telegram|telegram-desktop|1"
+    "Графика|photocraft|PhotoCraft — аналог Photoshop на Rust, альфа|photocraft-bin|1"
+    "Графика|gimp|GIMP|gimp|0"
+    "Графика|krita|Krita — рисование|krita|0"
+    "Работа и код|code|Code - OSS (VS Code)|code|0"
+    "Работа и код|vscodium|VSCodium|vscodium-bin|0"
+    "Работа и код|neovim|Neovim|neovim|0"
+    "Работа и код|libreoffice|LibreOffice|libreoffice-fresh|0"
+    "Работа и код|obsidian|Obsidian — заметки|obsidian|0"
+    "Игры|steam|Steam (включит multilib)|steam|0"
+    "Игры|lutris|Lutris|lutris|0"
+    "Игры|heroic|Heroic — Epic Games и GOG|heroic-games-launcher-bin|0"
+    "Игры|gametools|MangoHud + GameMode|mangohud gamemode|0"
+    "Утилиты|btop|btop — монитор ресурсов|btop|1"
+    "Утилиты|flatpak|Flatpak|flatpak|0"
+    "Утилиты|timeshift|Timeshift — снимки системы|timeshift|0"
+)
+SEL=()
+for i in "${!APP_CATALOG[@]}"; do SEL[i]=${APP_CATALOG[i]##*|}; done
+
+app_field() { local IFS='|'; local f=(${APP_CATALOG[$1]}); printf '%s' "${f[$2]}"; }
+
+if [ -n "$APPS" ]; then
+    for i in "${!APP_CATALOG[@]}"; do SEL[i]=0; done
+    for id in ${APPS//,/ }; do
+        [ "$id" = none ] && continue
+        found=0
+        for i in "${!APP_CATALOG[@]}"; do
+            [ "$(app_field "$i" 1)" = "$id" ] && { SEL[i]=1; found=1; }
+        done
+        [ "$found" = 1 ] || die "--apps: нет программы «$id»"
+    done
+elif [ "$YES" != 1 ]; then
+    while true; do
+        printf '\n  %sПрограммы%s %s(номера через пробел — отметить/снять, Enter — готово)%s\n' "$BOLD" "$N" "$D" "$N"
+        group=""
+        for i in "${!APP_CATALOG[@]}"; do
+            g=$(app_field "$i" 0)
+            [ "$g" != "$group" ] && { printf '   %s── %s%s\n' "$D" "$g" "$N"; group=$g; }
+            mark=$([ "${SEL[i]}" = 1 ] && printf '%s[x]%s' "$G" "$N" || printf '[ ]')
+            printf '   %s%2d)%s %s %s\n' "$A" "$((i + 1))" "$N" "$mark" "$(app_field "$i" 2)"
+        done
+        printf '  %s?%s ' "$A" "$N"
+        read -r ans </dev/tty || ans=""
+        [ -z "$ans" ] && break
+        for x in $ans; do
+            if [[ $x =~ ^[0-9]+$ ]] && [ "$x" -ge 1 ] && [ "$x" -le ${#APP_CATALOG[@]} ]; then
+                SEL[$((x - 1))]=$((1 - SEL[$((x - 1))]))
+            else
+                warn "нет пункта $x"
+            fi
+        done
+    done
+fi
+
+APP_IDS=() APP_PKGS=()
+for i in "${!APP_CATALOG[@]}"; do
+    [ "${SEL[i]}" = 1 ] || continue
+    APP_IDS+=("$(app_field "$i" 1)")
+    read -ra pk <<<"$(app_field "$i" 3)"
+    APP_PKGS+=("${pk[@]}")
+done
+ok "Программы: ${APP_IDS[*]:-никаких}"
+
+if printf '%s\n' "${APP_IDS[@]}" | grep -qx discord; then
+    choose DISCORD_MOD "Discord" none \
+        "none|как есть" \
+        "vencord|Vencord — плагины и темы, патч обычного Discord" \
+        "betterdiscord|BetterDiscord — плагины и темы" \
+        "vesktop|Vesktop — отдельный клиент со встроенным Vencord, лучше на Wayland"
+    # Vesktop заменяет обычный Discord
+    if [ "$DISCORD_MOD" = vesktop ]; then
+        mapfile -t APP_PKGS < <(printf '%s\n' "${APP_PKGS[@]}" | sed 's/^discord$/vesktop-bin/')
+    fi
+    [ "$DISCORD_MOD" = betterdiscord ] && APP_PKGS+=(betterdiscordctl)
+else
+    DISCORD_MOD=none
+fi
+
+declare -A BROWSER_PKG=([helium]=helium-browser-bin [firefox]=firefox [zen]=zen-browser-bin
+    [chromium]=chromium [brave]=brave-bin [vivaldi]=vivaldi [none]="")
+declare -A FILES_PKG=([thunar]=thunar [nautilus]=nautilus [dolphin]=dolphin [nemo]=nemo [yazi]=yazi [none]="")
+declare -A SHELL_PKGS=([zsh]="zsh zsh-autosuggestions zsh-syntax-highlighting zsh-completions" [fish]=fish [bash]=bash-completion)
+
+printf '\n  %sИтого:%s %s · %s · %s · файлы: %s · программы: %s%s\n' "$BOLD" "$N" \
+    "$TERMINAL" "$SHELL_CHOICE" "$BROWSER" "$FILES" "${APP_IDS[*]:-нет}" \
+    "$([ "$DISCORD_MOD" != none ] && printf ' · discord: %s' "$DISCORD_MOD")"
+ask "Начинаем?" y || die "отменено"
+
 sudo -v || die "без sudo не поставить пакеты"
 # держим sudo живым, пока идёт установка
 while kill -0 $$ 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done &
 
+# с --yes pacman и paru тоже не спрашивают; без него их вопросы остаются: видно, что ставится
+noconfirm=()
+[ "$YES" = 1 ] && noconfirm=(--noconfirm)
+
 # ── пакеты ───────────────────────────────────────────────────────────
 step "Пакеты"
 PKGS=(
-    niri quickshell xwayland-satellite kitty git curl
+    niri quickshell xwayland-satellite git curl xdg-utils
     networkmanager pipewire pipewire-pulse wireplumber upower pacman-contrib libnotify
     polkit-gnome gnome-keyring xdg-desktop-portal-gnome xdg-desktop-portal-gtk
     ttf-terminus-nerd noto-fonts noto-fonts-emoji
     wl-clipboard brightnessctl playerctl pavucontrol fastfetch base-devel
+    "$TERMINAL"
 )
+read -ra sp <<<"${SHELL_PKGS[$SHELL_CHOICE]}"
+PKGS+=("${sp[@]}")
+
 missing=()
 for p in "${PKGS[@]}"; do pacman -Qq "$p" &>/dev/null || missing+=("$p"); done
 
-# с --yes pacman тоже не спрашивает; без него — его вопрос остаётся: видно, что ставится
-noconfirm=()
-[ "$YES" = 1 ] && noconfirm=(--noconfirm)
-
 if [ ${#missing[@]} -eq 0 ]; then
-    ok "всё уже установлено"
+    ok "базовые пакеты уже установлены"
 else
     info "нужно поставить: ${missing[*]}"
     if ask "Обновить систему вместе с установкой (pacman -Syu)? На Arch так правильнее" y; then
@@ -109,7 +311,7 @@ else
     else
         sudo pacman -S --needed "${noconfirm[@]}" "${missing[@]}"
     fi
-    ok "пакеты установлены"
+    ok "базовые пакеты установлены"
 fi
 
 if command -v paru >/dev/null; then
@@ -124,6 +326,32 @@ else
     (cd "$tmp/paru-bin" && makepkg -si --noconfirm)
     rm -rf "$tmp"
     ok "paru собран"
+fi
+
+# браузер, файловый менеджер и программы — через paru: из репозиториев, если есть, иначе из AUR
+EXTRA=("${APP_PKGS[@]}")
+[ -n "${BROWSER_PKG[$BROWSER]}" ] && EXTRA+=("${BROWSER_PKG[$BROWSER]}")
+[ -n "${FILES_PKG[$FILES]}" ] && EXTRA+=("${FILES_PKG[$FILES]}")
+
+if printf '%s\n' "${EXTRA[@]}" | grep -qx steam && ! grep -q '^\[multilib\]' /etc/pacman.conf; then
+    if ask "Steam нужен репозиторий multilib (32-битные библиотеки). Включить?" y; then
+        sudo sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
+        sudo pacman -Sy
+        ok "multilib включён"
+    else
+        mapfile -t EXTRA < <(printf '%s\n' "${EXTRA[@]}" | grep -vx steam)
+        warn "Steam пропущен"
+    fi
+fi
+
+missing=()
+for p in "${EXTRA[@]}"; do pacman -Qq "$p" &>/dev/null || missing+=("$p"); done
+if [ ${#missing[@]} -eq 0 ]; then
+    ok "программы уже установлены"
+else
+    info "ставлю через paru: ${missing[*]}"
+    paru -S --needed --skipreview "${noconfirm[@]}" "${missing[@]}" || warn "часть программ не поставилась — см. вывод paru выше"
+    ok "программы установлены"
 fi
 
 # ── сам shell ────────────────────────────────────────────────────────
@@ -146,6 +374,10 @@ else
 fi
 info "обновления потом — сам shell: nopox ↑ на панели"
 mkdir -p "$HOME/Pictures/Wallpapers"
+
+# выбор терминала и файлового менеджера — в настройки shell (Mod+T, Mod+E, окна обновлений и т.п.)
+set_setting shell.terminal "$TERMINAL"
+set_setting shell.files "$FILES"
 
 # ── niri ─────────────────────────────────────────────────────────────
 step "Конфиг niri"
@@ -189,21 +421,123 @@ if command -v niri >/dev/null && ! niri validate -c "$conf" >/dev/null 2>&1; the
 fi
 ok "niri validate: конфиг корректный"
 
-# ── kitty ────────────────────────────────────────────────────────────
-step "kitty"
-kconf="$HOME/.config/kitty/kitty.conf"
-if [ ! -f "$kconf" ]; then
-    install -Dm644 "$DEST/extras/kitty/kitty.conf" "$kconf"
-    ok "конфиг kitty в цветах Gruvbox"
-elif cmp -s "$kconf" "$DEST/extras/kitty/kitty.conf"; then
+# ── терминал ─────────────────────────────────────────────────────────
+step "Терминал: $TERMINAL"
+declare -A TERM_CONF=(
+    [kitty]="kitty/kitty.conf:$HOME/.config/kitty/kitty.conf"
+    [alacritty]="alacritty/alacritty.toml:$HOME/.config/alacritty/alacritty.toml"
+    [ghostty]="ghostty/config:$HOME/.config/ghostty/config"
+    [foot]="foot/foot.ini:$HOME/.config/foot/foot.ini"
+)
+src="$DEST/extras/${TERM_CONF[$TERMINAL]%%:*}"
+dst="${TERM_CONF[$TERMINAL]#*:}"
+if [ ! -f "$dst" ]; then
+    install -Dm644 "$src" "$dst"
+    ok "конфиг в цветах Gruvbox + Terminess"
+elif cmp -s "$dst" "$src"; then
     ok "уже стоит конфиг nopox"
-elif ask "Заменить конфиг kitty на Gruvbox + Terminess от nopox?" n; then
-    backup "$kconf"
-    install -Dm644 "$DEST/extras/kitty/kitty.conf" "$kconf"
-    ok "конфиг kitty заменён"
+elif ask "Заменить ваш конфиг $TERMINAL на Gruvbox + Terminess от nopox?" n; then
+    backup "$dst"
+    install -Dm644 "$src" "$dst"
+    ok "конфиг заменён"
 else
-    info "оставил ваш kitty.conf"
+    info "оставил ваш конфиг"
 fi
+
+# ── оболочка ─────────────────────────────────────────────────────────
+step "Оболочка: $SHELL_CHOICE"
+case "$SHELL_CHOICE" in
+    zsh)
+        if [ ! -f "$HOME/.zshrc" ]; then
+            cp "$DEST/extras/shell/zshrc" "$HOME/.zshrc"
+            ok "~/.zshrc: приглашение как панель nopox, подсказки, подсветка"
+        elif grep -q "nopox-shell" "$HOME/.zshrc"; then
+            ok "~/.zshrc уже от nopox"
+        elif ask "Заменить ваш ~/.zshrc на nopox (приглашение как панель, подсказки, подсветка)?" n; then
+            backup "$HOME/.zshrc"
+            cp "$DEST/extras/shell/zshrc" "$HOME/.zshrc"
+            ok "~/.zshrc заменён"
+        else
+            info "оставил ваш ~/.zshrc"
+        fi
+        ;;
+    fish)
+        fp="$HOME/.config/fish/functions/fish_prompt.fish"
+        install -Dm644 "$DEST/extras/shell/nopox.fish" "$HOME/.config/fish/conf.d/nopox.fish"
+        if [ ! -f "$fp" ] || grep -q "nopox-shell" "$fp"; then
+            install -Dm644 "$DEST/extras/shell/fish_prompt.fish" "$fp"
+            ok "приглашение fish как панель nopox"
+        elif ask "Заменить ваше приглашение fish на nopox?" n; then
+            backup "$fp"
+            install -Dm644 "$DEST/extras/shell/fish_prompt.fish" "$fp"
+            ok "приглашение fish заменено"
+        fi
+        ;;
+    bash)
+        if grep -q ">>> nopox-shell >>>" "$HOME/.bashrc" 2>/dev/null; then
+            ok "~/.bashrc уже с приглашением nopox"
+        elif ask "Добавить в ~/.bashrc приглашение как панель nopox?" y; then
+            { echo; cat "$DEST/extras/shell/bashrc"; } >> "$HOME/.bashrc"
+            ok "добавлено в ~/.bashrc"
+        fi
+        ;;
+esac
+target=$(command -v "$SHELL_CHOICE")
+if [ "$(getent passwd "$USER" | cut -d: -f7)" = "$target" ]; then
+    ok "$SHELL_CHOICE уже оболочка по умолчанию"
+else
+    sudo chsh -s "$target" "$USER" && ok "оболочка по умолчанию: $target (с нового входа)"
+fi
+
+# ── приложения по умолчанию ──────────────────────────────────────────
+step "Приложения по умолчанию"
+if [ -n "${BROWSER_PKG[$BROWSER]}" ] && d=$(desktop_of "${BROWSER_PKG[$BROWSER]}") && [ -n "$d" ]; then
+    xdg-settings set default-web-browser "$d" && ok "браузер: $d"
+fi
+if [ -n "${FILES_PKG[$FILES]}" ] && [ "$FILES" != yazi ] && d=$(desktop_of "${FILES_PKG[$FILES]}") && [ -n "$d" ]; then
+    xdg-mime default "$d" inode/directory && ok "папки открывает: $d"
+fi
+[ "$FILES" = yazi ] && ok "файлы: yazi в терминале (Mod+E)"
+
+# ── Discord ──────────────────────────────────────────────────────────
+case "$DISCORD_MOD" in
+    vencord)
+        step "Discord: Vencord"
+        tmp=$(mktemp)
+        curl -fsSL -o "$tmp" https://github.com/Vendicated/VencordInstaller/releases/latest/download/VencordInstallerCli-linux \
+            || die "не скачался установщик Vencord"
+        sudo install -Dm755 "$tmp" /usr/local/bin/VencordInstallerCli
+        rm -f "$tmp"
+        sudo /usr/local/bin/VencordInstallerCli -install -location /opt/discord && ok "Vencord установлен в /opt/discord"
+        # обновление Discord из pacman затирает патч — хук ставит его заново
+        sudo install -Dm644 /dev/stdin /etc/pacman.d/hooks/vencord.hook <<'EOF'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = discord
+
+[Action]
+Description = Vencord: патчу Discord после обновления…
+When = PostTransaction
+Exec = /usr/local/bin/VencordInstallerCli -install -location /opt/discord
+EOF
+        ok "хук pacman: Vencord переустанавливается после обновлений Discord"
+        ;;
+    betterdiscord)
+        step "Discord: BetterDiscord"
+        if [ -d "$HOME/.config/discord" ]; then
+            betterdiscordctl install && ok "BetterDiscord установлен"
+        else
+            warn "Discord ещё ни разу не запускался — запустите его, закройте и выполните: betterdiscordctl install"
+        fi
+        info "после обновлений Discord: betterdiscordctl reinstall"
+        ;;
+    vesktop)
+        step "Discord: Vesktop"
+        ok "Vesktop установлен вместо Discord — Vencord уже внутри"
+        ;;
+esac
 
 # ── greeter ──────────────────────────────────────────────────────────
 step "Greeter (экран входа)"
@@ -248,8 +582,8 @@ fi
 cat <<EOF
 
   ${A}Mod+D${N}        меню             ${A}Mod+S${N}         настройки
-  ${A}Mod+Shift+D${N}  программы        ${A}Mod+Shift+W${N}   обои
-  ${A}Mod+T${N}        терминал         ${A}Super+Alt+L${N}   блокировка
+  ${A}Mod+T${N}        $TERMINAL$(printf '%*s' $((17 - ${#TERMINAL})) '')${A}Mod+Shift+W${N}   обои
+  ${A}Mod+Shift+D${N}  программы        ${A}Super+Alt+L${N}   блокировка$([ "$FILES" != none ] && printf '\n  %sMod+E%s        %s' "$A" "$N" "$FILES")
   ${A}Mod+Shift+/${N}  все клавиши niri
 
   ${D}$REPO${N}
