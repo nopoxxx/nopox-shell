@@ -86,7 +86,7 @@ Singleton {
     property string _written: ""
 
     function writeKeys() {
-        if (Settings.greeterMode || !Settings.loaded) return;
+        if (!Settings.writable) return;
         const text = S.keysKdl(keys);
         if (text === _written) return;   // иначе niri перечитывал бы конфиг при любом изменении настроек
         _written = text;

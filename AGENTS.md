@@ -102,7 +102,11 @@ README.md            пользовательская документация
   `Settings.get(key)` → значение или `S.defaultOf(key)`. `Settings.set(key, v)` — если `v` равно
   умолчанию, ключ удаляется. `reset(key)`, `isDefault(key)`, `replacePrefix(prefix, obj)`,
   `snapshotPrefix(prefix)` (для отката мониторов).
-- Сохранение — с задержкой 250 мс (таймер `save`): пишет JSON и вызывает `writeNiri()`.
+- Сохранение — с задержкой 250 мс (таймер `save`): пишет JSON (`atomicWrites`) и вызывает `writeNiri()`.
+- Загрузка: файла нет — умолчания, первое сохранение его создаст. Файл есть, но не читается (битый/пустой JSON —
+  после трёх перечитываний через 300 мс, нет прав) — `Settings.broken`: работаем на умолчаниях, ничего не пишем,
+  critical-уведомление. **Любая запись по настройкам** (settings.json, `nopox/*.kdl`, keys.kdl, темы, chsh)
+  проверяет `Settings.writable` (`loaded && !greeterMode && !broken`) — иначе пустые значения затрут файлы.
 - `writeNiri()` строит файлы через `S.niriFiles(get, outs)` и пишет **только изменившиеся**
   (кэш `_written`), через временный файл и `mv` (niri перечитывает конфиг на каждую запись).
 - Префиксы ключей: `niri.*` — уходят в конфиг niri; `shell.*` — читает QML; `wallpaper.*` — особые

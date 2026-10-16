@@ -15,7 +15,7 @@ Singleton {
     readonly property string home: Quickshell.env("HOME")
 
     // весь результат одной строкой: настройки меняются часто, а пишем только при реальной разнице
-    readonly property string state: Settings.loaded && !Settings.greeterMode
+    readonly property string state: Settings.writable
         ? JSON.stringify({
             files: S.themeFiles(k => Settings.get(k), home),
             gsettings: S.themeGsettings(k => Settings.get(k))

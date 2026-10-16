@@ -21,7 +21,7 @@ Singleton {
     property string sysBrowser: ""    // id из S.BROWSERS, если браузер по умолчанию — один из них
     property var desktops: ({})       // id установленного браузера → его .desktop
 
-    readonly property bool active: Settings.loaded && !Settings.greeterMode
+    readonly property bool active: Settings.writable
     onActiveChanged: if (active) probe.running = true
     Component.onCompleted: if (active) probe.running = true   // настройки могли загрузиться раньше
 

@@ -20,6 +20,12 @@ Singleton {
 
     property var values: ({})
     property bool loaded: false
+    // settings.json есть, но не читается (битый, пустой, нет прав): работаем на умолчаниях и ничего
+    // не пишем — иначе первое же сохранение затрёт все настройки, вместе со своими биндами
+    property bool broken: false
+    // можно писать файлы по настройкам (settings.json, nopox/*.kdl, темы) — проверять перед любой записью
+    readonly property bool writable: loaded && !greeterMode && !broken
+    property int _retries: 0
     property var outputs: []
     property bool open: false   // окно настроек
     property string page: ""    // открытый раздел (id из S.sections) — окно возвращается к нему
@@ -84,7 +90,7 @@ Singleton {
     function refreshOutputs() { outputsProc.running = true; }
 
     function writeNiri() {
-        if (greeterMode) return;
+        if (!writable) return;
         const outs = {};
         for (const k in values) {
             const m = k.match(/^niri\.out\.(.+)\.(\w+)$/);
@@ -123,7 +129,7 @@ Singleton {
         id: save
         interval: 250
         onTriggered: {
-            if (root.greeterMode) return;
+            if (!root.writable) return;
             json.setText(JSON.stringify(root.values, null, 2) + "\n");
             root.writeNiri();
         }
@@ -132,17 +138,54 @@ Singleton {
     FileView {
         id: json
         path: root.file
+        atomicWrites: true   // через временный файл: при падении или перезапуске qs файл не останется наполовину
         onLoaded: {
-            try { root.values = JSON.parse(text()); } catch (e) { console.warn("settings.json:", e); }
+            let v = null;
+            try { v = JSON.parse(text()); } catch (e) { console.warn("settings.json:", e); }
+            if (!v || typeof v !== "object" || Array.isArray(v)) {
+                // пустой или битый — возможно, застали запись: перечитать, и только потом сдаваться
+                if (root._retries < 3) {
+                    root._retries++;
+                    retry.restart();
+                    return;
+                }
+                root.giveUp("не разбирается как JSON");
+                return;
+            }
+            root._retries = 0;
+            root.broken = false;
+            root.values = v;
             root.loaded = true;
             root.writeNiri();   // схема могла измениться после обновления
         }
-        onLoadFailed: {
-            // greeter: у этого пользователя нет копии — умолчания, а не настройки предыдущего
-            if (root.greeterMode) root.values = {};
+        onLoadFailed: error => {
+            if (root.greeterMode) {
+                // greeter: у этого пользователя нет копии — умолчания, а не настройки предыдущего
+                root.values = {};
+            } else if (error !== FileViewError.FileNotFound) {
+                root.giveUp(FileViewError.toString(error));
+                return;
+            }
+            // файла нет — первый запуск: умолчания, первое сохранение его создаст
             root.loaded = true;
             root.writeNiri();
         }
+    }
+
+    Timer {
+        id: retry
+        interval: 300
+        onTriggered: json.reload()
+    }
+
+    function giveUp(why) {
+        broken = true;
+        loaded = true;
+        console.warn("settings.json не прочитан (" + why + ") — работаю на умолчаниях, сохранение выключено");
+        if (!greeterMode)
+            Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "-u", "critical", "Настройки не прочитаны",
+                file + ": " + why + ". Shell работает на умолчаниях и ничего не сохраняет, чтобы не затереть файл. "
+                + "Исправьте или удалите его и перезапустите shell."]);
     }
 
     property bool _migrated: false
