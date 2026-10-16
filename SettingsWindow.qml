@@ -40,6 +40,8 @@ Scope {
             property int cur: 1
             property bool editing: false
             property bool capturing: false   // строка combo ждёт нажатия сочетания
+            // черновик: ←→, Space, клик и r меняют только его, применяет ↵, Esc или уход со строки — отменяют
+            property var draft: null         // { key, value }
             readonly property var row: rows[cur] ?? null
 
             Component.onCompleted: {
@@ -128,31 +130,52 @@ Scope {
                 else Settings.set(r.key, v);
             }
 
+            // ── черновик ──
+            function drafted(r) { return !!draft && !!r && draft.key === r.key; }
+            function shown(r) { return drafted(r) ? draft.value : value(r); }
+
+            function propose(r, v) {
+                // вернулись к текущему значению — черновика нет
+                draft = v === value(r) ? null : { key: r.key, value: v };
+            }
+
+            function apply() {
+                if (!draft || !row || draft.key !== row.key) return;
+                setValue(row, draft.value);
+                draft = null;
+            }
+
             function reset(r) {
                 if (r.type === "action") return;
                 if (r.type === "module") {
                     Settings.reset(r.key);
                     selectModule(r.id);
-                } else if (r.key === "wallpaper.fill") Wallpaper.setFill(r.def);
-                else Settings.reset(r.key);
+                } else if (r.type === "combo" || r.type === "text") {
+                    Settings.reset(r.key);
+                } else {
+                    propose(r, r.def);   // по умолчанию — тоже через ↵
+                }
             }
 
             function adjust(r, d) {
+                const v = shown(r);
                 if (r.type === "module") {
                     moveModule(r, d);
                 } else if (r.type === "bool") {
-                    setValue(r, !value(r));
+                    propose(r, !v);
                 } else if (r.type === "enum") {
                     const o = r.options;
-                    setValue(r, o[(o.indexOf(value(r)) + d + o.length) % o.length]);
+                    propose(r, o[(o.indexOf(v) + d + o.length) % o.length]);
                 } else if (r.type === "int" || r.type === "float") {
-                    const v = Math.min(r.max, Math.max(r.min, value(r) + d * r.step));
-                    setValue(r, r.type === "int" ? Math.round(v) : Number(v.toFixed(2)));
+                    const n = Math.min(r.max, Math.max(r.min, v + d * r.step));
+                    propose(r, r.type === "int" ? Math.round(n) : Number(n.toFixed(2)));
                 }
             }
 
             function activate(r) {
-                if (r.type === "combo") {
+                if (drafted(r)) {
+                    apply();
+                } else if (r.type === "combo") {
                     capturing = true;
                 } else if (r.type === "text") {
                     editing = true;
@@ -161,9 +184,10 @@ Scope {
                     editor.forceActiveFocus();
                 } else if (r.type === "action") {
                     runAction(r.action);
-                } else {
+                } else if (r.type === "module") {
                     adjust(r, 1);
                 }
+                // значения (bool/enum/int/float) без черновика: ↵ ничего не меняет — выбирают ←→, Space или клик
             }
 
             // ⇥ в захвате: сочетание, занятое niri (Mod+D и т.п.), не нажать — niri перехватит его раньше окна
@@ -191,9 +215,9 @@ Scope {
                 keys.forceActiveFocus();
             }
 
-            function fmt(r) {
+            function fmt(r, v) {
                 if (r.type === "module") return "‹ " + r.zone + " ›";
-                const v = value(r);
+                if (v === undefined) v = shown(r);
                 if (r.type === "bool") return v ? "[x]" : "[ ]";
                 if (r.type === "text") return JSON.stringify(v);
                 if (r.type === "combo") return capturing && r === row ? "нажмите сочетание…" : v ? "[" + v + "]" : "—";
@@ -208,6 +232,7 @@ Scope {
             }
 
             function valueColor(r) {
+                if (drafted(r)) return Theme.accent;
                 if (r.type === "module") return r.zone === "off" ? Theme.gray : Theme.blue;
                 if (r.type === "bool") return value(r) ? Theme.accent : Theme.gray;
                 if (r.type === "text") return Theme.aqua;
@@ -234,6 +259,7 @@ Scope {
 
             onCurChanged: {
                 capturing = false;
+                draft = null;   // ушли со строки — не подтверждено, значит не применяем
                 list.positionViewAtIndex(cur, ListView.Contain);
             }
 
@@ -300,6 +326,11 @@ Scope {
                             }
                             return;
                         }
+                        if (win.draft && (k === Qt.Key_Escape || k === Qt.Key_Q)) {
+                            win.draft = null;
+                            event.accepted = true;
+                            return;
+                        }
                         const shift = event.modifiers & Qt.ShiftModifier;
                         const isModule = r && r.type === "module";
                         if (isModule && ((shift && k === Qt.Key_Up) || (shift && k === Qt.Key_K))) {
@@ -326,8 +357,12 @@ Scope {
                             win.adjust(r, 1);
                         } else if (r && (k === Qt.Key_Left || k === Qt.Key_H)) {
                             win.adjust(r, -1);
-                        } else if (r && (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space)) {
+                        } else if (r && (k === Qt.Key_Return || k === Qt.Key_Enter)) {
                             win.activate(r);
+                        } else if (r && k === Qt.Key_Space) {
+                            // Space — следующее значение в черновик; у текста, сочетаний и действий — как ↵
+                            if (["bool", "enum", "int", "float"].includes(r.type)) win.adjust(r, 1);
+                            else win.activate(r);
                         } else if (r && k === Qt.Key_R) {
                             win.reset(r);
                         } else {
@@ -511,6 +546,12 @@ Scope {
                                         }
                                         Item { Layout.fillWidth: true }
 
+                                        // черновик: «было →» серым перед новым значением
+                                        T {
+                                            visible: win.drafted(line.modelData) && line.current
+                                            text: win.fmt(line.modelData, win.value(line.modelData)).replace(/^‹ | ›$/g, "") + " → "
+                                            color: Theme.gray
+                                        }
                                         T {
                                             visible: !(win.editing && line.current)
                                             text: line.modelData.header ? "" : win.fmt(line.modelData)
@@ -522,10 +563,21 @@ Scope {
                                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                                                 onClicked: mouse => {
                                                     win.cur = line.index;
-                                                    if (mouse.button === Qt.RightButton) win.adjust(line.modelData, -1);
-                                                    else win.activate(line.modelData);
+                                                    const r = line.modelData;
+                                                    // значения — в черновик (кнопка [↵] рядом применяет), остальное — как ↵
+                                                    if (["bool", "enum", "int", "float"].includes(r.type))
+                                                        win.adjust(r, mouse.button === Qt.RightButton ? -1 : 1);
+                                                    else if (mouse.button === Qt.RightButton) win.adjust(r, -1);
+                                                    else win.activate(r);
                                                 }
                                             }
+                                        }
+                                        T {
+                                            visible: win.drafted(line.modelData) && line.current
+                                            text: "  [↵]"
+                                            color: Theme.accent
+                                            font.bold: true
+                                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.apply() }
                                         }
                                     }
 
@@ -595,7 +647,9 @@ Scope {
                         T {
                             textFormat: Text.StyledText
                             color: Theme.gray
-                            text: (win.capturing
+                            text: (win.draft
+                                ? [["↵", "применить"], ["esc", "отмена"], ["←→", "значение"], ["r", "по умолчанию"]]
+                                : win.capturing
                                 ? [["…", "нажмите сочетание"], ["⇥", "ввести текстом"], ["⌫", "убрать"], ["esc", "отмена"]]
                                 : win.editing
                                 ? [["↵", "сохранить"], ["esc", "отмена"]]

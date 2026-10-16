@@ -149,9 +149,9 @@ docs/                документация — GitHub Pages из main /docs (
 
 | type | поля | поведение |
 |---|---|---|
-| `bool` | `def` | ←→/↵ переключают |
-| `int`, `float` | `min, max, step, def` | ←→ ± step, float округляется до 2 знаков |
-| `enum` | `options, def` | ←→ по кругу |
+| `bool` | `def` | ←→ / Space / клик — переключить в черновик |
+| `int`, `float` | `min, max, step, def` | ←→ ± step в черновик, float округляется до 2 знаков |
+| `enum` | `options, def` | ←→ по кругу в черновик |
 | `text` | `def` | ↵ — поле редактирования |
 | `action` | `action` | ↵ — действие; строится `act(name, label, hint)`, ключ `action.<name>` (значения нет); обработчик — `switch` в `SettingsWindow.runAction()` |
 | `module` | `id, zone` | строки раздела bar/ из `barRows()`: ←→ — зона, ⇧↑↓ / K/J — порядок |
@@ -178,6 +178,11 @@ docs/                документация — GitHub Pages из main /docs (
 - `QT_QPA_PLATFORMTHEME "qt6ct"` — блок `environment` в `misc.kdl` при `shell.theme.sync`.
 - Уже открытые GTK-окна новый CSS не перечитывают (проверено: переключение gtk-theme туда-обратно не помогает) —
   только после перезапуска приложения. Новые окна получают изменения сразу.
+
+**Черновик.** Значения (`bool`, `enum`, `int`, `float`) меняются не сразу: ←→, Space, клик и `r` (по умолчанию) пишут
+`win.draft = {key, value}` (`propose`), строка показывает `было → ‹ станет ›` и кнопку `[↵]`; применяет только ↵
+(`activate` → `apply`), Esc или смена строки (`onCurChanged`) — отменяют. ↵ без черновика значение не меняет.
+`text` и `combo` и так подтверждаются ↵; строки модулей bar/ (зона, порядок) меняются сразу.
 
 **Окно настроек.** Открытый раздел помнит `Settings.page` (окно возвращается к нему); `Settings.show(id)`
 открывает нужный, IPC `settings open <id>`. `/` — поиск: `S.searchRows(sections, query)` ищет каждое
