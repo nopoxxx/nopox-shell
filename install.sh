@@ -98,7 +98,7 @@ choose() {
     i=1
     for line in "$@"; do
         id=${line%%|*}
-        printf '   %s%2d)%s %-12s %s%s%s%s\n' "$A" "$i" "$N" "$id" "$D" "${line#*|}" "$N" \
+        printf '   %s%2d)%s %-14s %s%s%s%s\n' "$A" "$i" "$N" "$id" "$D" "${line#*|}" "$N" \
             "$([ "$id" = "$def" ] && printf '  %s← по умолчанию%s' "$Y" "$N")"
         i=$((i + 1))
     done
@@ -503,26 +503,24 @@ fi
 case "$DISCORD_MOD" in
     vencord)
         step "Discord: Vencord"
+        # пакет discord — только загрузчик: сам Discord докачивает себя в ~/.config/discord при первом запуске,
+        # поэтому Vencord ставится от пользователя туда, а не в /opt
         tmp=$(mktemp)
         curl -fsSL -o "$tmp" https://github.com/Vendicated/VencordInstaller/releases/latest/download/VencordInstallerCli-linux \
             || die "не скачался установщик Vencord"
         sudo install -Dm755 "$tmp" /usr/local/bin/VencordInstallerCli
         rm -f "$tmp"
-        sudo /usr/local/bin/VencordInstallerCli -install -location /opt/discord && ok "Vencord установлен в /opt/discord"
-        # обновление Discord из pacman затирает патч — хук ставит его заново
-        sudo install -Dm644 /dev/stdin /etc/pacman.d/hooks/vencord.hook <<'EOF'
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Type = Package
-Target = discord
-
-[Action]
-Description = Vencord: патчу Discord после обновления…
-When = PostTransaction
-Exec = /usr/local/bin/VencordInstallerCli -install -location /opt/discord
-EOF
-        ok "хук pacman: Vencord переустанавливается после обновлений Discord"
+        if compgen -G "$HOME/.config/discord/app-*/resources/app.asar" >/dev/null; then
+            if VencordInstallerCli -install -location "$HOME/.config/discord" </dev/null >/dev/null 2>&1; then
+                ok "Vencord установлен"
+            else
+                warn "Vencord не встал — попробуйте: VencordInstallerCli -install -location ~/.config/discord"
+            fi
+        else
+            warn "Discord ещё не запускался — запустите его один раз, закройте и выполните:"
+            info "VencordInstallerCli -install -location ~/.config/discord"
+        fi
+        info "Discord обновляет себя сам; если Vencord пропал: VencordInstallerCli -repair -location ~/.config/discord"
         ;;
     betterdiscord)
         step "Discord: BetterDiscord"

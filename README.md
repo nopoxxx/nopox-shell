@@ -31,13 +31,25 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
 bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)
 ```
 
-Установщик ставит пакеты (и `paru`, если его нет), клонирует shell в `~/.config/quickshell`,
-ставит конфиг niri (или дописывает к вашему два `include`), по желанию — kitty в Gruvbox и greeter.
-Всё, что заменяется, остаётся рядом как `*.bak-<дата>`.
+Установщик сначала спрашивает, что ставить, показывает итог и только потом устанавливает:
+
+- **терминал** — kitty, alacritty, ghostty или foot (конфиг в Gruvbox + Terminess, `Mod+T`);
+- **оболочка** — zsh (подсказки и подсветка), fish или bash; приглашение как панель: `user@host ~/путь ❯`,
+  красный `❯` — если команда завершилась ошибкой;
+- **браузер** — Helium, Firefox, Zen, Chromium, Brave или Vivaldi (станет браузером по умолчанию);
+- **файловый менеджер** — Thunar, Nautilus, Dolphin, Nemo или yazi в терминале (`Mod+E`);
+- **программы** по группам: медиа, общение, графика (в т. ч. PhotoCraft), работа и код, игры, утилиты;
+- **Discord** — как есть, с Vencord, с BetterDiscord или Vesktop вместо него.
+
+Дальше — пакеты (программы через `paru`: из репозиториев или AUR), клон shell в `~/.config/quickshell`,
+конфиг niri (или два `include` к вашему) и, по желанию, greeter. Всё, что заменяется, остаётся рядом как `*.bak-<дата>`.
 
 | Флаг | Что делает |
 |---|---|
 | `--yes` | без вопросов, всё по умолчанию |
+| `--terminal`, `--shell`, `--browser`, `--files` | выбор без вопроса, например `--terminal foot` |
+| `--apps mpv,discord,steam` | программы (`none` — никаких) |
+| `--discord-mod vencord` | `none`, `vencord`, `betterdiscord`, `vesktop` |
 | `--keep-niri-config` | не заменять ваш `config.kdl`, только дописать `include` |
 | `--no-greeter` | не ставить greeter |
 | `--branch <ветка>` | другая ветка репозитория |
