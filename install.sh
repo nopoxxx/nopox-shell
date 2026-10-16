@@ -291,7 +291,7 @@ step "Пакеты"
 PKGS=(
     niri quickshell xwayland-satellite git curl xdg-utils
     networkmanager pipewire pipewire-pulse wireplumber upower pacman-contrib libnotify
-    polkit-gnome gnome-keyring xdg-desktop-portal-gnome xdg-desktop-portal-gtk
+    polkit-gnome gnome-keyring xdg-desktop-portal-gnome xdg-desktop-portal-gtk qt6ct adw-gtk-theme
     ttf-terminus-nerd noto-fonts noto-fonts-emoji
     wl-clipboard brightnessctl playerctl pavucontrol fastfetch base-devel
     "$TERMINAL"
@@ -360,7 +360,8 @@ else
 fi
 
 # браузер, файловый менеджер и программы — через paru: из репозиториев, если есть, иначе из AUR
-EXTRA=("${APP_PKGS[@]}")
+# иконки Gruvbox Plus — из AUR, поэтому не в PKGS; shell включает их в GTK и Qt (темы Qt и GTK)
+EXTRA=("${APP_PKGS[@]}" gruvbox-plus-icon-theme)
 [ -n "${BROWSER_PKG[$BROWSER]}" ] && EXTRA+=("${BROWSER_PKG[$BROWSER]}")
 [ -n "${FILES_PKG[$FILES]}" ] && EXTRA+=("${FILES_PKG[$FILES]}")
 

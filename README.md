@@ -22,6 +22,9 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
   отключить, вернуть. Сочетание можно нажать или ввести текстом; перед применением — `niri validate`.
 - **Настройки** (`Mod+S`): niri (клавиатура, мышь, окна, курсор, анимации),
   shell, раскладка панели. Изменения применяются сразу.
+- **Темы приложений** (`Mod+S → shell/ → темы Qt и GTK`): GTK- и Qt-приложения в той же палитре Gruvbox,
+  с тем же акцентом и шрифтом, что и shell, и иконками Gruvbox Plus — через adw-gtk3/libadwaita и qt6ct. Уже открытые окна
+  подхватывают изменения после перезапуска приложения.
 
 ## Установка
 
@@ -59,7 +62,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/ins
 
 ```sh
 sudo pacman -S --needed niri quickshell xwayland-satellite kitty git networkmanager pipewire \
-    pipewire-pulse wireplumber upower pacman-contrib libnotify polkit-gnome ttf-terminus-nerd paru
+    pipewire-pulse wireplumber upower pacman-contrib libnotify polkit-gnome ttf-terminus-nerd paru \
+    qt6ct adw-gtk-theme xdg-desktop-portal-gnome
 git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell
 ```
 
@@ -96,6 +100,8 @@ Greeter работает под пользователем `greeter` и не в�
 | `~/.config/nopox/settings.json` | настройки — только отличия от умолчаний |
 | `~/.config/niri/nopox/` | настройки niri по файлу на раздел: `input`, `displays`, `layout`, `window-rules`, `cursor`, `animations`, `misc`, `binds` — генерирует shell, вручную не править |
 | `~/.config/niri/nopox/keys.kdl` | свои бинды из окна биндов, подключён в `config.kdl` последним |
+| `~/.config/gtk-3.0/nopox.css`, `gtk-4.0/nopox.css` | палитра для GTK — подключается первой строкой `gtk.css`, свои стили пишите после неё |
+| `~/.config/qt6ct/` | палитра и шрифт для Qt (`QT_QPA_PLATFORMTHEME=qt6ct` задаёт `nopox/misc.kdl`) |
 | `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим заполнения |
 | `~/Pictures/Wallpapers/` | коллекция обоев, сюда же скачивается с wallhaven |
 | `/var/lib/nopox-greeter/<user>/` | копия настроек и обоев для greeter |

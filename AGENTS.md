@@ -29,7 +29,8 @@ niri validate -c ~/.config/niri/config.kdl  # проверить сгенери�
 NOPOX_GREETER=1 qs -p /usr/share/nopox-shell/greeter.qml   # greeter (обычно запускает greetd)
 ```
 
-Quickshell перезагружает QML при изменении файлов сам; ошибки QML и `console.warn` видны в выводе `qs`.
+Quickshell перезагружает конфиг при изменении `.qml`-файлов сам, а при изменении только `.js`
+(например `services/settings.js`) — нет: нужен перезапуск `qs`. Ошибки QML и `console.warn` видны в выводе `qs`.
 Модули импортируются как `qs` (корень), `qs.services`, `qs.bar` — это имена каталогов.
 
 ## 3. Дерево файлов
@@ -68,6 +69,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   ShellUpdate.qml    git fetch/pull самого shell, список новых коммитов, перезапуск, обновление greeter
   Updates.qml        число обновлений (checkupdates + paru -Qua) раз в час, запуск paru -Syu
   Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.cmd()
+  AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
 bar/                 модули панели и их попапы
@@ -128,6 +130,26 @@ README.md            пользовательская документация
 | `module` | `id, zone` | строки раздела bar/ из `barRows()`: ←→ — зона, ⇧↑↓ / K/J — порядок |
 
 `S.niriFileOf(key)` — в каком файле `nopox/` живёт настройка (показывается в подсказке).
+
+### 4.1a Темы приложений (`services/AppTheme.qml`, генерация — в `settings.js`)
+
+Настройки `shell.theme.sync` (вкл/выкл) и `shell.theme.font` (шрифт shell в интерфейсе приложений);
+цвета — `GRUVBOX` + `ACCENTS[shell.accent]`, размер — `shell.fontSize` (px × 0.75 → pt), курсор — `niri.cursor.size`.
+
+- `S.themeFiles(get, home)` → `{ путь от ~/.config: текст }`:
+  `gtk-3.0/nopox.css` (`@define-color` именованных цветов libadwaita — их понимает тема adw-gtk3),
+  `gtk-4.0/nopox.css` (то же + CSS-переменные `--window-bg-color` в `:root`: libadwaita ≥ 1.6 читает их),
+  `qt6ct/colors/nopox.conf` (22 роли QPalette по порядку, от WindowText до Accent),
+  `qt6ct/qt6ct.conf` (Fusion, своя палитра, иконки `ICONS`, шрифты в формате `QFont::toString`).
+  Синхронизация выключена → `nopox.css` пустые, qt6ct не трогается.
+- `S.themeGsettings(get)` → `[[ключ org.gnome.desktop.interface, GVariant | "" — reset]]`:
+  `color-scheme`, `gtk-theme adw-gtk3-dark`, `icon-theme` (`ICONS` = Gruvbox-Plus-Dark из AUR `gruvbox-plus-icon-theme`), `accent-color` (через `GNOME_ACCENTS`, aqua → teal),
+  `cursor-size`, шрифты. Синхронизация выключена → пустой список: gsettings не трогаем вовсе.
+- `AppTheme` сериализует оба результата в `state` и пишет, только когда строка изменилась (задержка 500 мс);
+  `@import "nopox.css";` вставляется **первой строкой** `gtk.css` (иначе GTK проигнорирует @import).
+- `QT_QPA_PLATFORMTHEME "qt6ct"` — блок `environment` в `misc.kdl` при `shell.theme.sync`.
+- Уже открытые GTK-окна новый CSS не перечитывают (проверено: переключение gtk-theme туда-обратно не помогает) —
+  только после перезапуска приложения. Новые окна получают изменения сразу.
 
 ### 4.2 Конфиг niri (`~/.config/niri/`)
 
@@ -267,6 +289,9 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 |---|---|---|
 | `~/.config/nopox/settings.json` | настройки, только отличия от умолчаний | Settings, install.sh (`set_setting`) |
 | `~/.config/niri/nopox/*.kdl` | сгенерированный конфиг niri | Settings, Binds (keys.kdl) |
+| `~/.config/gtk-{3,4}.0/nopox.css`, `@import` в `gtk.css` | палитра GTK | AppTheme |
+| `~/.config/qt6ct/qt6ct.conf`, `qt6ct/colors/nopox.conf` | палитра и шрифт Qt | AppTheme |
+| gsettings `org.gnome.desktop.interface` | тёмная схема, adw-gtk3-dark, иконки, акцент, шрифт, курсор | AppTheme |
 | `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим | Wallpaper |
 | `~/Pictures/Wallpapers/` | коллекция, загрузки wallhaven как `wallhaven-<id>.<ext>` | Wallpaper |
 | `/var/lib/nopox-greeter/<user>/` | копия для greeter | GreeterSync |
@@ -309,7 +334,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 при необходимости — бинд в `binds.kdl` внутри `niriFiles()` и пункт в меню.
 
 **Новый сервис.** `services/Name.qml` с `pragma Singleton` и `Singleton { }`. Синглтон создаётся при первом
-обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`).
+обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`).
 
 ## 8. Соглашения кода
 
@@ -332,6 +357,8 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 
 - `Settings.set` сравнивает с умолчанием через `===` — для объектов (layout, keys) ключ всегда пишется.
 - Не писать файлы `nopox/*.kdl` часто: niri перечитывает конфиг на каждую запись (отсюда задержки и кэш `_written`).
+- Приложения, запущенные из shell (меню, трей), наследуют окружение процесса `qs`, а не текущий `environment`
+  из niri: переменная, добавленная в `misc.kdl`, дойдёт до них после перезапуска shell или нового входа.
 - `normalizeLayout` хранит `off` явно: модуль, которого нет ни в одной зоне, считается новым.
 - Repeater отдаёт копии объектов — сравнивать по `name`/`id`, а не `===` (см. DisplaysWindow).
 - `Niri.windows` — объект по id; `Niri.workspaces` отсортированы по `idx`; номер стола относится к монитору,
@@ -352,7 +379,7 @@ Bash, `set -euo pipefail`, запуск от обычного пользоват
 терминал, оболочка, браузер, файловый менеджер, программы из `APP_CATALOG` `группа|id|описание|пакеты|умолч.`,
 мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`) → paru (`paru_ok` проверяет, что он
 **запускается**; иначе: из репозитория → сборка `paru-bin` → сборка `paru` из исходников через `build_aur`) →
-программы через `paru`, затем сверка `pacman -Qq` и честный список непоставленных →
+программы и иконки `gruvbox-plus-icon-theme` (AUR) через `paru`, затем сверка `pacman -Qq` и честный список непоставленных →
 клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files` →
 конфиг niri (замена или дописать два include; затем `niri validate`, при ошибке — откат) → конфиг
 терминала → оболочка → приложения по умолчанию → Discord → greeter → итог.

@@ -7,6 +7,7 @@ ShellRoot {
     // даже если модуль nopox ↑ убран с панели
     readonly property var _shellUpdate: ShellUpdate
     readonly property var _binds: Binds   // пишет nopox/keys.kdl при старте
+    readonly property var _appTheme: AppTheme   // темы GTK и Qt вслед за shell
 
     Variants {
         model: Quickshell.screens
