@@ -294,6 +294,8 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 `centerOpen` скрывает попапы, пока открыта история.
 
 ### 4.7 Блокировка и greeter
+Если меню открыто сразу в разделе (`launcher apps`), этот уровень — нижняя граница (`win.base`):
+Esc/Backspace/← на нём закрывают окно, а не поднимаются в корень.
 
 - `LockScreen`: `WlSessionLock` + `PamContext` (config `login`, user `Sys.user`). При падении quickshell
   сессия остаётся заблокированной — это поведение протокола. `IdleMonitor` по `shell.lock.idle` (мин).

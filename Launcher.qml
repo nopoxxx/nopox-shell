@@ -7,7 +7,8 @@ import qs.services
 import "services/fuzzy.js" as Fuzzy
 
 // Меню в духе omarchy: сначала раздел (apps/, packages/, system/ …), потом действие.
-// Разделы ведут себя как каталоги: путь в заголовке, Esc или ← — на уровень выше.
+// Разделы ведут себя как каталоги: путь в заголовке, Esc или ← — на уровень выше
+// (но не выше раздела, в котором меню открыли: там Esc закрывает окно).
 //   qs ipc call launcher toggle — корень меню
 //   qs ipc call launcher apps   — сразу список программ
 Scope {
@@ -163,6 +164,8 @@ Scope {
             WlrLayershell.namespace: "nopox-launcher"
 
             property var stack: []
+            // глубина, с которой меню открыли: выше неё Esc не поднимается, а закрывает окно
+            property int base: 1
             readonly property var node: stack[stack.length - 1] ?? null
             readonly property string path: "~/" + stack.slice(1).map(n => n.label + "/").join("")
             readonly property var items: node ? (node.children ?? root.providerItems(node.provider, input.text.trim())) : []
@@ -191,6 +194,7 @@ Scope {
                 const start = root.menu.children.find(c => c.label === root.startAt);
                 if (start) s.push(start);
                 stack = s;
+                base = s.length;
             }
 
             onNodeChanged: if (node?.provider) root.load(node.provider)
@@ -207,7 +211,7 @@ Scope {
             }
 
             function back() {
-                if (stack.length > 1) {
+                if (stack.length > base) {
                     stack = stack.slice(0, -1);
                     input.text = "";
                 } else {
@@ -294,7 +298,7 @@ Scope {
                                 const cur = win.results[list.currentIndex];
                                 if (event.key === Qt.Key_Escape) {
                                     win.back();
-                                } else if (empty && (event.key === Qt.Key_Backspace || event.key === Qt.Key_Left) && win.stack.length > 1) {
+                                } else if (empty && (event.key === Qt.Key_Backspace || event.key === Qt.Key_Left) && win.stack.length > win.base) {
                                     win.back();
                                 } else if (event.key === Qt.Key_Down || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
                                     list.incrementCurrentIndex();
