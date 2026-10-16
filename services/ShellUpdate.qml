@@ -106,7 +106,7 @@ Singleton {
             root.commits = [];
             root.updated = true;
             root.restartShell("nopox-shell обновлён",
-                root.greeterInstalled ? "Greeter обновляется отдельно: setup/ → greeter update" : "");
+                root.greeterInstalled ? "Greeter обновляется отдельно: Mod+S → system/ → обновить greeter" : "");
         }
     }
 

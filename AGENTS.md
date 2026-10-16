@@ -23,12 +23,14 @@
 ## 2. Запуск и проверка
 
 ```sh
-pkill -x qs; niri msg action spawn -- qs   # перезапустить shell (так же делает меню setup/ → restart shell)
+pkill -x qs; niri msg action spawn -- qs   # перезапустить shell (так же делает Mod+S → system/ → перезапустить shell)
 qs ipc call <target> <function>             # дёрнуть IPC (таблица в §6)
 niri validate -c ~/.config/niri/config.kdl  # проверить сгенерированный конфиг niri
 NOPOX_GREETER=1 qs -p /usr/share/nopox-shell/greeter.qml   # greeter (обычно запускает greetd)
 ```
 
+Из SSH (вне сессии) `qs ipc`/`qs list` экземпляр не видят — ищут на своём Wayland-дисплее:
+нужен `WAYLAND_DISPLAY=wayland-1` (или `qs ipc --pid $(pgrep -x qs) call …`).
 Quickshell перезагружает конфиг при изменении `.qml`-файлов сам, а при изменении только `.js`
 (например `services/settings.js`) — нет: нужен перезапуск `qs`. Ошибки QML и `console.warn` видны в выводе `qs`.
 Модули импортируются как `qs` (корень), `qs.services`, `qs.bar` — это имена каталогов.
@@ -43,9 +45,9 @@ Bar.qml              PanelWindow панели: три BarZone, автоскры�
 BarZone.qml          Row модулей по списку id; Loader по bar/<file>.qml; разделители между видимыми
 TuiPopup.qml         PopupWindow в TUI-рамке с заголовком [ title ] — база всех попапов панели
 Background.qml       обои на слое Background (namespace nopox-wallpaper), плавная смена, fill/fit/stretch
-Launcher.qml         меню Mod+D: дерево разделов, провайдеры apps/repo/aur/installed, нечёткий поиск
+Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск
 WallPicker.qml       выбор обоев: local и wallhaven, сетка превью, бесконечная прокрутка
-SettingsWindow.qml   окно настроек в стиле menuconfig; строки из S.sections()
+SettingsWindow.qml   окно настроек в стиле menuconfig: строки из S.sections(), поиск (/), действия — runAction()
 DisplaysWindow.qml   мониторы: карта, режим/масштаб/поворот/расположение/VRR/основной, откат через 15 с
 BindsWindow.qml      бинды niri: список с поиском, редактор (сочетание/действие/подпись), конфликты
 NotifPopups.qml      стопка всплывающих уведомлений (namespace nopox-notify)
@@ -68,7 +70,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   Notifs.qml         NotificationServer: история (до 100), попапы (ListModel ключей), DND, IPC notify
   ShellUpdate.qml    git fetch/pull самого shell, список новых коммитов, перезапуск, обновление greeter
   Updates.qml        число обновлений (checkupdates + paru -Qua) раз в час, запуск paru -Syu
-  Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.cmd()
+  Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.edit(path), Term.cmd(), configPath
   AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
@@ -116,9 +118,21 @@ README.md            пользовательская документация
 - Миграция старой схемы (`nopox.kdl`, `nopox-binds.kdl`, `nopox-keys.kdl` рядом с config.kdl) —
   процесс `migrate` после первой записи; при неудачном `niri validate` возвращает config.kdl.
 
-**Схема окна настроек** — `S.sections(outputs, layout)`: массив `{id, rows}`; разделы
-`niri`, `shell`, `bar`, `notify`, `lock`, `wallpaper`. Строка — `{header}` или
-`{key, label, type, def, hint, …}`. Типы:
+**Схема окна настроек** — `S.sections(outputs, layout)`: массив `{id, title, rows}`. Разделы — по тому,
+что ищет пользователь, а не по тому, кто читает настройку (niri или shell):
+
+| id | title | что внутри |
+|---|---|---|
+| `look` | вид | акцент, размер шрифта; темы Qt/GTK и шрифт в приложениях; обои (выбрать, wallhaven, заполнение); строк в меню |
+| `windows` | окна | отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, CSD, анимации |
+| `input` | ввод | клавиатура; клавиши (бинды, подсказка niri); мышь и тачпад; курсор |
+| `bar` | панель | модули по зонам; панель; prompt; вид модулей (часы, график cpu, трей) |
+| `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора |
+| `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
+| `system` | система | устройства (мониторы, сеть, звук); терминал и файловый менеджер; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
+
+Новую настройку кладите туда, где её будут искать; раздел и группу (`header`) поиск тоже учитывает.
+Строка — `{header}` или `{key, label, type, def, hint, …}`. Типы:
 
 | type | поля | поведение |
 |---|---|---|
@@ -126,7 +140,7 @@ README.md            пользовательская документация
 | `int`, `float` | `min, max, step, def` | ←→ ± step, float округляется до 2 знаков |
 | `enum` | `options, def` | ←→ по кругу |
 | `text` | `def` | ↵ — поле редактирования |
-| `action` | `action` | ↵ — действие; обработчик в `SettingsWindow.activate()` (binds, displays, shellUpdate, lock, lockPreview, иначе — picker) |
+| `action` | `action` | ↵ — действие; строится `act(name, label, hint)`, ключ `action.<name>` (значения нет); обработчик — `switch` в `SettingsWindow.runAction()` |
 | `module` | `id, zone` | строки раздела bar/ из `barRows()`: ←→ — зона, ⇧↑↓ / K/J — порядок |
 
 `S.niriFileOf(key)` — в каком файле `nopox/` живёт настройка (показывается в подсказке).
@@ -150,6 +164,13 @@ README.md            пользовательская документация
 - `QT_QPA_PLATFORMTHEME "qt6ct"` — блок `environment` в `misc.kdl` при `shell.theme.sync`.
 - Уже открытые GTK-окна новый CSS не перечитывают (проверено: переключение gtk-theme туда-обратно не помогает) —
   только после перезапуска приложения. Новые окна получают изменения сразу.
+
+**Окно настроек.** Открытый раздел помнит `Settings.page` (окно возвращается к нему); `Settings.show(id)`
+открывает нужный, IPC `settings open <id>`. `/` — поиск: `S.searchRows(sections, query)` ищет каждое
+слово в подписи, подсказке, ключе (у модулей — id), группе и разделе; результаты под заголовками
+`раздел/ · группа`, Esc сбрасывает. `runAction()` закрывает настройки; для окон binds, displays, picker,
+wallhaven, lockPreview ставит `Settings.returnHere` — закрываясь, такое окно зовёт `Settings.back()`
+и настройки открываются снова. Новое окно-действие должно делать так же (`onOpenChanged: if (!open) Settings.back()`).
 
 ### 4.2 Конфиг niri (`~/.config/niri/`)
 
@@ -248,7 +269,9 @@ Scope {
 Выделение строки — `▌ ` акцентом и фон `Theme.bg1`; изменённое значение — ` *`.
 Наведение мыши выделяет строку только при реальном сдвиге курсора (`lastMouse`).
 
-**Launcher**: узел дерева `{label, desc, icon, children | provider | run}`. Провайдеры:
+**Launcher**: меню — только действия, всё настраиваемое — в окне настроек (`setup` открывает его).
+Корень: `apps/`, `wallpaper`, `setup`, `packages/` (install, aur, remove, update), `system/` (lock, suspend,
+logout, reboot, poweroff), `about`. Узел дерева `{label, desc, icon, children | provider | run}`. Провайдеры:
 `apps` (DesktopEntries), `repo` (`pacman -Sl`), `installed` (`pacman -Qe`), `aur` (одна строка `paru <запрос>`).
 `repo`/`installed` кешируются до следующего открытия. Разделы показываются как каталоги (синие, со `/`).
 
@@ -274,7 +297,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
   Greeter работает под пользователем `greeter`, домашние папки не видит — поэтому `GreeterSync`
   из сессии пользователя копирует `settings.json`, обои и `wallpaper-fill` в `/var/lib/nopox-greeter/$USER/`.
   Последний пользователь и сессия — `/var/lib/nopox-greeter/.greeter/last`.
-  **После изменений в QML greeter надо переустановить** (`setup/ → greeter update` или `sudo extras/install-greeter.sh`).
+  **После изменений в QML greeter надо переустановить** (`Mod+S → system/ → обновить greeter` или `sudo extras/install-greeter.sh`).
 
 ### 4.8 Обновления
 
@@ -304,7 +327,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 |---|---|---|
 | `launcher` | `toggle`, `apps`, `open`, `close` (не `show` — занято `qs ipc show`) | Launcher.qml |
 | `wallpaper` | `picker`, `set <path>`, `fill <fill\|fit\|stretch>` | WallPicker.qml |
-| `settings` | `toggle` | SettingsWindow.qml |
+| `settings` | `toggle`, `open <раздел>` (`""` — последний открытый) | SettingsWindow.qml |
 | `displays` | `toggle` | DisplaysWindow.qml |
 | `binds` | `toggle` | BindsWindow.qml |
 | `lock` | `lock`, `locked`, `preview` | LockScreen.qml |
@@ -316,7 +339,8 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 
 **Новая настройка.** Добавить строку в нужный раздел `sections()` (`key`, `label`, `type`, `def`,
 `hint`, ограничения). Читать через `Settings.get("…")` — привязки обновятся сами. Если влияет на niri —
-использовать в `niriFiles()` и дописать ключ в `niriFileOf()`. Для `action` — ветка в `SettingsWindow.activate()`.
+использовать в `niriFiles()` и дописать ключ в `niriFileOf()`. Действие — `act("имя", "подпись", "подсказка")`
+и `case` в `SettingsWindow.runAction()`; если оно открывает окно — добавить имя в список `returnHere`.
 
 **Новый модуль панели.** `bar/Name.qml` (обычно `Seg { … }` с `import qs`, `qs.bar`, `qs.services`)
 со свойствами `bar` и `available`; запись в `MODULES` (`id`, `file: "Name"`, `desc`, `inline` при
@@ -327,11 +351,12 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 **Новый попап.** `bar/NamePopup.qml` на `TuiPopup { title: "…" }`, внутри — `T`, `RowLayout`,
 `Repeater`; кликабельные элементы — `[текст]` с `MouseArea` и `Qt.PointingHandCursor`.
 
-**Пункт меню.** Узел в `Launcher.menu`; для команды в терминале — `term("cmd", hold)`
-(плавающее окно `nopox-term`), для фоновой — `spawn([...])`.
+**Пункт меню.** Только для действий (настройки — в окно настроек). Узел в `Launcher.menu`; для команды
+в терминале — `term("cmd", hold)` (плавающее окно `nopox-term`), для фоновой — `spawn([...])`.
 
 **Новое окно.** Шаблон из §4.5, экземпляр — в `shell.qml`, IPC-команда, пресет в `BindsWindow.presets`,
-при необходимости — бинд в `binds.kdl` внутри `niriFiles()` и пункт в меню.
+при необходимости — бинд в `binds.kdl` внутри `niriFiles()`, строка-действие в настройках (с возвратом через
+`Settings.back()`) или пункт в меню. Заголовок — путь, откуда окно открывается: `[ ~/settings/system/displays/ ]`.
 
 **Новый сервис.** `services/Name.qml` с `pragma Singleton` и `Singleton { }`. Синглтон создаётся при первом
 обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`).
@@ -371,7 +396,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 - Бинды из `config.kdl` парсятся построчно: многострочные бинды в окне биндов не видны.
 - `paru-bin` из AUR — готовый бинарник под конкретную `libalpm.so.N`; после обновления pacman он перестаёт
   запускаться (так было с pacman 7.1 / libalpm.so.16). Проверять `paru --version`, а не `command -v paru`;
-  shell (`Updates`, меню install/update) при неработающем paru молча показывает 0 обновлений.
+  shell (`Updates`, меню packages/) при неработающем paru молча показывает 0 обновлений.
 
 ## 10. Установщик `install.sh`
 

@@ -143,6 +143,8 @@ Scope {
         onIsIdleChanged: if (isIdle) root.lock()
     }
 
+    onPreviewOpenChanged: if (!previewOpen) Settings.back()
+
     IpcHandler {
         target: "lock"
         function lock(): void { root.lock(); }

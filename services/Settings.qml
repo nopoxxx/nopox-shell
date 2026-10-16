@@ -22,6 +22,23 @@ Singleton {
     property bool loaded: false
     property var outputs: []
     property bool open: false   // окно настроек
+    property string page: ""    // открытый раздел (id из S.sections) — окно возвращается к нему
+
+    // окно, открытое из настроек (мониторы, бинды, обои, предпросмотр блокировки), при закрытии
+    // возвращает в настройки: такое окно вызывает back() в onOpenChanged
+    property bool returnHere: false
+
+    // открыть окно настроек; section — id раздела, "" — последний открытый
+    function show(section) {
+        if (section) page = section;
+        open = true;
+    }
+
+    function back() {
+        if (!returnHere) return;
+        returnHere = false;
+        open = true;
+    }
 
     function get(key) {
         return key in values ? values[key] : S.defaultOf(key, outputs);

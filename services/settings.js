@@ -21,7 +21,7 @@ const WIDTHS = { "1/3": "0.33333", "1/2": "0.5", "2/3": "0.66667", "1": "1.0" };
 // file — bar/<file>.qml; inline — часть prompt: между двумя inline-модулями пробел, а не разделитель
 
 const MODULES = [
-    { id: "user", file: "User", inline: true, desc: "user@host — стиль в shell/ → prompt" },
+    { id: "user", file: "User", inline: true, desc: "user@host — стиль в bar/ → prompt" },
     { id: "workspaces", file: "Workspaces", inline: true, desc: "~/ws/{1,[2],3}: клик — перейти, колёсико — листать" },
     { id: "jobs", file: "Jobs", inline: true, desc: "[3] — число окон на текущем столе" },
     { id: "command", file: "Command", inline: true, desc: "❯ активное окно как набранная команда" },
@@ -112,17 +112,70 @@ function barRows(layout) {
     return rows;
 }
 
+// Строка раздела: { header } или { key, label, type, def, hint, … }.
+// type: bool | int | float (min, max, step) | enum (options) | text | action (action — имя действия,
+// обработчик в SettingsWindow.actions) | module (раздел bar/, строится barRows).
+// У действий ключ action.<имя>: значения у них нет, ключ нужен только для поиска и подсказки.
+function act(name, label, hint) {
+    return { key: "action." + name, label, type: "action", action: name, hint: hint ?? "" };
+}
+
 // outputs: [{ name, scale, make, model, mode }] из `niri msg --json outputs`
 // layout: текущее значение shell.bar.layout — из него строится раздел bar/
 function sections(outputs, layout) {
     return [
-        { id: "niri", rows: [
+        { id: "look", title: "вид", rows: [
+            { header: "цвет и шрифт" },
+            { key: "shell.accent", label: "акцентный цвет", type: "enum", options: Object.keys(ACCENTS), def: "yellow", hint: "рамки окон shell, prompt, рамка фокуса niri и акцент в приложениях" },
+            { key: "shell.fontSize", label: "размер шрифта", type: "int", min: 10, max: 28, step: 1, def: 16 },
+
+            { header: "приложения" },
+            { key: "shell.theme.sync", label: "темы Qt и GTK", type: "bool", def: true,
+              hint: "тёмная схема, палитра Gruvbox, акцент и иконки Gruvbox Plus в GTK (adw-gtk3, libadwaita) и Qt (qt6ct); открытые окна — после перезапуска приложения" },
+            { key: "shell.theme.font", label: "шрифт shell в приложениях", type: "bool", def: true,
+              hint: "Terminess в интерфейсе GTK- и Qt-приложений; моноширинный шрифт ставится всегда" },
+
+            { header: "обои" },
+            act("picker", "выбрать обои", "локальная коллекция ~/Pictures/Wallpapers (Mod+Shift+W)"),
+            act("wallhaven", "найти на wallhaven", "поиск на wallhaven.cc, скачанные — в коллекцию"),
+            { key: "wallpaper.fill", label: "заполнение", type: "enum", options: ["fill", "fit", "stretch"], def: "fill", hint: "fill — обрезать, fit — вписать с полосами, stretch — растянуть" },
+
+            { header: "меню" },
+            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12, hint: "высота меню Mod+D" }
+        ] },
+
+        { id: "windows", title: "окна", rows: [
+            { header: "раскладка" },
+            { key: "niri.gaps", label: "отступы", type: "int", min: 0, max: 64, step: 2, def: 8 },
+            { key: "niri.colWidth", label: "ширина новой колонки", type: "enum", options: ["1/3", "1/2", "2/3", "1"], def: "1/2" },
+            { key: "niri.center", label: "центрировать колонку", type: "enum", options: ["never", "always", "on-overflow"], def: "never" },
+
+            { header: "рамки и тени" },
+            { key: "niri.ring", label: "рамка фокуса", type: "int", min: 0, max: 12, step: 1, def: 2, hint: "толщина в px, 0 — выключить; цвет — акцент (look/)" },
+            { key: "niri.border", label: "обводка окон", type: "int", min: 0, max: 12, step: 1, def: 0, hint: "толщина в px, 0 — выключить" },
+            { key: "niri.shadow", label: "тени", type: "bool", def: false },
+            { key: "niri.rules.radius", label: "скругление углов", type: "int", min: 0, max: 24, step: 2, def: 0, hint: "радиус в px, 0 — прямые углы" },
+
+            { header: "поведение" },
+            { key: "niri.rules.inactiveOpacity", label: "прозрачность неактивных, %", type: "int", min: 50, max: 100, step: 5, def: 100, hint: "100 — непрозрачные" },
+            { key: "niri.csd", label: "без декораций приложений", type: "bool", def: true, hint: "prefer-no-csd: просить приложения не рисовать свои заголовки" },
+
+            { header: "анимации" },
+            { key: "niri.anim", label: "включены", type: "bool", def: true },
+            { key: "niri.anim.slowdown", label: "замедление", type: "float", min: 0.25, max: 3, step: 0.25, def: 1 }
+        ] },
+
+        { id: "input", title: "ввод", rows: [
             { header: "клавиатура" },
             { key: "niri.kb.layout", label: "раскладки", type: "text", def: "us,ru", hint: "XKB-раскладки через запятую, например us,ru,ua" },
             { key: "niri.kb.options", label: "опции xkb", type: "text", def: "grp:alt_shift_toggle", hint: "например grp:win_space_toggle,ctrl:nocaps" },
             { key: "niri.kb.repeatDelay", label: "задержка повтора, мс", type: "int", min: 150, max: 1000, step: 25, def: 600 },
             { key: "niri.kb.repeatRate", label: "скорость повтора, /с", type: "int", min: 10, max: 80, step: 5, def: 25 },
             { key: "niri.kb.numlock", label: "numlock при входе", type: "bool", def: true },
+
+            { header: "клавиши" },
+            act("binds", "бинды", "все сочетания niri и nopox: изменить, добавить, отключить"),
+            act("hotkeys", "подсказка клавиш", "окно niri со всеми сочетаниями (Mod+Shift+/)"),
 
             { header: "мышь и тачпад" },
             { key: "niri.tp.tap", label: "тап для клика", type: "bool", def: true, hint: "тачпад" },
@@ -132,59 +185,12 @@ function sections(outputs, layout) {
             { key: "niri.ffm", label: "фокус следует за мышью", type: "bool", def: false },
             { key: "niri.warp", label: "курсор за фокусом", type: "bool", def: false, hint: "переносить курсор в окно, получившее фокус с клавиатуры" },
 
-            { header: "окна" },
-            { key: "niri.gaps", label: "отступы", type: "int", min: 0, max: 64, step: 2, def: 8 },
-            { key: "niri.colWidth", label: "ширина новой колонки", type: "enum", options: ["1/3", "1/2", "2/3", "1"], def: "1/2" },
-            { key: "niri.center", label: "центрировать колонку", type: "enum", options: ["never", "always", "on-overflow"], def: "never" },
-            { key: "niri.ring", label: "рамка фокуса", type: "int", min: 0, max: 12, step: 1, def: 2, hint: "толщина в px, 0 — выключить; цвет — акцент из раздела shell" },
-            { key: "niri.border", label: "обводка окон", type: "int", min: 0, max: 12, step: 1, def: 0, hint: "толщина в px, 0 — выключить" },
-            { key: "niri.shadow", label: "тени", type: "bool", def: false },
-            { key: "niri.csd", label: "без декораций приложений", type: "bool", def: true, hint: "prefer-no-csd: просить приложения не рисовать свои заголовки" },
-
-            { header: "правила окон" },
-            { key: "niri.rules.radius", label: "скругление углов", type: "int", min: 0, max: 24, step: 2, def: 0, hint: "радиус в px, 0 — прямые углы" },
-            { key: "niri.rules.inactiveOpacity", label: "прозрачность неактивных, %", type: "int", min: 50, max: 100, step: 5, def: 100, hint: "100 — непрозрачные" },
-
             { header: "курсор" },
             { key: "niri.cursor.size", label: "размер", type: "int", min: 16, max: 64, step: 4, def: 24 },
-            { key: "niri.cursor.hide", label: "прятать при наборе", type: "bool", def: false },
-
-            { header: "анимации" },
-            { key: "niri.anim", label: "включены", type: "bool", def: true },
-            { key: "niri.anim.slowdown", label: "замедление", type: "float", min: 0.25, max: 3, step: 0.25, def: 1 },
-
-            { header: "клавиши" },
-            { key: "niri.binds", label: "бинды", type: "action", action: "binds", hint: "все сочетания niri и nopox: изменить, добавить, отключить" },
-
-            { header: "мониторы" },
-            { key: "niri.displays", label: "мониторы", type: "action", action: "displays",
-              hint: outputs.map(o => o.name).join(", ") + " — режим, масштаб, поворот, расположение, VRR" }
+            { key: "niri.cursor.hide", label: "прятать при наборе", type: "bool", def: false }
         ] },
 
-        { id: "shell", rows: [
-            { header: "оформление" },
-            { key: "shell.accent", label: "акцентный цвет", type: "enum", options: Object.keys(ACCENTS), def: "yellow", hint: "рамки окон shell, prompt и рамка фокуса niri" },
-            { key: "shell.fontSize", label: "размер шрифта", type: "int", min: 10, max: 28, step: 1, def: 16 },
-            { key: "shell.theme.sync", label: "темы Qt и GTK", type: "bool", def: true,
-              hint: "тёмная схема, палитра Gruvbox, акцент и иконки Gruvbox Plus в GTK (adw-gtk3, libadwaita) и Qt (qt6ct); открытые окна — после перезапуска приложения" },
-            { key: "shell.theme.font", label: "шрифт shell в приложениях", type: "bool", def: true,
-              hint: "Terminess в интерфейсе GTK- и Qt-приложений; моноширинный шрифт ставится всегда" },
-
-            { header: "приложения" },
-            { key: "shell.terminal", label: "терминал", type: "enum", options: TERMINALS, def: "kitty", hint: "Mod+T и окна, которые открывает shell (обновления, nmtui, …)" },
-            { key: "shell.files", label: "файловый менеджер", type: "enum", options: FILE_MANAGERS, def: "none", hint: "Mod+E; yazi — в терминале" },
-
-            { header: "меню" },
-            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12 },
-
-            { header: "обновления nopox-shell" },
-            { key: "shell.update.check", label: "проверять", type: "bool", def: true, hint: "git fetch в папке shell; нужен git-клон и доступ к репозиторию" },
-            { key: "shell.update.hours", label: "раз в, ч", type: "int", min: 1, max: 48, step: 1, def: 6 },
-            { key: "shell.update.notify", label: "уведомлять", type: "bool", def: true, hint: "уведомление, когда появились новые коммиты" },
-            { key: "shell.update.now", label: "проверить сейчас", type: "action", action: "shellUpdate", hint: "результат — модуль nopox ↑ на панели" }
-        ] },
-
-        { id: "bar", rows: [
+        { id: "bar", title: "панель", rows: [
             ...barRows(layout),
 
             { header: "панель" },
@@ -194,45 +200,86 @@ function sections(outputs, layout) {
             { key: "shell.bar.opacity", label: "непрозрачность, %", type: "int", min: 30, max: 100, step: 5, def: 100 },
             { key: "shell.bar.autohide", label: "автоскрытие", type: "bool", def: false, hint: "панель появляется при наведении мыши на край экрана" },
             { key: "shell.bar.monitors", label: "мониторы", type: "enum", options: ["all", "primary"], def: "all" },
-            { key: "shell.bar.trayCollapsed", label: "трей свёрнут", type: "bool", def: false, hint: "на панели переключается кликом по ‹ / +N; просящие внимания видны всегда" },
-            { key: "shell.bar.trayTyping", label: "анимация трея", type: "bool", def: true, hint: "названия печатаются при разворачивании и стираются при сворачивании" },
+            { key: "shell.bar.separator", label: "разделитель", type: "enum", options: [" · ", " | ", " / ", " │ ", "  "], def: " · " },
 
             { header: "prompt" },
             { key: "shell.bar.prompt", label: "стиль prompt", type: "enum", options: ["user@host", "[user@host]", "user", "host"], def: "user@host" },
             { key: "shell.bar.symbol", label: "символ", type: "enum", options: ["❯", "$", "#", "λ", ">", "→"], def: "❯", hint: "красный, если какое-то окно требует внимания — как $? в shell" },
-            { key: "shell.bar.separator", label: "разделитель", type: "enum", options: [" · ", " | ", " / ", " │ ", "  "], def: " · " },
             { key: "shell.bar.typing", label: "эффект набора", type: "bool", def: true, hint: "новое активное окно «печатается» по символу" },
             { key: "shell.bar.titleMax", label: "длина команды", type: "int", min: 20, max: 160, step: 10, def: 80, hint: "максимум символов для приложения и заголовка" },
+
+            { header: "модули" },
+            { key: "shell.bar.clock", label: "формат часов", type: "enum", options: ["HH:mm", "HH:mm:ss", "ddd HH:mm", "dd.MM HH:mm"], def: "HH:mm" },
             { key: "shell.bar.cpuGraph", label: "график cpu", type: "bool", def: true, hint: "▂▃▅▇ — история загрузки, как в btop" },
-            { key: "shell.bar.clock", label: "формат часов", type: "enum", options: ["HH:mm", "HH:mm:ss", "ddd HH:mm", "dd.MM HH:mm"], def: "HH:mm" }
+            { key: "shell.bar.trayCollapsed", label: "трей свёрнут", type: "bool", def: false, hint: "на панели переключается кликом по ‹ / +N; просящие внимания видны всегда" },
+            { key: "shell.bar.trayTyping", label: "анимация трея", type: "bool", def: true, hint: "названия печатаются при разворачивании и стираются при сворачивании" }
         ] },
 
-        { id: "notify", rows: [
+        { id: "notify", title: "уведомления", rows: [
             { header: "уведомления" },
+            { key: "shell.notify.dnd", label: "не беспокоить", type: "bool", def: false, hint: "показывать только критичные; остальные — в истории (log на панели)" },
             { key: "shell.notify.position", label: "положение", type: "enum", options: ["top-right", "top-left", "bottom-right", "bottom-left"], def: "top-right" },
             { key: "shell.notify.timeout", label: "время показа, с", type: "int", min: 2, max: 60, step: 1, def: 6, hint: "если приложение не задало своё" },
             { key: "shell.notify.max", label: "максимум на экране", type: "int", min: 1, max: 10, step: 1, def: 4 },
             { key: "shell.notify.criticalSticky", label: "критичные не исчезают", type: "bool", def: true, hint: "ERROR висит, пока не закроете" },
-            { key: "shell.notify.typing", label: "эффект набора", type: "bool", def: true, hint: "заголовок уведомления печатается по символу" },
-            { key: "shell.notify.dnd", label: "не беспокоить", type: "bool", def: false, hint: "показывать только критичные; остальные — в истории (log на панели)" }
+            { key: "shell.notify.typing", label: "эффект набора", type: "bool", def: true, hint: "заголовок уведомления печатается по символу" }
         ] },
 
-        { id: "lock", rows: [
+        { id: "lock", title: "блокировка", rows: [
             { header: "блокировка экрана" },
             { key: "shell.lock.idle", label: "блокировать через, мин", type: "int", min: 0, max: 60, step: 1, def: 10, hint: "после бездействия; 0 — не блокировать; видеоплееры могут запретить" },
             { key: "shell.lock.echo", label: "эхо пароля", type: "enum", options: ["*", "●", "none"], def: "*", hint: "none — как в консоли: ничего не видно при вводе" },
             { key: "shell.lock.clock", label: "часы", type: "bool", def: true, hint: "крупные часы как tty-clock" },
             { key: "shell.lock.wallpaper", label: "обои на фоне", type: "bool", def: true, hint: "приглушённые текущие обои под приглашением" },
-            { key: "shell.lock.preview", label: "предпросмотр", type: "action", action: "lockPreview", hint: "экран блокировки без проверки пароля; Esc — закрыть" },
-            { key: "shell.lock.now", label: "заблокировать сейчас", type: "action", action: "lock", hint: "Super+Alt+L" }
+            act("lockPreview", "предпросмотр", "экран блокировки без проверки пароля; Esc — закрыть"),
+            act("lock", "заблокировать сейчас", "Super+Alt+L")
         ] },
 
-        { id: "wallpaper", rows: [
-            { header: "обои" },
-            { key: "wallpaper.fill", label: "заполнение", type: "enum", options: ["fill", "fit", "stretch"], def: "fill", hint: "fill — обрезать, fit — вписать с полосами, stretch — растянуть" },
-            { key: "wallpaper.picker", label: "выбрать обои", type: "action", action: "picker", hint: "открыть окно выбора (Mod+Shift+W)" }
+        { id: "system", title: "система", rows: [
+            { header: "устройства" },
+            act("displays", "мониторы", (outputs ?? []).map(o => o.name).join(", ") + " — режим, масштаб, поворот, расположение, VRR"),
+            act("wifi", "сеть", "nmtui — Wi-Fi и проводные подключения"),
+            act("audio", "звук", "pavucontrol — устройства и громкость приложений; быстрый микшер — клик по vol на панели"),
+
+            { header: "приложения" },
+            { key: "shell.terminal", label: "терминал", type: "enum", options: TERMINALS, def: "kitty", hint: "Mod+T и окна, которые открывает shell (обновления, nmtui, …)" },
+            { key: "shell.files", label: "файловый менеджер", type: "enum", options: FILE_MANAGERS, def: "none", hint: "Mod+E; yazi — в терминале" },
+
+            { header: "конфиги" },
+            act("editNiri", "niri", "~/.config/niri/config.kdl — свои настройки niri; nopox/ генерирует shell"),
+            act("editShell", "код shell", "~/.config/quickshell/ — QML и JS nopox-shell"),
+            act("editTerminal", "терминал", "конфиг выбранного терминала"),
+
+            { header: "nopox-shell" },
+            act("shellUpdate", "обновить", "git pull и перезапуск; если новых коммитов нет — проверить (nopox ↑ на панели)"),
+            { key: "shell.update.check", label: "проверять обновления", type: "bool", def: true, hint: "git fetch в папке shell; нужен git-клон и доступ к репозиторию" },
+            { key: "shell.update.hours", label: "раз в, ч", type: "int", min: 1, max: 48, step: 1, def: 6 },
+            { key: "shell.update.notify", label: "уведомлять", type: "bool", def: true, hint: "уведомление, когда появились новые коммиты" },
+            act("restartShell", "перезапустить shell", "pkill qs и запуск заново"),
+            act("greeterUpdate", "обновить greeter", "переустановить экран входа из текущего shell (sudo)")
         ] }
     ];
+}
+
+// поиск по всем разделам: каждое слово запроса — подстрока подписи, подсказки, ключа, заголовка группы
+// или имени раздела. Строки остаются как есть (плюс section — индекс раздела) и группируются под
+// заголовками «раздел/ · группа» — по одной подписи («размер») не понять, чего она касается.
+function searchRows(secs, query) {
+    const words = String(query).toLowerCase().split(/\s+/).filter(w => w);
+    const out = [];
+    secs.forEach((s, i) => {
+        let group = "", shown = "";
+        for (const r of s.rows) {
+            if (r.header) { group = r.header; continue; }
+            // у модулей панели общий ключ shell.bar.layout — ищем по их id
+            const fields = [r.label, r.hint, r.type === "module" ? r.id : r.key, group, s.id, s.title];
+            if (!words.every(w => fields.some(x => String(x ?? "").toLowerCase().includes(w)))) continue;
+            const h = s.id + "/ · " + group;
+            if (h !== shown) out.push({ header: shown = h });
+            out.push(Object.assign({ section: i }, r));
+        }
+    });
+    return out;
 }
 
 function find(key, outputs) {
@@ -339,7 +386,7 @@ function actionKdl(a) {
 // keys: { comboKey: { combo, action, title } }; action "off" — сочетание отключено
 function keysKdl(keys) {
     const lines = [
-        "// nopox: свои бинды — окно биндов (Mod+S → бинды), из ~/.config/nopox/settings.json.",
+        "// nopox: свои бинды — окно биндов (Mod+S → input/ → бинды), из ~/.config/nopox/settings.json.",
         "// Подключается в config.kdl последним (include \"nopox/keys.kdl\") и перекрывает одноимённые бинды.",
         "// Ручные правки перезапишутся.",
         "",
@@ -390,8 +437,8 @@ function niriFileOf(key) {
     if (/^niri\.cursor\./.test(key)) return "cursor.kdl";
     if (/^niri\.anim/.test(key)) return "animations.kdl";
     if (key === "niri.csd" || key === "shell.theme.sync") return "misc.kdl";
-    if (/^niri\.out\./.test(key) || key === "niri.displays") return "displays.kdl";
-    if (key === "niri.binds") return "keys.kdl";
+    if (/^niri\.out\./.test(key) || key === "action.displays") return "displays.kdl";
+    if (key === "action.binds") return "keys.kdl";
     if (key === "shell.terminal" || key === "shell.files") return "binds.kdl";
     return "";
 }
@@ -452,7 +499,7 @@ function niriFiles(get, outs) {
         "}"
     ]);
 
-    const displays = head("мониторы — окно мониторов (setup/ → displays)");
+    const displays = head("мониторы — окно мониторов (Mod+S → system/ → мониторы)");
     for (const name in outs) {
         const o = outs[name];
         const body = [];
@@ -565,7 +612,7 @@ function niriFiles(get, outs) {
     ]);
 
     files["binds.kdl"] = text([
-        ...head("клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → бинды), они в keys.kdl"),
+        ...head("клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl"),
         'spawn-at-startup "qs"',
         "",
         "binds {",
@@ -637,7 +684,7 @@ function gtkColors(accent) {
 
 function gtkCss(colors, vars) {
     const head = [
-        "/* nopox: палитра shell для GTK — сгенерировано nopox-shell (Mod+S → shell/ → темы Qt и GTK).",
+        "/* nopox: палитра shell для GTK — сгенерировано nopox-shell (Mod+S → look/ → темы Qt и GTK).",
         "   Ручные правки перезапишутся; свои стили пишите в gtk.css после строки @import. */",
         ""
     ];
@@ -670,7 +717,7 @@ function qtFont(pt) {
 // qt6ct не трогаем: без QT_QPA_PLATFORMTHEME (misc.kdl) он не используется.
 function themeFiles(get, home) {
     if (!get("shell.theme.sync")) {
-        const off = "/* nopox: синхронизация тем выключена (Mod+S → shell/ → темы Qt и GTK) */\n";
+        const off = "/* nopox: синхронизация тем выключена (Mod+S → look/ → темы Qt и GTK) */\n";
         return { "gtk-3.0/nopox.css": off, "gtk-4.0/nopox.css": off };
     }
     const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
@@ -688,7 +735,7 @@ function themeFiles(get, home) {
             ""
         ].join("\n"),
         "qt6ct/qt6ct.conf": [
-            "; nopox: сгенерировано nopox-shell (Mod+S → shell/ → темы Qt и GTK), ручные правки перезапишутся",
+            "; nopox: сгенерировано nopox-shell (Mod+S → look/ → темы Qt и GTK), ручные правки перезапишутся",
             "[Appearance]",
             "color_scheme_path=" + home + "/.config/qt6ct/colors/nopox.conf",
             "custom_palette=true",

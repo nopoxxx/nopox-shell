@@ -1,4 +1,4 @@
-// nopox: клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → бинды), они в keys.kdl
+// nopox: клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl
 // Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.
 // Свои настройки пишите в ~/.config/niri/config.kdl.
 

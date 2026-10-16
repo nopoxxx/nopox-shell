@@ -13,16 +13,20 @@ nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~          [‹ discord] · cpu ▂
   `user`, `workspaces`, `jobs`, `command`, `media`, `tray`, `cpu`, `mem`, `gpu`, `temp`,
   `netspeed`, `net`, `vol`, `bat`, `updates`, `kbd`, `clock`.
   По клику — TUI-попапы: календарь как `cal`, процессы как `ps`, микшер, меню трея.
-- **Меню** (`Mod+D`) в духе omarchy: `apps/`, `setup/`, `style/`, `install/`, `remove/`, `update`, `system/`.
+- **Меню** (`Mod+D`) в духе omarchy — для действий: `apps/`, `wallpaper`, `setup` (открывает настройки),
+  `packages/` (install, aur, remove, update), `system/` (lock, suspend, logout, reboot, poweroff), `about`.
   Нечёткий поиск, установка пакетов из репозиториев и AUR через paru.
 - **Обои** (`Mod+Shift+W`): локальная коллекция и поиск на wallhaven.cc, режимы fill / fit / stretch.
-- **Мониторы** (`setup/ → displays`): карта расположения, режим, масштаб, поворот, расположение относительно
+- **Мониторы** (`Mod+S → system/ → мониторы`): карта расположения, режим, масштаб, поворот, расположение относительно
   других, VRR, основной монитор. Изменения ждут подтверждения 15 секунд и иначе откатываются.
-- **Бинды** (`Mod+S → бинды`, `setup/ → binds`): все сочетания niri и nopox с поиском — изменить, добавить,
+- **Бинды** (`Mod+S → input/ → бинды`): все сочетания niri и nopox с поиском — изменить, добавить,
   отключить, вернуть. Сочетание можно нажать или ввести текстом; перед применением — `niri validate`.
-- **Настройки** (`Mod+S`): niri (клавиатура, мышь, окна, курсор, анимации),
-  shell, раскладка панели. Изменения применяются сразу.
-- **Темы приложений** (`Mod+S → shell/ → темы Qt и GTK`): GTK- и Qt-приложения в той же палитре Gruvbox,
+- **Настройки** (`Mod+S`, `setup` в меню) в стиле menuconfig, разделы по назначению:
+  `look/` (акцент, шрифт, темы приложений, обои), `windows/` (отступы, рамки, тени, анимации),
+  `input/` (клавиатура, мышь, курсор, бинды), `bar/` (модули и панель), `notify/`, `lock/`,
+  `system/` (мониторы, сеть, звук, терминал, конфиги, обновления shell). `/` — поиск по всем настройкам.
+  Изменения применяются сразу; окна, открытые из настроек, по `Esc` возвращают в них.
+- **Темы приложений** (`Mod+S → look/ → темы Qt и GTK`): GTK- и Qt-приложения в той же палитре Gruvbox,
   с тем же акцентом и шрифтом, что и shell, и иконками Gruvbox Plus — через adw-gtk3/libadwaita и qt6ct. Уже открытые окна
   подхватывают изменения после перезапуска приложения.
 
@@ -91,7 +95,7 @@ Greeter работает под пользователем `greeter` и не в�
 Если shell установлен через `git clone`, он сам раз в несколько часов делает `git fetch`.
 Когда в репозитории появились новые коммиты, на панели появляется `nopox ↑N`: клик — список коммитов
 и `[обновить]` (`git pull --ff-only` и перезапуск shell). Greeter после этого переустанавливается
-отдельно — `[обновить greeter]` или `setup/ → greeter update` (нужен sudo).
+отдельно — `[обновить greeter]` или `Mod+S → system/ → обновить greeter` (нужен sudo).
 
 ## Где что хранится
 
@@ -112,7 +116,7 @@ Greeter работает под пользователем `greeter` и не в�
 ```sh
 qs ipc call launcher toggle     # меню; launcher apps — сразу программы
 qs ipc call wallpaper picker    # выбор обоев; wallpaper set <путь>, wallpaper fill <fill|fit|stretch>
-qs ipc call settings toggle     # настройки
+qs ipc call settings toggle     # настройки; settings open <раздел> — сразу раздел (look, input, system, …)
 qs ipc call displays toggle     # мониторы
 qs ipc call binds toggle        # бинды
 qs ipc call lock lock           # блокировка; lock preview — предпросмотр без проверки пароля

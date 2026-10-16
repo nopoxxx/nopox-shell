@@ -16,6 +16,8 @@ Scope {
 
     property bool open: false
 
+    onOpenChanged: if (!open) Settings.back()
+
     IpcHandler {
         target: "binds"
         function toggle(): void { root.open = !root.open; }
@@ -192,7 +194,7 @@ Scope {
                     width: title.implicitWidth
                     height: title.implicitHeight
                     color: Theme.bg
-                    T { id: title; text: "[ ~/settings/binds/ ]"; color: Theme.accent; font.bold: true }
+                    T { id: title; text: "[ ~/settings/input/binds/ ]"; color: Theme.accent; font.bold: true }
                 }
 
                 ColumnLayout {

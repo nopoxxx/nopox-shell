@@ -139,6 +139,8 @@ Scope {
         onTriggered: Settings.refreshOutputs()
     }
 
+    onOpenChanged: if (!open) Settings.back()
+
     IpcHandler {
         target: "displays"
         function toggle(): void { root.open = !root.open; }
@@ -243,7 +245,7 @@ Scope {
                     width: title.implicitWidth
                     height: title.implicitHeight
                     color: Theme.bg
-                    T { id: title; text: "[ ~/settings/displays/ ]"; color: box.border.color; font.bold: true }
+                    T { id: title; text: "[ ~/settings/system/displays/ ]"; color: box.border.color; font.bold: true }
                 }
 
                 Item {

@@ -13,6 +13,11 @@ import "services/fuzzy.js" as Fuzzy
 Scope {
     id: root
 
+    Connections {
+        target: Wallpaper
+        function onPickerOpenChanged() { if (!Wallpaper.pickerOpen) Settings.back(); }
+    }
+
     IpcHandler {
         target: "wallpaper"
         function picker(): void { Wallpaper.pickerOpen = !Wallpaper.pickerOpen; }
@@ -153,7 +158,7 @@ Scope {
                     width: title.implicitWidth
                     height: title.implicitHeight
                     color: Theme.bg
-                    T { id: title; text: "[ ~/style/wallpaper/" + win.source + "/ ]"; color: Theme.accent; font.bold: true }
+                    T { id: title; text: "[ ~/wallpaper/" + win.source + "/ ]"; color: Theme.accent; font.bold: true }
                 }
 
                 ColumnLayout {

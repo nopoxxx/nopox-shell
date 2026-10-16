@@ -6,7 +6,7 @@ import QtQuick.Layouts
 import qs.services
 import "services/fuzzy.js" as Fuzzy
 
-// Меню в духе omarchy: сначала раздел (apps/, install/, system/ …), потом действие.
+// Меню в духе omarchy: сначала раздел (apps/, packages/, system/ …), потом действие.
 // Разделы ведут себя как каталоги: путь в заголовке, Esc или ← — на уровень выше.
 //   qs ipc call launcher toggle — корень меню
 //   qs ipc call launcher apps   — сразу список программ
@@ -16,7 +16,6 @@ Scope {
     property bool open: false
     property string startAt: ""
     readonly property int rows: Settings.get("shell.launcher.rows")
-    readonly property string home: Quickshell.env("HOME")
 
     IpcHandler {
         target: "launcher"
@@ -38,12 +37,6 @@ Scope {
 
     function spawn(argv) { Quickshell.execDetached(argv); }
 
-    function edit(path) { term("vim " + shq(path), false); }
-
-    function fillDesc(mode, text) {
-        return (Wallpaper.fill === mode ? "● " : "  ") + text;
-    }
-
     function openPicker(source) {
         Wallpaper.pickerSource = source;
         Wallpaper.pickerOpen = true;
@@ -57,15 +50,14 @@ Scope {
     }
 
     // ── дерево меню ────────────────────────────────────────────────
+    // Меню — для действий; всё, что настраивается, — в окне настроек (setup, Mod+S).
     // узел: { label, desc, icon, children | provider | run }
 
     readonly property var icons: ({
         apps: String.fromCodePoint(0xF003B),
+        wallpaper: String.fromCodePoint(0xF03D8),
         setup: String.fromCodePoint(0xF0493),
-        style: String.fromCodePoint(0xF03D8),
-        install: String.fromCodePoint(0xF03D7),
-        remove: String.fromCodePoint(0xF01B4),
-        update: String.fromCodePoint(0xF06B0),
+        packages: String.fromCodePoint(0xF03D7),
         system: String.fromCodePoint(0xF0425),
         about: String.fromCodePoint(0xF02FD)
     })
@@ -73,46 +65,21 @@ Scope {
     readonly property var menu: ({
         label: "~",
         children: [
-            { label: "apps", icon: icons.apps, desc: "запуск программ", provider: "apps" },
-            { label: "setup", icon: icons.setup, desc: "настройки, сеть, звук, конфиги", children: [
-                { label: "settings", desc: "настройки niri и shell (Mod+S)", run: () => Settings.open = true },
-                { label: "displays", desc: "мониторы: режим, масштаб, поворот, расположение", run: () => spawn(["qs", "ipc", "call", "displays", "toggle"]) },
-                { label: "wifi", desc: "nmtui", run: () => term("nmtui", false) },
-                { label: "audio", desc: "pavucontrol", run: () => spawn(["pavucontrol"]) },
-                { label: "binds", desc: "изменить бинды niri и nopox", run: () => spawn(["qs", "ipc", "call", "binds", "toggle"]) },
-                { label: "keybindings", desc: "подсказка по клавишам niri", run: () => spawn(["niri", "msg", "action", "show-hotkey-overlay"]) },
-                { label: "config", desc: "редактировать конфиги", children: [
-                    { label: "niri", desc: "~/.config/niri/config.kdl", run: () => edit(home + "/.config/niri/config.kdl") },
-                    { label: "quickshell", desc: "~/.config/quickshell/", run: () => edit(home + "/.config/quickshell") },
-                    { label: "terminal", desc: "конфиг терминала (" + Term.name + ")", run: () => edit(home + ({
-                        kitty: "/.config/kitty/kitty.conf", alacritty: "/.config/alacritty/alacritty.toml",
-                        ghostty: "/.config/ghostty/config", foot: "/.config/foot/foot.ini" })[Term.name]) }
-                ] },
-                { label: "restart shell", desc: "перезапустить quickshell", run: () => spawn(["sh", "-c", "pkill -x qs; sleep 0.3; niri msg action spawn -- qs"]) },
-                { label: "shell update", desc: "обновить nopox-shell с GitHub (git pull)", run: () => ShellUpdate.behind > 0 ? ShellUpdate.update() : ShellUpdate.check(true) },
-                { label: "greeter update", desc: "переустановить greeter из текущего shell (sudo)", run: () => ShellUpdate.updateGreeter() }
+            { label: "apps", icon: icons.apps, desc: "запуск программ (Mod+Shift+D)", provider: "apps" },
+            { label: "wallpaper", icon: icons.wallpaper, desc: "обои; Tab — wallhaven (Mod+Shift+W)", run: () => openPicker("local") },
+            { label: "setup", icon: icons.setup, desc: "все настройки, мониторы, сеть, звук (Mod+S)", run: () => Settings.show("") },
+            { label: "packages", icon: icons.packages, desc: "установить, удалить, обновить", children: [
+                { label: "install", desc: "из репозиториев pacman", provider: "repo" },
+                { label: "aur", desc: "поиск в AUR через paru", provider: "aur" },
+                { label: "remove", desc: "удалить установленные", provider: "installed" },
+                { label: "update", desc: "обновить систему: paru -Syu" + (Updates.count > 0 ? " — доступно " + Updates.count : ""), run: () => Updates.run() }
             ] },
-            { label: "style", icon: icons.style, desc: "обои", children: [
-                { label: "wallpaper", desc: "локальная коллекция", run: () => openPicker("local") },
-                { label: "wallhaven", desc: "поиск на wallhaven.cc", run: () => openPicker("wallhaven") },
-                { label: "fill", desc: "заполнение обоев: " + Wallpaper.fill, children: [
-                    { label: "fill", desc: fillDesc("fill", "заполнить экран, лишнее обрезать"), run: () => Wallpaper.setFill("fill") },
-                    { label: "fit", desc: fillDesc("fit", "вписать целиком, по краям полосы"), run: () => Wallpaper.setFill("fit") },
-                    { label: "stretch", desc: fillDesc("stretch", "растянуть без сохранения пропорций"), run: () => Wallpaper.setFill("stretch") }
-                ] }
-            ] },
-            { label: "install", icon: icons.install, desc: "установить пакеты", children: [
-                { label: "package", desc: "из репозиториев: arch, chaotic-aur", provider: "repo" },
-                { label: "aur", desc: "поиск в AUR через paru", provider: "aur" }
-            ] },
-            { label: "remove", icon: icons.remove, desc: "удалить пакеты", provider: "installed" },
-            { label: "update", icon: icons.update, desc: "paru -Syu", run: () => term("paru -Syu") },
             { label: "system", icon: icons.system, desc: "питание и сессия", children: [
                 { label: "lock", desc: "заблокировать экран (Super+Alt+L)", run: () => spawn(["qs", "ipc", "call", "lock", "lock"]) },
                 { label: "suspend", desc: "заблокировать и уснуть", run: () => spawn(["sh", "-c", "qs ipc call lock lock; sleep 0.5; systemctl suspend"]) },
+                { label: "logout", desc: "выйти из niri", run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) },
                 { label: "reboot", desc: "перезагрузка", run: () => spawn(["systemctl", "reboot"]) },
-                { label: "poweroff", desc: "выключение", run: () => spawn(["systemctl", "poweroff"]) },
-                { label: "logout", desc: "выйти из niri", run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) }
+                { label: "poweroff", desc: "выключение", run: () => spawn(["systemctl", "poweroff"]) }
             ] },
             { label: "about", icon: icons.about, desc: "fastfetch", run: () => term("fastfetch") }
         ]
@@ -267,7 +234,7 @@ Scope {
 
                 MouseArea { anchors.fill: parent }
 
-                // заголовок на линии рамки: ┌─[ ~/install/ ]────
+                // заголовок на линии рамки: ┌─[ ~/packages/install/ ]────
                 Rectangle {
                     x: Theme.pad
                     y: -height / 2
