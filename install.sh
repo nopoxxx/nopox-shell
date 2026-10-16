@@ -323,7 +323,9 @@ else
     info "paru нет в репозиториях — собираю paru-bin из AUR"
     tmp=$(mktemp -d)
     git clone -q --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
-    (cd "$tmp/paru-bin" && makepkg -si --noconfirm)
+    # не makepkg -si: он ставит пакет через «sudo -k» и заново спрашивает пароль (а с --yes зависает)
+    (cd "$tmp/paru-bin" && makepkg -s --noconfirm)
+    sudo pacman -U --noconfirm "$tmp"/paru-bin/paru-bin-[0-9]*.pkg.tar.zst
     rm -rf "$tmp"
     ok "paru собран"
 fi
