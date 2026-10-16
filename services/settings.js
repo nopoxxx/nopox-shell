@@ -180,6 +180,12 @@ function sections(outputs, layout) {
             { key: "niri.key.micMute", label: "мьют микрофона", type: "combo", def: "", action: MUTE_BINDS["niri.key.micMute"].action, hint: "вкл/выкл микрофон по умолчанию (wpctl); работает и на экране блокировки" },
             { key: "niri.key.audioMute", label: "мьют звука", type: "combo", def: "", action: MUTE_BINDS["niri.key.audioMute"].action, hint: "вкл/выкл звук на устройстве вывода по умолчанию — наушники или колонки (wpctl)" },
 
+            { header: "горячие углы" },
+            { key: "niri.hc.topLeft", label: "↖ левый верхний", type: "bool", def: true, hint: "курсор в угол экрана — обзор столов и окон (как Mod+Tab)" },
+            { key: "niri.hc.topRight", label: "↗ правый верхний", type: "bool", def: false, hint: "курсор в угол экрана — обзор столов и окон" },
+            { key: "niri.hc.bottomLeft", label: "↙ левый нижний", type: "bool", def: false, hint: "курсор в угол экрана — обзор столов и окон" },
+            { key: "niri.hc.bottomRight", label: "↘ правый нижний", type: "bool", def: false, hint: "курсор в угол экрана — обзор столов и окон" },
+
             { header: "мышь и тачпад" },
             { key: "niri.tp.tap", label: "тап для клика", type: "bool", def: true, hint: "тачпад" },
             { key: "niri.tp.natural", label: "естественная прокрутка", type: "bool", def: true, hint: "тачпад" },
@@ -314,6 +320,10 @@ function defaultOf(key, outputs) {
 
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
+
+// горячие углы: ключ настройки → имя угла в niri (gestures { hot-corners { … } })
+var HOT_CORNERS = [["niri.hc.topLeft", "top-left"], ["niri.hc.topRight", "top-right"],
+    ["niri.hc.bottomLeft", "bottom-left"], ["niri.hc.bottomRight", "bottom-right"]];
 
 // ── скриншоты (ShotWindow) ───────────────────────────────────────────
 var SHOT_TOOLS = ["rect", "ellipse", "line", "arrow", "pen", "marker", "text", "step", "blur", "pixel"];
@@ -525,7 +535,7 @@ function niriFileOf(key) {
     if (/^niri\.rules\./.test(key)) return "window-rules.kdl";
     if (/^niri\.cursor\./.test(key)) return "cursor.kdl";
     if (/^niri\.anim/.test(key)) return "animations.kdl";
-    if (key === "niri.csd" || key === "shell.theme.sync") return "misc.kdl";
+    if (key === "niri.csd" || key === "shell.theme.sync" || /^niri\.hc\./.test(key)) return "misc.kdl";
     if (/^niri\.out\./.test(key) || key === "action.displays") return "displays.kdl";
     if (key === "action.binds") return "keys.kdl";
     if (key === "shell.terminal" || key === "shell.files" || key === "shell.browser" || key in MUTE_BINDS) return "binds.kdl";
@@ -693,6 +703,13 @@ function niriFiles(get, outs) {
         ...head("прочее"),
         "// просить приложения не рисовать свои заголовки",
         "prefer-no-csd " + (get("niri.csd") ? "true" : "false"),
+        "",
+        "// горячие углы открывают обзор; ни одного — off (пустой блок niri понял бы как «по умолчанию»)",
+        "gestures {",
+        "    hot-corners {",
+        ...(HOT_CORNERS.some(([k]) => get(k)) ? HOT_CORNERS.filter(([k]) => get(k)).map(([, c]) => "        " + c) : ["        off"]),
+        "    }",
+        "}",
         ...(get("shell.theme.sync") ? [
             "",
             "// Qt-приложения берут палитру и шрифт из qt6ct — его настраивает shell (темы Qt и GTK)",
