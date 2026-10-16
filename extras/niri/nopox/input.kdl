@@ -1,1 +1,23 @@
-// nopox: заглушка — заполнит nopox-shell при первом запуске (настройки niri, Mod+S)
+// nopox: ввод — клавиатура, мышь, тачпад
+// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.
+// Свои настройки пишите в ~/.config/niri/config.kdl.
+
+input {
+    keyboard {
+        xkb {
+            layout "us,ru"
+            options "grp:alt_shift_toggle"
+        }
+        repeat-delay 600
+        repeat-rate 25
+        numlock
+    }
+    touchpad {
+        tap
+        natural-scroll
+    }
+    mouse {
+        accel-speed 0.00
+        accel-profile "adaptive"
+    }
+}

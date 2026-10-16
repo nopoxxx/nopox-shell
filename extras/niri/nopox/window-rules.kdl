@@ -1,1 +1,17 @@
-// nopox: заглушка — заполнит nopox-shell при первом запуске (настройки niri, Mod+S)
+// nopox: правила окон
+// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.
+// Свои настройки пишите в ~/.config/niri/config.kdl.
+
+// терминалы, открытые из меню nopox (install / remove / update …), — плавающие по центру
+window-rule {
+    match app-id="^(nopox-term|dev[.]nopox[.]term)$"
+    open-floating true
+    default-column-width { fixed 960; }
+    default-window-height { fixed 600; }
+}
+
+// обои quickshell видны и как фон режима обзора
+layer-rule {
+    match namespace="^nopox-wallpaper$"
+    place-within-backdrop true
+}

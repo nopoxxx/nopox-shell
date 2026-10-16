@@ -12,6 +12,7 @@
 #   --apps <a,b,…>           программы (список — в начале установки), none — никаких
 #   --discord-mod <m>        none | vencord | betterdiscord | vesktop
 #   --no-greeter             не ставить greeter (greetd)
+#   --no-steam-notify        не ставить Millennium и плагин nopox-notify (уведомления Steam)
 #   --keep-niri-config       не заменять config.kdl niri, только дописать include
 #   --branch <ветка>         ветка репозитория (по умолчанию main)
 #
@@ -22,6 +23,7 @@ REPO=https://github.com/nopoxxx/nopox-shell
 BRANCH=main
 YES=0
 GREETER=ask
+STEAM_NOTIFY=ask
 KEEP_NIRI=0
 TERMINAL="" SHELL_CHOICE="" BROWSER="" FILES="" APPS="" DISCORD_MOD=""
 DEST="$HOME/.config/quickshell"
@@ -38,9 +40,10 @@ while [ $# -gt 0 ]; do
         --apps) APPS=${2:?}; shift ;;
         --discord-mod) DISCORD_MOD=${2:?}; shift ;;
         --no-greeter) GREETER=no ;;
+        --no-steam-notify) STEAM_NOTIFY=no ;;
         --keep-niri-config) KEEP_NIRI=1 ;;
         --branch) BRANCH=${2:?нужно имя ветки}; shift ;;
-        -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "неизвестный флаг: $1" >&2; exit 1 ;;
     esac
     shift
@@ -314,6 +317,20 @@ else
     ok "базовые пакеты установлены"
 fi
 
+# shell пишет конфиг под свежий niri (горячие углы по одному, pick-window и screenshot-window --path для скриншотов):
+# старый niri такой конфиг не примет, а pacman -S --needed уже установленный niri не обновит
+NIRI_MIN=25.11
+niri_ver=$(niri --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)
+if [ -n "$niri_ver" ] && [ "$(printf '%s\n' "$NIRI_MIN" "$niri_ver" | sort -V | head -1)" != "$NIRI_MIN" ]; then
+    warn "niri $niri_ver старше $NIRI_MIN — конфиг nopox он не примет"
+    if ask "Обновить систему вместе с niri (pacman -Syu)?" y; then
+        sudo pacman -Syu --needed "${noconfirm[@]}" niri
+        ok "niri: $(niri --version | head -1)"
+    else
+        die "нужен niri $NIRI_MIN или новее: sudo pacman -Syu niri"
+    fi
+fi
+
 # paru должен не просто быть, а запускаться: paru-bin собран под конкретную libalpm
 # и после обновления pacman (libalpm.so.N → N+1) не стартует
 paru_ok() { paru --version &>/dev/null; }
@@ -433,6 +450,16 @@ done
 
 if [ -f "$conf" ] && grep -q '^include "nopox/main.kdl"' "$conf"; then
     ok "nopox уже подключён к вашему config.kdl"
+    # старый эталон держал Mod+Shift+S за встроенным скриншотом niri; config.kdl грузится после nopox/binds.kdl
+    # и перекрыл бы скриншот nopox с разметкой
+    shot_re='^[[:space:]]*(Mod\+Shift\+S|Print)[[:space:]]*\{[[:space:]]*screenshot;[[:space:]]*\}'
+    if grep -qE "$shot_re" "$conf"; then
+        if ask "В config.kdl Mod+Shift+S / Print — встроенный скриншот niri; он перекрывает скриншот nopox с разметкой. Закомментировать?" y; then
+            cp "$conf" "$conf.bak-$STAMP"
+            sed -i -E "s#($shot_re)#// \1  // nopox: скриншот с разметкой — в nopox/binds.kdl#" "$conf"
+            ok "встроенный скриншот niri отключён (Ctrl+Print / Alt+Print остались); старое — в $conf.bak-$STAMP"
+        fi
+    fi
 elif [ -f "$conf" ] && grep -qE '^include "nopox(-binds)?\.kdl"' "$conf"; then
     ok "старая схема nopox — shell сам переложит её в ~/.config/niri/nopox/ при запуске"
 elif [ ! -f "$conf" ] || { [ "$KEEP_NIRI" = 0 ] && ask "Заменить ваш config.kdl конфигом nopox? Старый уйдёт в бэкап" y; }; then
@@ -586,6 +613,66 @@ case "$DISCORD_MOD" in
         ;;
 esac
 
+# ── Steam: уведомления ───────────────────────────────────────────────
+# Steam рисует свои уведомления отдельным окном, и niri ставит его посреди экрана. Плагин Millennium nopox-notify
+# забирает их у Steam и шлёт через notify-send — приходят как обычные уведомления shell.
+STEAM_DIR="$HOME/.local/share/Steam"
+NOTIFY_DIR="$HOME/.local/share/nopox-notify"
+MCFG="$HOME/.config/millennium/config.json"
+if [ "$STEAM_NOTIFY" != no ] && pacman -Qq steam &>/dev/null; then
+    step "Steam: уведомления"
+    if ask "Поставить Millennium и плагин nopox-notify (уведомления Steam — обычными уведомлениями shell)?" y; then
+        paru -S --needed --skipreview "${noconfirm[@]}" millennium bun || true
+        if ! pacman -Qq millennium &>/dev/null || ! command -v bun >/dev/null; then
+            warn "Millennium или bun не поставились — см. вывод paru; плагин пропущен"
+        else
+            # пакет millennium подключается к Steam симлинками, но только если Steam уже запускался
+            if [ -d "$STEAM_DIR/ubuntu12_32" ] && [ -d "$STEAM_DIR/ubuntu12_64" ]; then
+                ln -sf /usr/lib/millennium/libmillennium_bootstrap_x86.so "$STEAM_DIR/ubuntu12_32/libXtst.so.6"
+                ln -sf /usr/lib/millennium/libmillennium_bootstrap_hhx64.so "$STEAM_DIR/ubuntu12_64/libXtst.so.6"
+                ok "Millennium подключён к Steam"
+            else
+                warn "Steam ещё не запускался — запустите его один раз, закройте и подключите Millennium:"
+                info "ln -sf /usr/lib/millennium/libmillennium_bootstrap_x86.so ~/.local/share/Steam/ubuntu12_32/libXtst.so.6"
+                info "ln -sf /usr/lib/millennium/libmillennium_bootstrap_hhx64.so ~/.local/share/Steam/ubuntu12_64/libXtst.so.6"
+            fi
+
+            if [ -d "$NOTIFY_DIR/.git" ]; then
+                git -C "$NOTIFY_DIR" pull -q --ff-only || warn "не удалось обновить $NOTIFY_DIR"
+            else
+                backup "$NOTIFY_DIR"
+                git clone -q https://github.com/nopoxxx/nopox-notify "$NOTIFY_DIR"
+            fi
+            mkdir -p "$HOME/.local/share/millennium/plugins"
+            if (cd "$NOTIFY_DIR" && bun install --silent && bun run build) >/dev/null 2>&1; then
+                ok "nopox-notify собран → ~/.local/share/millennium/plugins/"
+                # включить плагин: plugins.enabledPlugins в config.json Millennium; битый JSON не трогаем
+                if bun -e '
+                    const fs = require("fs"), path = require("path"), file = process.argv[1];
+                    let cfg = {};
+                    if (fs.existsSync(file) && fs.statSync(file).size > 0) {
+                        try { cfg = JSON.parse(fs.readFileSync(file, "utf8")); } catch { process.exit(1); }
+                    }
+                    cfg.plugins ??= {};
+                    const on = new Set(cfg.plugins.enabledPlugins ?? []);
+                    on.add("nopox-notify");
+                    cfg.plugins.enabledPlugins = [...on];
+                    fs.mkdirSync(path.dirname(file), { recursive: true });
+                    fs.writeFileSync(file, JSON.stringify(cfg, null, 2) + "\n");' "$MCFG"; then
+                    ok "плагин включён"
+                else
+                    warn "$MCFG не разбирается — включите nopox notify вручную: Steam → Millennium → Plugins"
+                fi
+                pgrep -x steam >/dev/null && warn "Steam запущен — перезапустите его, чтобы подхватить плагин"
+            else
+                warn "плагин не собрался — повторить: cd $NOTIFY_DIR && bun install && bun run build"
+            fi
+        fi
+    else
+        info "пропущено — потом: https://github.com/nopoxxx/nopox-notify"
+    fi
+fi
+
 # ── greeter ──────────────────────────────────────────────────────────
 step "Greeter (экран входа)"
 if [ "$GREETER" = no ] || ! ask "Поставить greeter nopox для greetd?" y; then
@@ -631,8 +718,8 @@ cat <<EOF
   ${A}Mod+D${N}        меню             ${A}Mod+S${N}         настройки
   ${A}Mod+Return${N}   $TERMINAL$(printf '%*s' $((17 - ${#TERMINAL})) '')${A}Mod+Shift+W${N}   обои
   ${A}Mod+Space${N}    программы        ${A}Super+Alt+L${N}   блокировка$([ "$FILES" != none ] && printf '\n  %sMod+E%s        %s' "$A" "$N" "$FILES")
-  ${A}Mod+Tab${N}      обзор            ${A}Mod+Shift+S${N}   скриншот
+  ${A}Mod+Tab${N}      обзор            ${A}Mod+Shift+S${N}   скриншот с разметкой (и Print)$([ "$BROWSER" != none ] && printf '\n  %sMod+Shift+B%s  %s' "$A" "$N" "$BROWSER")
   ${A}Mod+Shift+/${N}  все клавиши niri
 
-  ${D}$REPO${N}
+  ${D}документация: https://nopoxxx.github.io/nopox-shell/${N}
 EOF

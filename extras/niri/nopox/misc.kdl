@@ -1,1 +1,18 @@
-// nopox: заглушка — заполнит nopox-shell при первом запуске (настройки niri, Mod+S)
+// nopox: прочее
+// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.
+// Свои настройки пишите в ~/.config/niri/config.kdl.
+
+// просить приложения не рисовать свои заголовки
+prefer-no-csd true
+
+// горячие углы открывают обзор; ни одного — off (пустой блок niri понял бы как «по умолчанию»)
+gestures {
+    hot-corners {
+        top-left
+    }
+}
+
+// Qt-приложения берут палитру и шрифт из qt6ct — его настраивает shell (темы Qt и GTK)
+environment {
+    QT_QPA_PLATFORMTHEME "qt6ct"
+}
