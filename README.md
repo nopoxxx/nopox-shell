@@ -94,6 +94,20 @@ Greeter работает под пользователем `greeter` и не в�
 копирует настройки, обои и режим заполнения в `/var/lib/nopox-greeter/<user>/` — greeter выглядит так же,
 как shell последнего вошедшего пользователя. После обновления shell установку нужно повторить.
 
+## Уведомления Steam
+
+Steam рисует свои уведомления отдельным окном, и в niri оно оказывается посреди экрана. Плагин
+[Millennium](https://steambrew.app) [nopox-notify](https://github.com/nopoxxx/nopox-notify) забирает их у Steam
+до показа и отправляет через `notify-send`: они приходят как обычные уведомления shell (`Steam`), а свои тосты
+Steam больше не показывает. Уведомления оверлея внутри игры и звуки Steam остаются как были.
+
+```sh
+git clone https://github.com/nopoxxx/nopox-notify && cd nopox-notify
+bun install && bun run build   # соберёт и положит в ~/.local/share/millennium/plugins/
+```
+
+Затем включите **nopox notify** в Steam → Millennium → Plugins и перезапустите Steam.
+
 ## Обновления
 
 Если shell установлен через `git clone`, он сам раз в несколько часов делает `git fetch`.

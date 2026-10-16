@@ -308,6 +308,10 @@ Esc/Backspace/← на нём закрывают окно, а не подним�
 Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO (акцент). DND пропускает только critical.
 `centerOpen` скрывает попапы, пока открыта история.
 
+**Steam** — уведомления приходят от отдельного плагина Millennium [nopox-notify](https://github.com/nopoxxx/nopox-notify)
+(свой репозиторий): он забирает тосты из `NotificationStore` Steam до показа и шлёт их через `notify-send -a Steam`,
+со стороны shell это обычные уведомления. Устройство, отладка и журнал (`~/.cache/nopox-notify.log`) — в его README.
+
 ### 4.7 Блокировка и greeter
 
 - `LockScreen`: `WlSessionLock` + `PamContext` (config `login`, user `Sys.user`). При падении quickshell
