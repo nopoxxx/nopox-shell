@@ -8,6 +8,7 @@ ShellRoot {
     readonly property var _shellUpdate: ShellUpdate
     readonly property var _binds: Binds   // пишет nopox/keys.kdl при старте
     readonly property var _appTheme: AppTheme   // темы GTK и Qt вслед за shell
+    readonly property var _defaultApps: DefaultApps   // оболочка и браузер — из системы в настройки
 
     Variants {
         model: Quickshell.screens

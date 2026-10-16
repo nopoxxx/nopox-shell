@@ -245,6 +245,8 @@ function sections(outputs, layout) {
             { header: "приложения" },
             { key: "shell.terminal", label: "терминал", type: "enum", options: TERMINALS, def: "kitty", hint: "Mod+T и окна, которые открывает shell (обновления, nmtui, …)" },
             { key: "shell.files", label: "файловый менеджер", type: "enum", options: FILE_MANAGERS, def: "none", hint: "Mod+E; yazi — в терминале" },
+            { key: "shell.sh", label: "оболочка", type: "enum", options: SHELLS, def: "zsh", hint: "chsh в терминале (спросит пароль), действует с нового входа; нет пакета — поставит" },
+            { key: "shell.browser", label: "браузер", type: "enum", options: Object.keys(BROWSERS), def: "none", hint: "Mod+Shift+B и браузер по умолчанию (xdg-settings); нет пакета — поставит через paru" },
 
             { header: "конфиги" },
             act("editNiri", "niri", "~/.config/niri/config.kdl — свои настройки niri; nopox/ генерирует shell"),
@@ -304,6 +306,21 @@ const f = x => Number(x).toFixed(2);
 
 var TERMINALS = ["kitty", "alacritty", "ghostty", "foot"];
 var FILE_MANAGERS = ["none", "thunar", "nautilus", "dolphin", "nemo", "yazi"];
+
+// оболочка: пакеты, которые ставятся, если её нет (как в install.sh)
+var SHELLS = ["zsh", "fish", "bash"];
+var SHELL_PKGS = { zsh: "zsh zsh-autosuggestions zsh-syntax-highlighting zsh-completions", fish: "fish", bash: "bash bash-completion" };
+
+// браузер: пакет (по нему ищется .desktop для xdg-settings) и команда для Mod+Shift+B
+var BROWSERS = {
+    none: null,
+    helium: { pkg: "helium-browser-bin", bin: "helium-browser" },
+    firefox: { pkg: "firefox", bin: "firefox" },
+    zen: { pkg: "zen-browser-bin", bin: "zen-browser" },
+    chromium: { pkg: "chromium", bin: "chromium" },
+    brave: { pkg: "brave-bin", bin: "brave" },
+    vivaldi: { pkg: "vivaldi", bin: "vivaldi-stable" }
+};
 
 // ghostty принимает только идентификатор приложения с точкой
 function termClass(term, c) {
@@ -440,7 +457,7 @@ function niriFileOf(key) {
     if (key === "niri.csd" || key === "shell.theme.sync") return "misc.kdl";
     if (/^niri\.out\./.test(key) || key === "action.displays") return "displays.kdl";
     if (key === "action.binds") return "keys.kdl";
-    if (key === "shell.terminal" || key === "shell.files") return "binds.kdl";
+    if (key === "shell.terminal" || key === "shell.files" || key === "shell.browser") return "binds.kdl";
     return "";
 }
 
@@ -620,6 +637,9 @@ function niriFiles(get, outs) {
         "    Mod+T hotkey-overlay-title=" + q("Open a Terminal: " + get("shell.terminal")) + " { spawn " + termCmd(get("shell.terminal")).map(q).join(" ") + "; }",
         ...(filesCmd(get("shell.terminal"), get("shell.files"))
             ? ["    Mod+E hotkey-overlay-title=" + q("Files: " + get("shell.files")) + " { spawn " + filesCmd(get("shell.terminal"), get("shell.files")).map(q).join(" ") + "; }"]
+            : []),
+        ...(BROWSERS[get("shell.browser")]
+            ? ["    Mod+Shift+B hotkey-overlay-title=" + q("Browser: " + get("shell.browser")) + " { spawn " + q(BROWSERS[get("shell.browser")].bin) + "; }"]
             : []),
         '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
         '    Mod+Shift+D hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',

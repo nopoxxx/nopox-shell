@@ -72,6 +72,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   Updates.qml        число обновлений (checkupdates + paru -Qua) раз в час, запуск paru -Syu
   Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.edit(path), Term.cmd(), configPath
   AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
+  DefaultApps.qml    оболочка входа и браузер по умолчанию (shell.sh, shell.browser): сверка с системой, chsh, xdg-settings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
 bar/                 модули панели и их попапы
@@ -130,7 +131,7 @@ README.md            пользовательская документация
 | `bar` | панель | модули по зонам; панель; prompt; вид модулей (часы, график cpu, трей) |
 | `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора |
 | `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
-| `system` | система | устройства (мониторы, сеть, звук); терминал и файловый менеджер; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
+| `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
 
 Новую настройку кладите туда, где её будут искать; раздел и группу (`header`) поиск тоже учитывает.
 Строка — `{header}` или `{key, label, type, def, hint, …}`. Типы:
@@ -173,13 +174,25 @@ README.md            пользовательская документация
 wallhaven, lockPreview ставит `Settings.returnHere` — закрываясь, такое окно зовёт `Settings.back()`
 и настройки открываются снова. Новое окно-действие должно делать так же (`onOpenChanged: if (!open) Settings.back()`).
 
+### 4.1b Оболочка и браузер (`services/DefaultApps.qml`)
+
+`shell.sh` (`S.SHELLS`, пакеты — `S.SHELL_PKGS`) и `shell.browser` (`S.BROWSERS`: id → `{pkg, bin}`, `none` — без бинда)
+отражают **состояние системы**, а не только выбор: при старте и после каждого применения `probe` читает
+оболочку из `getent passwd`, браузер — `xdg-settings get default-web-browser` (сопоставляется с `.desktop`
+установленных пакетов из `pacman -Qlq`) и пишет их в настройки (неизвестный браузер не трогает).
+Изменение настройки применяется через 1.5 с (таймер, чтобы ←→ не запускали chsh на каждом шаге) одним
+скриптом `applyScript` с данными в аргументах: оболочка — в терминале `nopox-term` (`pacman -S`, если нет; конфиг nopox
+из `extras/shell`, если своего нет; `chsh -s`), браузер — `xdg-settings set` молча или через `paru -S` в терминале.
+Отменённый chsh / неудачная установка — следующий `probe` вернёт настройку к системе.
+`Mod+Shift+B` в `binds.kdl` запускает `BROWSERS[shell.browser].bin`.
+
 ### 4.2 Конфиг niri (`~/.config/niri/`)
 
 ```
 config.kdl            пользовательский; include "nopox/main.kdl" и В САМОМ КОНЦЕ include "nopox/keys.kdl"
 nopox/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
 nopox/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
-nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+T, Mod+E, Mod+D, Mod+Shift+D, Mod+Shift+W, Mod+S, Super+Alt+L)
+nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+T, Mod+E, Mod+Shift+B, Mod+D, Mod+Shift+D, Mod+Shift+W, Mod+S, Super+Alt+L)
 nopox/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
 ```
 
@@ -281,6 +294,8 @@ logout, reboot, poweroff), `about` (`about()`: fastfetch с `extras/fastfetch/co
 акцент — truecolor `--logo-color-1/2`, окно закрывается по Enter). Узел дерева `{label, desc, icon, children | provider | run}`. Провайдеры:
 `apps` (DesktopEntries), `repo` (`pacman -Sl`), `installed` (`pacman -Qe`), `aur` (одна строка `paru <запрос>`).
 `repo`/`installed` кешируются до следующего открытия. Разделы показываются как каталоги (синие, со `/`).
+Если меню открыто сразу в разделе (`launcher apps`), этот уровень — нижняя граница (`win.base`):
+Esc/Backspace/← на нём закрывают окно, а не поднимаются в корень.
 
 **DisplaysWindow**: любое изменение → `begin()` снимает снимок `niri.out.*`, 15 с на `y`;
 иначе (или `n`/Esc) `revert()` через `replacePrefix`. Последний включённый монитор выключить нельзя.
@@ -294,8 +309,6 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 `centerOpen` скрывает попапы, пока открыта история.
 
 ### 4.7 Блокировка и greeter
-Если меню открыто сразу в разделе (`launcher apps`), этот уровень — нижняя граница (`win.base`):
-Esc/Backspace/← на нём закрывают окно, а не поднимаются в корень.
 
 - `LockScreen`: `WlSessionLock` + `PamContext` (config `login`, user `Sys.user`). При падении quickshell
   сессия остаётся заблокированной — это поведение протокола. `IdleMonitor` по `shell.lock.idle` (мин).
@@ -368,7 +381,7 @@ Esc/Backspace/← на нём закрывают окно, а не подним�
 `Settings.back()`) или пункт в меню. Заголовок — путь, откуда окно открывается: `[ ~/settings/system/displays/ ]`.
 
 **Новый сервис.** `services/Name.qml` с `pragma Singleton` и `Singleton { }`. Синглтон создаётся при первом
-обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`).
+обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`).
 
 ## 8. Соглашения кода
 
@@ -415,7 +428,7 @@ Bash, `set -euo pipefail`, запуск от обычного пользоват
 мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`) → paru (`paru_ok` проверяет, что он
 **запускается**; иначе: из репозитория → сборка `paru-bin` → сборка `paru` из исходников через `build_aur`) →
 программы и иконки `gruvbox-plus-icon-theme` (AUR) через `paru`, затем сверка `pacman -Qq` и честный список непоставленных →
-клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files` →
+клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files/sh/browser` →
 конфиг niri (замена или дописать два include; затем `niri validate`, при ошибке — откат) → конфиг
 терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию → Discord → greeter → итог.
 Всё заменяемое уходит в `*.bak-<дата>`. С `--yes` вопросов нет и pacman/paru получают `--noconfirm`.

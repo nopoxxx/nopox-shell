@@ -414,9 +414,12 @@ fi
 info "обновления потом — сам shell: nopox ↑ на панели"
 mkdir -p "$HOME/Pictures/Wallpapers"
 
-# выбор терминала и файлового менеджера — в настройки shell (Mod+T, Mod+E, окна обновлений и т.п.)
+# выбор терминала, файлового менеджера и браузера — в настройки shell (Mod+T, Mod+E, Mod+Shift+B, окна обновлений и т.п.);
+# оболочку и браузер shell при запуске всё равно сверит с системой (services/DefaultApps.qml)
 set_setting shell.terminal "$TERMINAL"
 set_setting shell.files "$FILES"
+set_setting shell.sh "$SHELL_CHOICE"
+set_setting shell.browser "$BROWSER"
 
 # ── niri ─────────────────────────────────────────────────────────────
 step "Конфиг niri"
