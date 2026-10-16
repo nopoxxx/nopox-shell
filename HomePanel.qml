@@ -22,6 +22,7 @@ Scope {
         open: Home.open
         style: Settings.get("shell.home.anim")
         duration: 180
+        typeScale: 3
         edge: Settings.get("shell.home.side")
     }
 
@@ -242,9 +243,11 @@ Scope {
                 }
             }
 
+            // колонка во всю высоту: построчно печать шла бы сверху вниз и почти не видна — все строки сразу, слева направо
             TypeOn {
                 anchors.fill: parent
                 source: box
+                direction: "columns"
                 p: reveal.p
                 active: reveal.printing
             }

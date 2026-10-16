@@ -17,6 +17,7 @@ Scope {
     property int duration: 160
     property string edge: "top"       // откуда выезжает slide: left, right, top, bottom
     property real distance: 40        // на сколько px
+    property real typeScale: 2.5      // печать (type) дольше остальных стилей: окно набирается по символу
 
     property real p: 0
     readonly property bool loaded: open || p > 0
@@ -50,7 +51,7 @@ Scope {
         // прерванная на середине анимация доигрывает только остаток пути;
         // печать — ровным темпом и дольше: окно набирается по символу
         const type = style === "type";
-        anim.duration = duration * (type ? 2.5 : 1) * Math.abs(to - p);
+        anim.duration = duration * (type ? typeScale : 1) * Math.abs(to - p);
         anim.easing.type = type ? Easing.Linear : open ? Easing.OutCubic : Easing.InCubic;
         anim.start();
     }
