@@ -342,13 +342,18 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 - ghostty принимает класс окна только с точкой: `nopox-term` → `dev.nopox.term` (`S.termClass`).
 - В greeter нет `$HOME` пользователя: всё, что нужно greeter'у, должно идти через GreeterSync.
 - Бинды из `config.kdl` парсятся построчно: многострочные бинды в окне биндов не видны.
+- `paru-bin` из AUR — готовый бинарник под конкретную `libalpm.so.N`; после обновления pacman он перестаёт
+  запускаться (так было с pacman 7.1 / libalpm.so.16). Проверять `paru --version`, а не `command -v paru`;
+  shell (`Updates`, меню install/update) при неработающем paru молча показывает 0 обновлений.
 
 ## 10. Установщик `install.sh`
 
 Bash, `set -euo pipefail`, запуск от обычного пользователя. Порядок: проверки → выбор (`choose`:
 терминал, оболочка, браузер, файловый менеджер, программы из `APP_CATALOG` `группа|id|описание|пакеты|умолч.`,
-мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`) → paru (из репо или сборка `paru-bin`) →
-программы через `paru` → клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files` →
+мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`) → paru (`paru_ok` проверяет, что он
+**запускается**; иначе: из репозитория → сборка `paru-bin` → сборка `paru` из исходников через `build_aur`) →
+программы через `paru`, затем сверка `pacman -Qq` и честный список непоставленных →
+клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files` →
 конфиг niri (замена или дописать два include; затем `niri validate`, при ошибке — откат) → конфиг
 терминала → оболочка → приложения по умолчанию → Discord → greeter → итог.
 Всё заменяемое уходит в `*.bak-<дата>`. С `--yes` вопросов нет и pacman/paru получают `--noconfirm`.

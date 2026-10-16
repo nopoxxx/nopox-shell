@@ -314,20 +314,49 @@ else
     ok "базовые пакеты установлены"
 fi
 
-if command -v paru >/dev/null; then
-    ok "paru уже есть"
-elif pacman -Si paru &>/dev/null; then
-    sudo pacman -S --needed --noconfirm paru
-    ok "paru из репозитория"
-else
-    info "paru нет в репозиториях — собираю paru-bin из AUR"
+# paru должен не просто быть, а запускаться: paru-bin собран под конкретную libalpm
+# и после обновления pacman (libalpm.so.N → N+1) не стартует
+paru_ok() { paru --version &>/dev/null; }
+
+# build_aur <пакет> — собрать из AUR и поставить; сборочные зависимости (-r) удаляются после сборки.
+# Не makepkg -si: он ставит пакет через «sudo -k» и заново спрашивает пароль (а с --yes зависает)
+build_aur() {
+    local tmp rc=0
     tmp=$(mktemp -d)
-    git clone -q --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
-    # не makepkg -si: он ставит пакет через «sudo -k» и заново спрашивает пароль (а с --yes зависает)
-    (cd "$tmp/paru-bin" && makepkg -s --noconfirm)
-    sudo pacman -U --noconfirm "$tmp"/paru-bin/paru-bin-[0-9]*.pkg.tar.zst
+    git clone -q --depth 1 "https://aur.archlinux.org/$1.git" "$tmp/$1" \
+        && (cd "$tmp/$1" && makepkg -sr --noconfirm) \
+        && sudo pacman -U --noconfirm "$tmp/$1/$1"-[0-9]*.pkg.tar.zst || rc=1
     rm -rf "$tmp"
-    ok "paru собран"
+    return $rc
+}
+
+# убрать неработающий paru, чтобы на его место встал другой (paru и paru-bin конфликтуют)
+drop_paru() {
+    # точные имена: `pacman -Qq paru` находит и paru-bin — тот провайдит paru
+    local pkgs
+    pkgs=$(pacman -Qq | grep -xE 'paru|paru-bin' || true)
+    [ -z "$pkgs" ] || sudo pacman -Rdd --noconfirm $pkgs >/dev/null
+}
+
+if paru_ok; then
+    ok "paru уже есть"
+else
+    command -v paru >/dev/null && { warn "paru установлен, но не запускается — переустанавливаю"; drop_paru; }
+    if pacman -Si paru &>/dev/null; then
+        sudo pacman -S --needed --noconfirm paru || true
+    fi
+    if ! paru_ok; then
+        info "собираю paru-bin из AUR"
+        drop_paru
+        build_aur paru-bin || true
+    fi
+    if ! paru_ok; then
+        warn "paru-bin не запускается (собран под другую версию pacman) — собираю paru из исходников, это несколько минут"
+        drop_paru
+        build_aur paru || true
+    fi
+    paru_ok || die "paru не запускается: $(paru --version 2>&1 | tail -1)"
+    ok "paru: $(paru --version | head -1)"
 fi
 
 # браузер, файловый менеджер и программы — через paru: из репозиториев, если есть, иначе из AUR
@@ -352,8 +381,15 @@ if [ ${#missing[@]} -eq 0 ]; then
     ok "программы уже установлены"
 else
     info "ставлю через paru: ${missing[*]}"
-    paru -S --needed --skipreview "${noconfirm[@]}" "${missing[@]}" || warn "часть программ не поставилась — см. вывод paru выше"
-    ok "программы установлены"
+    paru -S --needed --skipreview "${noconfirm[@]}" "${missing[@]}" || true
+    # paru мог упасть на одном пакете — сверяем, что поставилось на самом деле
+    failed=()
+    for p in "${missing[@]}"; do pacman -Qq "$p" &>/dev/null || failed+=("$p"); done
+    if [ ${#failed[@]} -eq 0 ]; then
+        ok "программы установлены"
+    else
+        warn "не поставились: ${failed[*]} — см. вывод paru выше; повторить: paru -S ${failed[*]}"
+    fi
 fi
 
 # ── сам shell ────────────────────────────────────────────────────────
