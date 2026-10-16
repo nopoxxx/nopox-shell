@@ -85,124 +85,137 @@ Item {
 
     HoverHandler { id: hover }
 
-    Rectangle {
-        id: frame
+    // рамка и заголовок — отдельным слоем: стиль type печатает его копию (TypeOn), а сам он спрятан
+    Item {
+        id: body
+        anchors.fill: parent
 
-        y: titleBox.height / 2
-        width: parent.width
-        height: col.implicitHeight + Theme.pad * 2 + titleBox.height / 2
-        color: Theme.bg
-        border.color: card.levelColor
-        border.width: 2
+        Rectangle {
+            id: frame
 
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
-            onClicked: mouse => {
-                const e = card.entry;
-                if (mouse.button === Qt.RightButton) card.leave(() => Notifs.dismiss(e));
-                else card.leave(() => Notifs.invoke(e));
-            }
-        }
+            y: titleBox.height / 2
+            width: parent.width
+            height: col.implicitHeight + Theme.pad * 2 + titleBox.height / 2
+            color: Theme.bg
+            border.color: card.levelColor
+            border.width: 2
 
-        ColumnLayout {
-            id: col
-
-            x: Theme.pad
-            y: Theme.pad + titleBox.height / 2
-            width: frame.width - Theme.pad * 2
-            spacing: 2
-
-            T {
-                Layout.fillWidth: true
-                visible: card.summary !== ""
-                text: card.summary.slice(0, card.typed) + (card.typed < card.summary.length ? "█" : "")
-                color: Theme.fg
-                font.bold: true
-                wrapMode: Text.Wrap
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: mouse => {
+                    const e = card.entry;
+                    if (mouse.button === Qt.RightButton) card.leave(() => Notifs.dismiss(e));
+                    else card.leave(() => Notifs.invoke(e));
+                }
             }
 
-            T {
-                Layout.fillWidth: true
-                visible: text !== ""
-                text: card.entry?.body ?? ""
-                color: Theme.gray
-                wrapMode: Text.Wrap
-                maximumLineCount: 4
-                elide: Text.ElideRight
-            }
+            ColumnLayout {
+                id: col
 
-            // кнопки действий: [открыть] [ответить] … [×]
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 4
-                spacing: cell.advanceWidth
+                x: Theme.pad
+                y: Theme.pad + titleBox.height / 2
+                width: frame.width - Theme.pad * 2
+                spacing: 2
 
-                Repeater {
-                    model: card.buttons
+                T {
+                    Layout.fillWidth: true
+                    visible: card.summary !== ""
+                    text: card.summary.slice(0, card.typed) + (card.typed < card.summary.length ? "█" : "")
+                    color: Theme.fg
+                    font.bold: true
+                    wrapMode: Text.Wrap
+                }
+
+                T {
+                    Layout.fillWidth: true
+                    visible: text !== ""
+                    text: card.entry?.body ?? ""
+                    color: Theme.gray
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 4
+                    elide: Text.ElideRight
+                }
+
+                // кнопки действий: [открыть] [ответить] … [×]
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    spacing: cell.advanceWidth
+
+                    Repeater {
+                        model: card.buttons
+
+                        T {
+                            required property var modelData
+                            text: "[" + modelData.text + "]"
+                            color: Theme.accent
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { const e = card.entry, a = parent.modelData; card.leave(() => Notifs.invoke(e, a)); }
+                            }
+                        }
+                    }
+
+                    Item { Layout.fillWidth: true }
 
                     T {
-                        required property var modelData
-                        text: "[" + modelData.text + "]"
-                        color: Theme.accent
+                        text: "[×]"
+                        color: Theme.gray
 
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: { const e = card.entry, a = parent.modelData; card.leave(() => Notifs.invoke(e, a)); }
+                            onClicked: { const e = card.entry; card.leave(() => Notifs.dismiss(e)); }
                         }
                     }
                 }
 
-                Item { Layout.fillWidth: true }
+                // сколько осталось до исчезновения
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    implicitHeight: 2
+                    visible: !card.sticky
+                    color: Theme.bg1
 
-                T {
-                    text: "[×]"
-                    color: Theme.gray
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: { const e = card.entry; card.leave(() => Notifs.dismiss(e)); }
+                    Rectangle {
+                        width: parent.width * card.remaining
+                        height: parent.height
+                        color: card.levelColor
                     }
                 }
             }
+        }
 
-            // сколько осталось до исчезновения
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.topMargin: 4
-                implicitHeight: 2
-                visible: !card.sticky
-                color: Theme.bg1
+        // заголовок на линии рамки: ┌─[ 21:06 INFO firefox ]───
+        Rectangle {
+            id: titleBox
 
-                Rectangle {
-                    width: parent.width * card.remaining
-                    height: parent.height
-                    color: card.levelColor
-                }
+            x: Theme.pad
+            width: title.implicitWidth
+            height: title.implicitHeight
+            color: Theme.bg
+
+            T {
+                id: title
+                textFormat: Text.StyledText
+                text: !card.entry ? "" : card.c(card.levelColor, "[ ")
+                    + card.c(Theme.gray, Qt.formatTime(card.entry.time, "HH:mm")) + " "
+                    + card.c(card.levelColor, "<b>" + Notifs.level(card.entry.urgency) + "</b>") + " "
+                    + card.c(Theme.fg, card.entry.app)
+                    + card.c(card.levelColor, " ]")
             }
         }
     }
 
-    // заголовок на линии рамки: ┌─[ 21:06 INFO firefox ]───
-    Rectangle {
-        id: titleBox
-
-        x: Theme.pad
-        width: title.implicitWidth
-        height: title.implicitHeight
-        color: Theme.bg
-
-        T {
-            id: title
-            textFormat: Text.StyledText
-            text: !card.entry ? "" : card.c(card.levelColor, "[ ")
-                + card.c(Theme.gray, Qt.formatTime(card.entry.time, "HH:mm")) + " "
-                + card.c(card.levelColor, "<b>" + Notifs.level(card.entry.urgency) + "</b>") + " "
-                + card.c(Theme.fg, card.entry.app)
-                + card.c(card.levelColor, " ]")
-        }
+    TypeOn {
+        anchors.fill: parent
+        source: body
+        p: reveal.p
+        active: reveal.printing
     }
 }

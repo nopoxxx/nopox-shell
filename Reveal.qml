@@ -3,7 +3,8 @@ import QtQuick
 
 // Появление и исчезновение окна shell: p идёт 0 → 1, пока open, и обратно, когда open снят.
 // Стили (S.SHELL_ANIMS): slide — выезжает от edge, fade — проявляется, pop — вырастает из центра,
-// unfold — разворачивается сверху вниз, none — без анимации.
+// unfold — разворачивается сверху вниз, type — печатается по символу из случайных знаков (рисует TypeOn.qml),
+// none — без анимации.
 // Для окна в LazyLoader Reveal живёт снаружи загрузчика: active: reveal.loaded держит окно, пока доигрывает
 // закрытие. Окно привязывает к нему opacity, scale и transform:
 //   opacity: rv.alpha; scale: rv.zoom
@@ -20,6 +21,8 @@ Scope {
     property real p: 0
     readonly property bool loaded: open || p > 0
     readonly property bool animated: style !== "none" && duration > 0
+    // type: окно рисует TypeOn, пока печать не закончена
+    readonly property bool printing: style === "type" && p < 1
 
     readonly property real alpha: style === "fade" || style === "pop" || style === "slide" ? p : 1
     readonly property real zoom: style === "pop" ? 0.92 + 0.08 * p : 1
@@ -44,9 +47,11 @@ Scope {
         }
         anim.from = p;
         anim.to = to;
-        // прерванная на середине анимация доигрывает только остаток пути
-        anim.duration = duration * Math.abs(to - p);
-        anim.easing.type = open ? Easing.OutCubic : Easing.InCubic;
+        // прерванная на середине анимация доигрывает только остаток пути;
+        // печать — ровным темпом и дольше: окно набирается по символу
+        const type = style === "type";
+        anim.duration = duration * (type ? 2.5 : 1) * Math.abs(to - p);
+        anim.easing.type = type ? Easing.Linear : open ? Easing.OutCubic : Easing.InCubic;
         anim.start();
     }
 

@@ -62,7 +62,8 @@ LockScreen.qml       WlSessionLock + PAM (/etc/pam.d/login), предпросм�
 LoginPrompt.qml      общий экран getty (часы, login:, Password:) для блокировки и greeter
 BigClock.qml         часы из блоков 3×5 как tty-clock
 BlinkCursor.qml      мигающий █
-Reveal.qml           появление/исчезновение окна shell по стилю (slide fade pop unfold none): меню, home, уведомления
+Reveal.qml           появление/исчезновение окна shell по стилю (slide fade pop unfold type none): меню, home, уведомления
+TypeOn.qml           стиль type: окно печатается по символу из случайных знаков (копия через ShaderEffectSource)
 EditField.qml        поле ввода в рамке с подписью (используется в BindsWindow)
 GreeterSync.qml      копирует настройки/обои в /var/lib/nopox-greeter/$USER для greeter
 greeter.qml          отдельная точка входа greeter для greetd (ShellRoot, Greetd)
@@ -389,6 +390,12 @@ duration; edge; distance }` живёт **снаружи** LazyLoader, `active: r
 доиграть. Окно привязывает `opacity: reveal.alpha`, `scale: reveal.zoom`, `transform: [Translate { reveal.dx/dy },
 Scale { yScale: reveal.ys }]`, а `keyboardFocus` — Exclusive только пока `open`. Открыли снова во время закрытия —
 окно то же, состояние сбрасывать самому (Launcher: `reset()`). Сигнал `hidden` — p дошло до 0.
+Стиль `type` рисует не Reveal, а `TypeOn { anchors.fill: parent; source: box; margin; p: reveal.p; active: reveal.printing }` —
+**сосед** `box` выше по z, не потомок: прячет его (`hideSource`) и показывает напечатанную часть двумя
+`ShaderEffectSource` в окошках (целые строки и начало текущей) плюс полосу шума с курсором █. `margin` — сколько
+захватить над `box` (заголовок на рамке). Печать длится `duration × 2.5`, линейно. У карточки уведомления источник —
+`body` (рамка и заголовок), потому что TypeOn не может прятать собственного родителя. ShaderEffect с текстурой
+в `qml -platform offscreen` не рисуется (программный рендер) — для проверки там годится только сам ShaderEffectSource.
 Навигация везде одинакова: ↑↓ / j k (в полях ввода — Ctrl+J/K), ←→ / h l, ↵, Esc/q, Tab — разделы.
 Выделение строки — `▌ ` акцентом и фон `Theme.bg1`; изменённое значение — ` *`.
 Наведение мыши выделяет строку только при реальном сдвиге курсора (`lastMouse`).

@@ -486,6 +486,14 @@ Scope {
                     }
                 }
             }
+
+            TypeOn {
+                anchors.fill: parent
+                source: box
+                margin: title.height / 2
+                p: reveal.p
+                active: reveal.printing
+            }
         }
     }
 }

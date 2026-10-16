@@ -241,6 +241,13 @@ Scope {
                         .map(([k, v]) => `<font color="${Theme.accent}">${k}</font> ${v}`).join("  ")
                 }
             }
+
+            TypeOn {
+                anchors.fill: parent
+                source: box
+                p: reveal.p
+                active: reveal.printing
+            }
         }
     }
 }
