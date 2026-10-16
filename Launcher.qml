@@ -75,7 +75,7 @@ Scope {
     readonly property var menu: ({
         label: "~",
         children: [
-            { label: "apps", icon: icons.apps, desc: "запуск программ (Mod+Shift+D)", provider: "apps" },
+            { label: "apps", icon: icons.apps, desc: "запуск программ (Mod+Space)", provider: "apps" },
             { label: "wallpaper", icon: icons.wallpaper, desc: "обои; Tab — wallhaven (Mod+Shift+W)", run: () => openPicker("local") },
             { label: "setup", icon: icons.setup, desc: "все настройки, мониторы, сеть, звук (Mod+S)", run: () => Settings.show("") },
             { label: "packages", icon: icons.packages, desc: "установить, удалить, обновить", children: [

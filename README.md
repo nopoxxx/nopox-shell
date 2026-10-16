@@ -44,7 +44,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/ins
 
 Установщик сначала спрашивает, что ставить, показывает итог и только потом устанавливает:
 
-- **терминал** — kitty, alacritty, ghostty или foot (конфиг в Gruvbox + Terminess, `Mod+T`);
+- **терминал** — kitty, alacritty, ghostty или foot (конфиг в Gruvbox + Terminess, `Mod+Return`);
 - **оболочка** — zsh (подсказки и подсветка), fish или bash; приглашение как панель: `user@host ~/путь ❯`,
   красный `❯` — если команда завершилась ошибкой;
 - **браузер** — Helium, Firefox, Zen, Chromium, Brave или Vivaldi (станет браузером по умолчанию, `Mod+Shift+B`);

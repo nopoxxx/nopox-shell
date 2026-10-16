@@ -243,7 +243,7 @@ function sections(outputs, layout) {
             act("audio", "звук", "pavucontrol — устройства и громкость приложений; быстрый микшер — клик по vol на панели"),
 
             { header: "приложения" },
-            { key: "shell.terminal", label: "терминал", type: "enum", options: TERMINALS, def: "kitty", hint: "Mod+T и окна, которые открывает shell (обновления, nmtui, …)" },
+            { key: "shell.terminal", label: "терминал", type: "enum", options: TERMINALS, def: "kitty", hint: "Mod+Return и окна, которые открывает shell (обновления, nmtui, …)" },
             { key: "shell.files", label: "файловый менеджер", type: "enum", options: FILE_MANAGERS, def: "none", hint: "Mod+E; yazi — в терминале" },
             { key: "shell.sh", label: "оболочка", type: "enum", options: SHELLS, def: "zsh", hint: "chsh в терминале (спросит пароль), действует с нового входа; нет пакета — поставит" },
             { key: "shell.browser", label: "браузер", type: "enum", options: Object.keys(BROWSERS), def: "none", hint: "Mod+Shift+B и браузер по умолчанию (xdg-settings); нет пакета — поставит через paru" },
@@ -634,7 +634,7 @@ function niriFiles(get, outs) {
         'spawn-at-startup "qs"',
         "",
         "binds {",
-        "    Mod+T hotkey-overlay-title=" + q("Open a Terminal: " + get("shell.terminal")) + " { spawn " + termCmd(get("shell.terminal")).map(q).join(" ") + "; }",
+        "    Mod+Return hotkey-overlay-title=" + q("Open a Terminal: " + get("shell.terminal")) + " { spawn " + termCmd(get("shell.terminal")).map(q).join(" ") + "; }",
         ...(filesCmd(get("shell.terminal"), get("shell.files"))
             ? ["    Mod+E hotkey-overlay-title=" + q("Files: " + get("shell.files")) + " { spawn " + filesCmd(get("shell.terminal"), get("shell.files")).map(q).join(" ") + "; }"]
             : []),
@@ -642,7 +642,7 @@ function niriFiles(get, outs) {
             ? ["    Mod+Shift+B hotkey-overlay-title=" + q("Browser: " + get("shell.browser")) + " { spawn " + q(BROWSERS[get("shell.browser")].bin) + "; }"]
             : []),
         '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
-        '    Mod+Shift+D hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
+        '    Mod+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
         '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',
         '    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }',
         '    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "qs" "ipc" "call" "lock" "lock"; }',

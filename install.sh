@@ -414,7 +414,7 @@ fi
 info "обновления потом — сам shell: nopox ↑ на панели"
 mkdir -p "$HOME/Pictures/Wallpapers"
 
-# выбор терминала, файлового менеджера и браузера — в настройки shell (Mod+T, Mod+E, Mod+Shift+B, окна обновлений и т.п.);
+# выбор терминала, файлового менеджера и браузера — в настройки shell (Mod+Return, Mod+E, Mod+Shift+B, окна обновлений и т.п.);
 # оболочку и браузер shell при запуске всё равно сверит с системой (services/DefaultApps.qml)
 set_setting shell.terminal "$TERMINAL"
 set_setting shell.files "$FILES"
@@ -629,8 +629,9 @@ fi
 cat <<EOF
 
   ${A}Mod+D${N}        меню             ${A}Mod+S${N}         настройки
-  ${A}Mod+T${N}        $TERMINAL$(printf '%*s' $((17 - ${#TERMINAL})) '')${A}Mod+Shift+W${N}   обои
-  ${A}Mod+Shift+D${N}  программы        ${A}Super+Alt+L${N}   блокировка$([ "$FILES" != none ] && printf '\n  %sMod+E%s        %s' "$A" "$N" "$FILES")
+  ${A}Mod+Return${N}   $TERMINAL$(printf '%*s' $((17 - ${#TERMINAL})) '')${A}Mod+Shift+W${N}   обои
+  ${A}Mod+Space${N}    программы        ${A}Super+Alt+L${N}   блокировка$([ "$FILES" != none ] && printf '\n  %sMod+E%s        %s' "$A" "$N" "$FILES")
+  ${A}Mod+Tab${N}      обзор            ${A}Mod+Shift+S${N}   скриншот
   ${A}Mod+Shift+/${N}  все клавиши niri
 
   ${D}$REPO${N}

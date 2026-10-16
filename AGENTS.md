@@ -192,7 +192,7 @@ wallhaven, lockPreview ставит `Settings.returnHere` — закрываяс
 config.kdl            пользовательский; include "nopox/main.kdl" и В САМОМ КОНЦЕ include "nopox/keys.kdl"
 nopox/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
 nopox/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
-nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+T, Mod+E, Mod+Shift+B, Mod+D, Mod+Shift+D, Mod+Shift+W, Mod+S, Super+Alt+L)
+nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+S, Super+Alt+L)
 nopox/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
 ```
 
