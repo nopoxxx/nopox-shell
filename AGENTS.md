@@ -486,15 +486,19 @@ Bash, `set -euo pipefail`, запуск от обычного пользоват
 терминал, оболочка, браузер, файловый менеджер, программы из `APP_CATALOG` `группа|id|описание|пакеты|умолч.`,
 мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`) → **niri ≥ `NIRI_MIN` (25.11)**: настраиваемые горячие
 углы и `screenshot-window --path` появились в 25.11, старый niri конфиг nopox не примет, а `pacman -S --needed` его не
-обновит — предлагает `pacman -Syu`, иначе выход → paru (`paru_ok` проверяет, что он
-**запускается**; иначе: из репозитория → сборка `paru-bin` → сборка `paru` из исходников через `build_aur`) →
-программы и иконки `gruvbox-plus-icon-theme` (AUR) через `paru`, затем сверка `pacman -Qq` и честный список непоставленных →
+обновит — предлагает `pacman -Syu`, иначе выход → **chaotic-aur** (ключ `3056513887B78AEB`, keyring и mirrorlist с
+`cdn-mirror.chaotic.cx`, запись в `pacman.conf` с бэкапом; уже подключён — пропуск, `--no-chaotic` — без него) →
+программы и иконки `gruvbox-plus-icon-theme` через **`install_pkgs`**: что есть в репозиториях (официальные, chaotic-aur,
+CachyOS) — одним `pacman -S`, чего нет нигде — `build_aur` (`makepkg`); «`a/b`» в списке — варианты имени (первый из
+репозиториев, иначе последний, обычно `-bin`), «стоит ли» — `pacman -T` (учитывает provides); не поставилось — честный
+список и команда повтора → **paru только для shell** (обновления AUR, меню packages/): из репозитория или `paru-bin`
+через `makepkg`, не запустился — предупреждение; **сам установщик paru не пользуется** →
 клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files/sh/browser` →
 конфиг niri (замена или дописать два include; если nopox уже подключён — предлагает закомментировать
 встроенный `Mod+Shift+S`/`Print { screenshot; }` старого эталона: он перекрыл бы скриншот nopox; затем `niri validate`,
 при ошибке — откат; стартовые `nopox/*.kdl` — вывод генератора с настройками по умолчанию, пересобирать при его изменении) → конфиг
 терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию → Discord →
-**Steam: уведомления** (если стоит steam, флаг `--no-steam-notify` пропускает): `paru -S millennium bun`, симлинки
+**Steam: уведомления** (если стоит steam, флаг `--no-steam-notify` пропускает): `install_pkgs millennium bun`, симлинки
 `libXtst.so.6` → bootstrap Millennium (пакет ставит их сам, только если Steam уже запускался), клон
 `~/.local/share/nopox-notify`, `bun run build`, включение в `~/.config/millennium/config.json` → `plugins.enabledPlugins`
 (правка JSON через `bun -e`, битый файл не трогается) → greeter → итог.

@@ -13,6 +13,7 @@
 #   --discord-mod <m>        none | vencord | betterdiscord | vesktop
 #   --no-greeter             не ставить greeter (greetd)
 #   --no-steam-notify        не ставить Millennium и плагин nopox-notify (уведомления Steam)
+#   --no-chaotic             не подключать chaotic-aur: AUR-программы собирать makepkg (дольше)
 #   --keep-niri-config       не заменять config.kdl niri, только дописать include
 #   --branch <ветка>         ветка репозитория (по умолчанию main)
 #
@@ -24,6 +25,7 @@ BRANCH=main
 YES=0
 GREETER=ask
 STEAM_NOTIFY=ask
+CHAOTIC=ask
 KEEP_NIRI=0
 TERMINAL="" SHELL_CHOICE="" BROWSER="" FILES="" APPS="" DISCORD_MOD=""
 DEST="$HOME/.config/quickshell"
@@ -41,9 +43,10 @@ while [ $# -gt 0 ]; do
         --discord-mod) DISCORD_MOD=${2:?}; shift ;;
         --no-greeter) GREETER=no ;;
         --no-steam-notify) STEAM_NOTIFY=no ;;
+        --no-chaotic) CHAOTIC=no ;;
         --keep-niri-config) KEEP_NIRI=1 ;;
         --branch) BRANCH=${2:?нужно имя ветки}; shift ;;
-        -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "неизвестный флаг: $1" >&2; exit 1 ;;
     esac
     shift
@@ -197,7 +200,7 @@ APP_CATALOG=(
     "Графика|gimp|GIMP|gimp|0"
     "Графика|krita|Krita — рисование|krita|0"
     "Работа и код|code|Code - OSS (VS Code)|code|0"
-    "Работа и код|vscodium|VSCodium|vscodium-bin|0"
+    "Работа и код|vscodium|VSCodium|vscodium/vscodium-bin|0"
     "Работа и код|neovim|Neovim|neovim|0"
     "Работа и код|libreoffice|LibreOffice|libreoffice-fresh|0"
     "Работа и код|obsidian|Obsidian — заметки|obsidian|0"
@@ -264,7 +267,7 @@ if printf '%s\n' "${APP_IDS[@]}" | grep -qx discord; then
         "vesktop|Vesktop — отдельный клиент со встроенным Vencord, лучше на Wayland"
     # Vesktop заменяет обычный Discord
     if [ "$DISCORD_MOD" = vesktop ]; then
-        mapfile -t APP_PKGS < <(printf '%s\n' "${APP_PKGS[@]}" | sed 's/^discord$/vesktop-bin/')
+        mapfile -t APP_PKGS < <(printf '%s\n' "${APP_PKGS[@]}" | sed 's#^discord$#vesktop/vesktop-bin#')
     fi
     [ "$DISCORD_MOD" = betterdiscord ] && APP_PKGS+=(betterdiscordctl)
 else
@@ -285,7 +288,7 @@ sudo -v || die "без sudo не поставить пакеты"
 # держим sudo живым, пока идёт установка
 while kill -0 $$ 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done &
 
-# с --yes pacman и paru тоже не спрашивают; без него их вопросы остаются: видно, что ставится
+# с --yes pacman и makepkg тоже не спрашивают; без него их вопросы остаются: видно, что ставится
 noconfirm=()
 [ "$YES" = 1 ] && noconfirm=(--noconfirm)
 
@@ -331,11 +334,7 @@ if [ -n "$niri_ver" ] && [ "$(printf '%s\n' "$NIRI_MIN" "$niri_ver" | sort -V | 
     fi
 fi
 
-# paru должен не просто быть, а запускаться: paru-bin собран под конкретную libalpm
-# и после обновления pacman (libalpm.so.N → N+1) не стартует
-paru_ok() { paru --version &>/dev/null; }
-
-# build_aur <пакет> — собрать из AUR и поставить; сборочные зависимости (-r) удаляются после сборки.
+# build_aur <пакет> — собрать из AUR makepkg'ом и поставить; сборочные зависимости (-r) удаляются после сборки.
 # Не makepkg -si: он ставит пакет через «sudo -k» и заново спрашивает пароль (а с --yes зависает)
 build_aur() {
     local tmp rc=0
@@ -347,37 +346,55 @@ build_aur() {
     return $rc
 }
 
-# убрать неработающий paru, чтобы на его место встал другой (paru и paru-bin конфликтуют)
-drop_paru() {
-    # точные имена: `pacman -Qq paru` находит и paru-bin — тот провайдит paru
-    local pkgs
-    pkgs=$(pacman -Qq | grep -xE 'paru|paru-bin' || true)
-    [ -z "$pkgs" ] || sudo pacman -Rdd --noconfirm $pkgs >/dev/null
+# installed <пакет> — стоит ли он сам или то, что его провайдит (vesktop-bin → vesktop, paru-bin → paru)
+installed() { pacman -T "$1" >/dev/null 2>&1; }
+
+# install_pkgs <пакет|a/b> … — что есть в репозиториях (официальные, chaotic-aur, …) — одним pacman,
+# остального нет нигде — makepkg из AUR. «a/b» — варианты имени: первый, что есть в репозиториях,
+# иначе последний (обычно -bin: собирается без компиляции). Не поставилось — в FAILED.
+FAILED=()
+install_pkgs() {
+    local item alt pick repo=() aur=() p alts
+    for item in "$@"; do
+        IFS=/ read -ra alts <<<"$item"
+        pick=""
+        for alt in "${alts[@]}"; do installed "$alt" && { pick=-; break; }; done
+        [ "$pick" = - ] && continue
+        for alt in "${alts[@]}"; do pacman -Si "$alt" &>/dev/null && { pick=$alt; break; }; done
+        if [ -n "$pick" ]; then repo+=("$pick"); else aur+=("${alts[-1]}"); fi
+    done
+    if [ ${#repo[@]} -gt 0 ]; then
+        info "pacman: ${repo[*]}"
+        sudo pacman -S --needed "${noconfirm[@]}" "${repo[@]}" || true
+    fi
+    for p in "${aur[@]}"; do
+        info "нет в репозиториях — собираю из AUR: $p"
+        build_aur "$p" || true
+    done
+    for p in "${repo[@]}" "${aur[@]}"; do installed "$p" || FAILED+=("$p"); done
 }
 
-if paru_ok; then
-    ok "paru уже есть"
+# ── chaotic-aur ──────────────────────────────────────────────────────
+# AUR-программы — готовыми сборками chaotic-aur через pacman: без компиляции установка в разы быстрее
+CHAOTIC_KEY=3056513887B78AEB
+CHAOTIC_CDN=https://cdn-mirror.chaotic.cx/chaotic-aur
+if grep -q '^\[chaotic-aur\]' /etc/pacman.conf; then
+    ok "chaotic-aur уже подключён"
+elif [ "$CHAOTIC" = no ] || ! ask "Подключить chaotic-aur — готовые сборки AUR, программы ставятся без компиляции?" y; then
+    info "без chaotic-aur: программы из AUR соберутся makepkg — это дольше"
+elif sudo pacman-key --recv-key "$CHAOTIC_KEY" --keyserver keyserver.ubuntu.com \
+    && sudo pacman-key --lsign-key "$CHAOTIC_KEY" \
+    && sudo pacman -U --needed --noconfirm "$CHAOTIC_CDN/chaotic-keyring.pkg.tar.zst" "$CHAOTIC_CDN/chaotic-mirrorlist.pkg.tar.zst"; then
+    sudo cp /etc/pacman.conf "/etc/pacman.conf.bak-$STAMP"
+    printf '\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist\n' | sudo tee -a /etc/pacman.conf >/dev/null
+    sudo pacman -Sy
+    ok "chaotic-aur подключён (старый pacman.conf — /etc/pacman.conf.bak-$STAMP)"
 else
-    command -v paru >/dev/null && { warn "paru установлен, но не запускается — переустанавливаю"; drop_paru; }
-    if pacman -Si paru &>/dev/null; then
-        sudo pacman -S --needed --noconfirm paru || true
-    fi
-    if ! paru_ok; then
-        info "собираю paru-bin из AUR"
-        drop_paru
-        build_aur paru-bin || true
-    fi
-    if ! paru_ok; then
-        warn "paru-bin не запускается (собран под другую версию pacman) — собираю paru из исходников, это несколько минут"
-        drop_paru
-        build_aur paru || true
-    fi
-    paru_ok || die "paru не запускается: $(paru --version 2>&1 | tail -1)"
-    ok "paru: $(paru --version | head -1)"
+    warn "chaotic-aur подключить не вышло — программы из AUR соберутся makepkg"
 fi
 
-# браузер, файловый менеджер и программы — через paru: из репозиториев, если есть, иначе из AUR
-# иконки Gruvbox Plus — из AUR, поэтому не в PKGS; shell включает их в GTK и Qt (темы Qt и GTK)
+# ── программы ────────────────────────────────────────────────────────
+# браузер, файловый менеджер, программы и иконки Gruvbox Plus (их shell включает в GTK и Qt)
 EXTRA=("${APP_PKGS[@]}" gruvbox-plus-icon-theme)
 [ -n "${BROWSER_PKG[$BROWSER]}" ] && EXTRA+=("${BROWSER_PKG[$BROWSER]}")
 [ -n "${FILES_PKG[$FILES]}" ] && EXTRA+=("${FILES_PKG[$FILES]}")
@@ -393,21 +410,29 @@ if printf '%s\n' "${EXTRA[@]}" | grep -qx steam && ! grep -q '^\[multilib\]' /et
     fi
 fi
 
-missing=()
-for p in "${EXTRA[@]}"; do pacman -Qq "$p" &>/dev/null || missing+=("$p"); done
-if [ ${#missing[@]} -eq 0 ]; then
-    ok "программы уже установлены"
+install_pkgs "${EXTRA[@]}"
+if [ ${#FAILED[@]} -eq 0 ]; then
+    ok "программы установлены"
 else
-    info "ставлю через paru: ${missing[*]}"
-    paru -S --needed --skipreview "${noconfirm[@]}" "${missing[@]}" || true
-    # paru мог упасть на одном пакете — сверяем, что поставилось на самом деле
-    failed=()
-    for p in "${missing[@]}"; do pacman -Qq "$p" &>/dev/null || failed+=("$p"); done
-    if [ ${#failed[@]} -eq 0 ]; then
-        ok "программы установлены"
-    else
-        warn "не поставились: ${failed[*]} — см. вывод paru выше; повторить: paru -S ${failed[*]}"
+    warn "не поставились: ${FAILED[*]} — см. вывод выше; повторить: paru -S ${FAILED[*]}"
+    FAILED=()
+fi
+
+# paru — для shell (обновления AUR на панели, меню packages/); сам установщик им не пользуется.
+# Должен не просто стоять, а запускаться: paru-bin собран под конкретную libalpm и после обновления pacman не стартует
+paru_ok() { paru --version &>/dev/null; }
+if paru_ok; then
+    ok "paru уже есть"
+else
+    # неработающий paru мешает поставить другой (paru и paru-bin конфликтуют)
+    if command -v paru >/dev/null; then
+        old=$(pacman -Qq | grep -xE 'paru|paru-bin' || true)
+        [ -z "$old" ] || sudo pacman -Rdd --noconfirm $old >/dev/null
     fi
+    install_pkgs paru/paru-bin
+    FAILED=()
+    if paru_ok; then ok "paru: $(paru --version | head -1)"
+    else warn "paru не запускается — обновления AUR и меню packages/ его не найдут; поставить потом: pacman -S paru"; fi
 fi
 
 # ── сам shell ────────────────────────────────────────────────────────
@@ -622,9 +647,9 @@ MCFG="$HOME/.config/millennium/config.json"
 if [ "$STEAM_NOTIFY" != no ] && pacman -Qq steam &>/dev/null; then
     step "Steam: уведомления"
     if ask "Поставить Millennium и плагин nopox-notify (уведомления Steam — обычными уведомлениями shell)?" y; then
-        paru -S --needed --skipreview "${noconfirm[@]}" millennium bun || true
-        if ! pacman -Qq millennium &>/dev/null || ! command -v bun >/dev/null; then
-            warn "Millennium или bun не поставились — см. вывод paru; плагин пропущен"
+        install_pkgs millennium bun
+        if ! pacman -T millennium >/dev/null || ! command -v bun >/dev/null; then
+            warn "Millennium или bun не поставились — см. вывод выше; плагин пропущен"
         else
             # пакет millennium подключается к Steam симлинками, но только если Steam уже запускался
             if [ -d "$STEAM_DIR/ubuntu12_32" ] && [ -d "$STEAM_DIR/ubuntu12_64" ]; then

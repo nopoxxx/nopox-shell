@@ -228,7 +228,9 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td>программы</td><td>по группам: медиа, общение, графика, работа и код, игры, утилиты</td></tr>
     <tr><td>Discord</td><td>как есть, с Vencord, с BetterDiscord или Vesktop вместо него</td></tr>
   </table></div>
-  <p>Нужен niri 25.11 или новее — установщик проверит и предложит обновить. Дальше — пакеты (программы через <code>paru</code>: репозитории или AUR), клон shell в <code>~/.config/quickshell</code>,
+  <p>Нужен niri 25.11 или новее — установщик проверит и предложит обновить. Программы из AUR ставятся готовыми сборками из
+  <a href="https://aur.chaotic.cx">chaotic-aur</a> (установщик предложит подключить его) — без компиляции, поэтому быстро; чего там нет —
+  собирается из AUR. <code>paru</code> тоже ставится — им пользуется сам shell (обновления, меню <code>packages/</code>). Дальше — клон shell в <code>~/.config/quickshell</code>,
   конфиг niri (или два <code>include</code> к вашему) и, по желанию, greeter. Всё, что заменяется, остаётся рядом как <code>*.bak-&lt;дата&gt;</code>.</p>
 
   <h3>флаги</h3>
@@ -241,6 +243,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td><code>--keep-niri-config</code></td><td>не заменять ваш <code>config.kdl</code>, только дописать <code>include</code></td></tr>
     <tr><td><code>--no-greeter</code></td><td>не ставить greeter</td></tr>
     <tr><td><code>--no-steam-notify</code></td><td>не ставить Millennium и плагин уведомлений Steam</td></tr>
+    <tr><td><code>--no-chaotic</code></td><td>не подключать chaotic-aur: программы из AUR соберутся из исходников (дольше)</td></tr>
     <tr><td><code>--branch &lt;ветка&gt;</code></td><td>другая ветка репозитория</td></tr>
   </table></div>
 
