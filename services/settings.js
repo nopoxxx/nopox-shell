@@ -933,6 +933,7 @@ function themeFiles(get, home) {
     return {
         "gtk-3.0/nopox.css": gtkCss(colors, false),
         "gtk-4.0/nopox.css": gtkCss(colors, true),
+        "btop/themes/nopox.theme": btopTheme(accent),
         "qt6ct/colors/nopox.conf": [
             "; nopox: палитра shell для Qt — сгенерировано nopox-shell, ручные правки перезапишутся",
             "[ColorScheme]",
@@ -956,6 +957,28 @@ function themeFiles(get, home) {
             ""
         ].join("\n")
     };
+}
+
+// btop в стиле shell: рамки и заголовки — акцент, разделители — bg2, подписи — серые, градиенты Gruvbox.
+// Фон пустой — btop рисует на фоне терминала (theme_background = False ставит AppTheme в btop.conf).
+function btopTheme(accent) {
+    const c = GRUVBOX, aqua = ACCENTS.aqua, orange = ACCENTS.orange;
+    const t = {
+        main_bg: "", main_fg: c.fg, title: accent, hi_fg: accent,
+        selected_bg: c.bg1, selected_fg: accent, inactive_fg: c.bg3, graph_text: c.gray, meter_bg: c.bg1,
+        proc_misc: aqua, cpu_box: accent, mem_box: accent, net_box: accent, proc_box: accent, div_line: c.bg2,
+        temp_start: c.green, temp_mid: c.yellow, temp_end: c.red,
+        cpu_start: c.green, cpu_mid: c.yellow, cpu_end: c.red,
+        free_start: c.bg2, free_mid: aqua, free_end: c.green,
+        cached_start: c.bg2, cached_mid: c.blue, cached_end: aqua,
+        available_start: c.bg2, available_mid: orange, available_end: c.yellow,
+        used_start: c.green, used_mid: orange, used_end: c.red,
+        download_start: c.bg2, download_mid: c.blue, download_end: aqua,
+        upload_start: c.bg2, upload_mid: c.purple, upload_end: accent,
+        process_start: c.green, process_mid: c.yellow, process_end: c.red
+    };
+    return ["# nopox: тема btop в цветах shell — сгенерировано nopox-shell (Mod+S → look/ → темы), ручные правки перезапишутся",
+        ...Object.keys(t).map(k => "theme[" + k + "]=" + JSON.stringify(t[k])), ""].join("\n");
 }
 
 // [[ключ org.gnome.desktop.interface, значение GVariant | "" — сбросить]].

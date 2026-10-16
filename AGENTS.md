@@ -184,8 +184,12 @@ docs/                документация — GitHub Pages из main /docs (
   `gtk-3.0/nopox.css` (`@define-color` именованных цветов libadwaita — их понимает тема adw-gtk3),
   `gtk-4.0/nopox.css` (то же + CSS-переменные `--window-bg-color` в `:root`: libadwaita ≥ 1.6 читает их),
   `qt6ct/colors/nopox.conf` (22 роли QPalette по порядку, от WindowText до Accent),
-  `qt6ct/qt6ct.conf` (Fusion, своя палитра, иконки `ICONS`, шрифты в формате `QFont::toString`).
-  Синхронизация выключена → `nopox.css` пустые, qt6ct не трогается.
+  `qt6ct/qt6ct.conf` (Fusion, своя палитра, иконки `ICONS`, шрифты в формате `QFont::toString`),
+  `btop/themes/nopox.theme` (`btopTheme(accent)`: рамки и заголовки — акцент, разделители bg2, пустой `main_bg`).
+  Синхронизация выключена → `nopox.css` пустые, qt6ct и btop не трогаются.
+- btop.conf AppTheme правит построчно (есть тема nopox): `color_theme = "nopox"`, `theme_background = False`
+  (фон терминала), `rounded_corners = False` (прямые углы, как рамки shell); нет файла — создаёт, btop допишет остальное.
+  btop читает его при запуске и переписывает при выходе со своими значениями — эти три сохраняет.
 - `S.themeGsettings(get)` → `[[ключ org.gnome.desktop.interface, GVariant | "" — reset]]`:
   `color-scheme`, `gtk-theme adw-gtk3-dark`, `icon-theme` (`ICONS` = Gruvbox-Plus-Dark из AUR `gruvbox-plus-icon-theme`), `accent-color` (через `GNOME_ACCENTS`, aqua → teal),
   `cursor-size`, шрифты. Синхронизация выключена → пустой список: gsettings не трогаем вовсе.
@@ -434,6 +438,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 | `~/.config/niri/nopox/*.kdl` | сгенерированный конфиг niri | Settings, Binds (keys.kdl) |
 | `~/.config/gtk-{3,4}.0/nopox.css`, `@import` в `gtk.css` | палитра GTK | AppTheme |
 | `~/.config/qt6ct/qt6ct.conf`, `qt6ct/colors/nopox.conf` | палитра и шрифт Qt | AppTheme |
+| `~/.config/btop/themes/nopox.theme`, три строки `btop.conf` | btop в цветах shell | AppTheme |
 | gsettings `org.gnome.desktop.interface` | тёмная схема, adw-gtk3-dark, иконки, акцент, шрифт, курсор | AppTheme |
 | `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим | Wallpaper |
 | `~/Pictures/Wallpapers/` | коллекция, загрузки wallhaven как `wallhaven-<id>.<ext>` | Wallpaper |

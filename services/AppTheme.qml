@@ -7,7 +7,8 @@ import "settings.js" as S
 // Темы приложений вслед за shell (настройки shell.theme.*, shell.accent, shell.fontSize, niri.cursor.size):
 //   GTK — ~/.config/gtk-{3,4}.0/nopox.css (палитра Gruvbox и акцент; @import в начале gtk.css)
 //         и gsettings org.gnome.desktop.interface (тёмная схема, adw-gtk3-dark, акцент, шрифт, курсор);
-//   Qt  — ~/.config/qt6ct/ (палитра, Fusion, шрифт); QT_QPA_PLATFORMTHEME задаёт misc.kdl.
+//   Qt  — ~/.config/qt6ct/ (палитра, Fusion, шрифт); QT_QPA_PLATFORMTHEME задаёт misc.kdl;
+//   btop — ~/.config/btop/themes/nopox.theme и color_theme / theme_background / rounded_corners в btop.conf.
 // Что писать — S.themeFiles() и S.themeGsettings(); здесь только запись, и лишь когда результат изменился.
 Singleton {
     id: root
@@ -55,6 +56,16 @@ Singleton {
                 last=$(awk '/^[[:space:]]*@import/ { n = NR } END { print n + 0 }' "$f")
                 if [ "$last" -gt 0 ]; then sed -i "\${last}a @import \\"nopox.css\\";" "$f"; else sed -i '1i @import "nopox.css";' "$f"; fi
             done
+            # btop: тема nopox, фон терминала, прямые углы — как рамки shell. btop перечитывает btop.conf
+            # при запуске и переписывает при выходе, сохраняя эти значения; запущенный увидит их со следующего раза
+            if [ -f "$d/btop/themes/nopox.theme" ]; then
+                b="$d/btop/btop.conf"
+                [ -f "$b" ] || printf '#? nopox: btop.conf создан nopox-shell, btop дополнит его сам\\n' > "$b"
+                for kv in 'color_theme = "nopox"' 'theme_background = False' 'rounded_corners = False'; do
+                    k=\${kv%% =*}
+                    if grep -q "^$k = " "$b"; then sed -i "s|^$k = .*|$kv|" "$b"; else printf '%s\\n' "$kv" >> "$b"; fi
+                done
+            fi
             # gsettings: ключ и значение; пустое значение — вернуть по умолчанию
             while [ $# -gt 1 ]; do
                 if [ -n "$2" ]; then gsettings set org.gnome.desktop.interface "$1" "$2"

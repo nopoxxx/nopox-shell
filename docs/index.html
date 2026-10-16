@@ -494,6 +494,8 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   <h2>Темы приложений</h2>
   <p><code>look/</code> → <code>темы Qt и GTK</code>: GTK- и Qt-приложения в той же палитре Gruvbox, с тем же акцентом и шрифтом,
   что и shell, и иконками Gruvbox Plus — через adw-gtk3 / libadwaita и qt6ct. Firefox и Chromium берут тёмную схему через портал.</p>
+  <p><code>btop</code> — тоже: тема <code>nopox</code> с рамками цвета акцента, прямыми углами и фоном терминала
+  (в <code>btop.conf</code> shell ставит <code>color_theme</code>, <code>theme_background</code> и <code>rounded_corners</code>, остальное не трогает).</p>
   <p class="c-gray">Уже открытые окна подхватывают изменения после перезапуска приложения; новые — сразу.
   Свои стили GTK пишите в <code>gtk.css</code> после строки <code>@import "nopox.css";</code>.</p>
 </section>
