@@ -56,7 +56,12 @@ Scope {
         if (entry.runInTerminal)
             Term.open(entry.command);
         else
-            entry.execute();
+            // не entry.execute(): он отдаёт окружение qs, а тот мог стартовать до включения тем (QT_QPA_PLATFORMTHEME)
+            Quickshell.execDetached({
+                command: entry.command,
+                workingDirectory: entry.workingDirectory || Quickshell.env("HOME"),
+                environment: Settings.appEnv()
+            });
     }
 
     // ── дерево меню ────────────────────────────────────────────────

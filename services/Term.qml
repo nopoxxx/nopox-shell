@@ -22,7 +22,9 @@ Singleton {
     })[name]
 
     function cmd(argv, opts) { return S.termCmd(name, argv, opts); }
-    function open(argv) { Quickshell.execDetached(cmd(argv)); }
-    function float(argv, opts) { Quickshell.execDetached(cmd(argv, Object.assign({ cls: "nopox-term" }, opts ?? {}))); }
+    // окружение — свежее (Settings.appEnv), а не то, с которым стартовал qs: из терминала тоже запускают программы
+    function run(argv) { Quickshell.execDetached({ command: argv, environment: Settings.appEnv() }); }
+    function open(argv) { run(cmd(argv)); }
+    function float(argv, opts) { run(cmd(argv, Object.assign({ cls: "nopox-term" }, opts ?? {}))); }
     function edit(path) { float(["vim", path]); }
 }

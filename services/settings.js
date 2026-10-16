@@ -321,6 +321,10 @@ function defaultOf(key, outputs) {
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
 
+// окружение программ при включённых темах (shell.theme.sync). niri получает его блоком environment в misc.kdl,
+// но выдаёт только тому, что запустит после этого; программам, которые запускает сам shell, — Settings.appEnv()
+var APP_ENV = { QT_QPA_PLATFORMTHEME: "qt6ct" };
+
 // горячие углы: ключ настройки → имя угла в niri (gestures { hot-corners { … } })
 var HOT_CORNERS = [["niri.hc.topLeft", "top-left"], ["niri.hc.topRight", "top-right"],
     ["niri.hc.bottomLeft", "bottom-left"], ["niri.hc.bottomRight", "bottom-right"]];
@@ -714,7 +718,7 @@ function niriFiles(get, outs) {
             "",
             "// Qt-приложения берут палитру и шрифт из qt6ct — его настраивает shell (темы Qt и GTK)",
             "environment {",
-            '    QT_QPA_PLATFORMTHEME "qt6ct"',
+            ...Object.keys(APP_ENV).map(k => "    " + k + " " + q(APP_ENV[k])),
             "}"] : [])
     ]);
 

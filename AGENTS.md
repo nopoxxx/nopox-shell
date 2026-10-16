@@ -174,8 +174,13 @@ docs/                документация — GitHub Pages из main /docs (
   `color-scheme`, `gtk-theme adw-gtk3-dark`, `icon-theme` (`ICONS` = Gruvbox-Plus-Dark из AUR `gruvbox-plus-icon-theme`), `accent-color` (через `GNOME_ACCENTS`, aqua → teal),
   `cursor-size`, шрифты. Синхронизация выключена → пустой список: gsettings не трогаем вовсе.
 - `AppTheme` сериализует оба результата в `state` и пишет, только когда строка изменилась (задержка 500 мс);
-  `@import "nopox.css";` вставляется **первой строкой** `gtk.css` (иначе GTK проигнорирует @import).
-- `QT_QPA_PLATFORMTHEME "qt6ct"` — блок `environment` в `misc.kdl` при `shell.theme.sync`.
+  `@import "nopox.css";` стоит **последним среди `@import`** в `gtk.css` (до остальных правил — иначе GTK проигнорирует
+  @import): из одинаковых `@define-color` побеждает последний, и остатки других тем (например `noctalia.css` от Noctalia)
+  перебивали палитру. При каждой записи импорт переставляется, если после него появился чужой.
+- `S.APP_ENV` (`QT_QPA_PLATFORMTHEME=qt6ct`) — блок `environment` в `misc.kdl` при `shell.theme.sync`. niri выдаёт его только
+  тому, что запустит после этого, поэтому программы, которые запускает сам shell (меню — `execDetached` с
+  `DesktopEntry.command` вместо `entry.execute()`, терминалы — `Term.run`), получают окружение явно: `Settings.appEnv()`;
+  при выключенных темах переменная убирается, только если её поставили мы (`=qt6ct`).
 - Уже открытые GTK-окна новый CSS не перечитывают (проверено: переключение gtk-theme туда-обратно не помогает) —
   только после перезапуска приложения. Новые окна получают изменения сразу.
 
@@ -457,8 +462,9 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
   В `Terminess Nerd Font Mono` значки ужаты в клетку и не читаются — Tray рисует их обычным `Terminess Nerd Font`.
   Новый глиф в `TRAY_ICONS` проверять по шрифту (fontTools, имена вида `md-discord`); в иконке элемента трея
   смотреть только `image://icon/<имя>` — в URL pixmap-иконок путь DBus (`/org/chromium/…` у любого Electron).
-- Приложения, запущенные из shell (меню, трей), наследуют окружение процесса `qs`, а не текущий `environment`
-  из niri: переменная, добавленная в `misc.kdl`, дойдёт до них после перезапуска shell или нового входа.
+- Приложения, запущенные из shell, наследуют окружение процесса `qs`, а не текущий `environment` из niri. Для тем это
+  закрыто `Settings.appEnv()` (меню, `Term`); новая переменная в `misc.kdl` — добавить в `S.APP_ENV`, иначе до программ
+  из shell она дойдёт только после перезапуска shell. Уже запущенные программы окружение не меняют — их надо перезапустить.
 - `normalizeLayout` хранит `off` явно: модуль, которого нет ни в одной зоне, считается новым.
 - Repeater отдаёт копии объектов — сравнивать по `name`/`id`, а не `===` (см. DisplaysWindow).
 - `Niri.windows` — объект по id; `Niri.workspaces` отсортированы по `idx`; номер стола относится к монитору.

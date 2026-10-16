@@ -43,11 +43,17 @@ Singleton {
                 shift 2
             done
             shift
-            # nopox.css подключается первой строкой gtk.css: @import должен идти до остальных правил
+            # nopox.css — последним среди @import в gtk.css: из одинаковых @define-color побеждает последний,
+            # а остатки других тем (noctalia.css и т.п.) иначе перебили бы палитру. @import — до остальных правил
             for v in gtk-3.0 gtk-4.0; do
                 f="$d/$v/gtk.css"
-                grep -qs '^@import "nopox.css";' "$f" && continue
-                if [ -s "$f" ]; then sed -i '1i @import "nopox.css";' "$f"; else printf '@import "nopox.css";\\n' > "$f"; fi
+                if [ ! -s "$f" ]; then mkdir -p "$d/$v"; printf '@import "nopox.css";\\n' > "$f"; continue; fi
+                last=$(awk '/^[[:space:]]*@import/ { n = NR } END { print n + 0 }' "$f")
+                ours=$(grep -n '^@import "nopox.css";$' "$f" | tail -1 | cut -d: -f1)
+                [ "$ours" = "$last" ] && continue
+                sed -i '/^@import "nopox.css";$/d' "$f"
+                last=$(awk '/^[[:space:]]*@import/ { n = NR } END { print n + 0 }' "$f")
+                if [ "$last" -gt 0 ]; then sed -i "\${last}a @import \\"nopox.css\\";" "$f"; else sed -i '1i @import "nopox.css";' "$f"; fi
             done
             # gsettings: ключ и значение; пустое значение — вернуть по умолчанию
             while [ $# -gt 1 ]; do

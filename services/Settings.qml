@@ -46,6 +46,17 @@ Singleton {
         open = true;
     }
 
+    // окружение для программ, которые запускает shell (меню, терминалы): qs мог стартовать до включения тем
+    // и держит старое окружение. Темы выключены — убираем только то, что поставили мы сами
+    function appEnv() {
+        const env = {};
+        for (const k in S.APP_ENV) {
+            if (get("shell.theme.sync")) env[k] = S.APP_ENV[k];
+            else if (Quickshell.env(k) === S.APP_ENV[k]) env[k] = null;
+        }
+        return env;
+    }
+
     function get(key) {
         return key in values ? values[key] : S.defaultOf(key, outputs);
     }
