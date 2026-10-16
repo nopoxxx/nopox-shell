@@ -344,7 +344,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><th>раздел</th><th>что внутри</th></tr>
     <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота меню</td></tr>
     <tr><td><code>windows/</code></td><td>отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, анимации</td></tr>
-    <tr><td><code>input/</code></td><td>клавиатура и раскладки, <a href="#binds">бинды</a>, мышь и тачпад, курсор</td></tr>
+    <tr><td><code>input/</code></td><td>клавиатура и раскладки, <a href="#binds">бинды</a>, мьют микрофона и звука, мышь и тачпад, курсор</td></tr>
     <tr><td><code>bar/</code></td><td>модули по зонам, положение и стиль панели, prompt, часы, график cpu, трей</td></tr>
     <tr><td><code>notify/</code></td><td>«не беспокоить», положение, время показа, максимум на экране, критичные</td></tr>
     <tr><td><code>lock/</code></td><td>блокировка по бездействию, эхо пароля, часы, обои, предпросмотр</td></tr>
@@ -374,6 +374,10 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td>2. ваши</td><td><code>~/.config/niri/config.kdl</code></td><td>вы, руками</td></tr>
     <tr><td>3. из окна биндов</td><td><code>~/.config/niri/nopox/keys.kdl</code></td><td>shell, из окна биндов</td></tr>
   </table></div>
+  <h3>мьют микрофона и звука</h3>
+  <p>В <code>input/</code> → <code>клавиши</code> — строки <code>мьют микрофона</code> и <code>мьют звука</code> (наушники или колонки — устройство вывода по умолчанию).
+  <kbd>↵</kbd> на строке и нажмите сочетание; <kbd>⇥</kbd> — ввести текстом (если сочетание уже занято niri, нажать его окну не получится),
+  <kbd>⌫</kbd> — убрать. Работают и на экране блокировки; если сочетание занято другим биндом, подсказка внизу об этом скажет.</p>
   <p class="note">Файлы в <code>~/.config/niri/nopox/</code> перезаписываются при каждом запуске shell — ручные правки там пропадут.
   Свои бинды задавайте в окне биндов или в своём <code>config.kdl</code>.</p>
 </section>

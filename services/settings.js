@@ -114,7 +114,8 @@ function barRows(layout) {
 
 // Строка раздела: { header } или { key, label, type, def, hint, … }.
 // type: bool | int | float (min, max, step) | enum (options) | text | action (action — имя действия,
-// обработчик в SettingsWindow.actions) | module (раздел bar/, строится barRows).
+// обработчик в SettingsWindow.actions) | module (раздел bar/, строится barRows) | combo (сочетание клавиш:
+// ↵ — захват нажатия, ⇥ — ввод текстом; action — его строка KDL для проверки конфликтов).
 // У действий ключ action.<имя>: значения у них нет, ключ нужен только для поиска и подсказки.
 function act(name, label, hint) {
     return { key: "action." + name, label, type: "action", action: name, hint: hint ?? "" };
@@ -176,6 +177,8 @@ function sections(outputs, layout) {
             { header: "клавиши" },
             act("binds", "бинды", "все сочетания niri и nopox: изменить, добавить, отключить"),
             act("hotkeys", "подсказка клавиш", "окно niri со всеми сочетаниями (Mod+Shift+/)"),
+            { key: "niri.key.micMute", label: "мьют микрофона", type: "combo", def: "", action: MUTE_BINDS["niri.key.micMute"].action, hint: "вкл/выкл микрофон по умолчанию (wpctl); работает и на экране блокировки" },
+            { key: "niri.key.audioMute", label: "мьют звука", type: "combo", def: "", action: MUTE_BINDS["niri.key.audioMute"].action, hint: "вкл/выкл звук на устройстве вывода по умолчанию — наушники или колонки (wpctl)" },
 
             { header: "мышь и тачпад" },
             { key: "niri.tp.tap", label: "тап для клика", type: "bool", def: true, hint: "тачпад" },
@@ -302,6 +305,16 @@ function defaultOf(key, outputs) {
 
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
+
+// ── свои сочетания из настроек (type: "combo") ─────────────────────
+// Пустое значение — бинда нет. action — готовая строка KDL: по ней Binds.conflict отличает этот бинд от чужих.
+var MUTE_BINDS = {
+    "niri.key.micMute": { title: "Mute Microphone", action: 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"' },
+    "niri.key.audioMute": { title: "Mute Audio", action: 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"' }
+};
+
+// в KDL сочетание идёт без кавычек — пропускаем только имена клавиш и модификаторы через «+»
+var COMBO_RE = /^[A-Za-z0-9_]+(\+[A-Za-z0-9_]+)*$/;
 
 // ── значки трея ────────────────────────────────────────────────────
 // Глифы Terminess Nerd Font: шаблон ищется в id, заголовке и имени иконки элемента трея (в нижнем регистре).
@@ -502,7 +515,7 @@ function niriFileOf(key) {
     if (key === "niri.csd" || key === "shell.theme.sync") return "misc.kdl";
     if (/^niri\.out\./.test(key) || key === "action.displays") return "displays.kdl";
     if (key === "action.binds") return "keys.kdl";
-    if (key === "shell.terminal" || key === "shell.files" || key === "shell.browser") return "binds.kdl";
+    if (key === "shell.terminal" || key === "shell.files" || key === "shell.browser" || key in MUTE_BINDS) return "binds.kdl";
     return "";
 }
 
@@ -687,6 +700,8 @@ function niriFiles(get, outs) {
         ...(BROWSERS[get("shell.browser")]
             ? ["    Mod+Shift+B hotkey-overlay-title=" + q("Browser: " + get("shell.browser")) + " { spawn " + q(BROWSERS[get("shell.browser")].bin) + "; }"]
             : []),
+        ...Object.keys(MUTE_BINDS).filter(k => COMBO_RE.test(get(k) ?? "")).map(k =>
+            "    " + get(k) + " allow-when-locked=true hotkey-overlay-title=" + q(MUTE_BINDS[k].title) + " { " + MUTE_BINDS[k].action + "; }"),
         '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
         '    Mod+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
         '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',

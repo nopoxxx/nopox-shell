@@ -39,6 +39,7 @@ Scope {
             readonly property var rows: query ? S.searchRows(sections, query) : sections[section].rows
             property int cur: 1
             property bool editing: false
+            property bool capturing: false   // строка combo ждёт нажатия сочетания
             readonly property var row: rows[cur] ?? null
 
             Component.onCompleted: {
@@ -151,7 +152,9 @@ Scope {
             }
 
             function activate(r) {
-                if (r.type === "text") {
+                if (r.type === "combo") {
+                    capturing = true;
+                } else if (r.type === "text") {
                     editing = true;
                     editor.text = value(r);
                     editor.selectAll();
@@ -163,8 +166,17 @@ Scope {
                 }
             }
 
+            // ⇥ в захвате: сочетание, занятое niri (Mod+D и т.п.), не нажать — niri перехватит его раньше окна
+            function editComboAsText(r) {
+                capturing = false;
+                editing = true;
+                editor.text = value(r);
+                editor.selectAll();
+                editor.forceActiveFocus();
+            }
+
             function finishEdit(commit) {
-                if (commit && row) setValue(row, editor.text.trim());
+                if (commit && row) setValue(row, row.type === "combo" ? editor.text.trim().replace(/\s+/g, "") : editor.text.trim());
                 editing = false;
                 keys.forceActiveFocus();
             }
@@ -184,6 +196,7 @@ Scope {
                 const v = value(r);
                 if (r.type === "bool") return v ? "[x]" : "[ ]";
                 if (r.type === "text") return JSON.stringify(v);
+                if (r.type === "combo") return capturing && r === row ? "нажмите сочетание…" : v ? "[" + v + "]" : "—";
                 if (r.type === "action") return "↵";
                 if (r.type === "float") {
                     const decimals = String(r.step).split(".")[1]?.length ?? 0;
@@ -199,6 +212,7 @@ Scope {
                 if (r.type === "bool") return value(r) ? Theme.accent : Theme.gray;
                 if (r.type === "text") return Theme.aqua;
                 if (r.type === "action") return Theme.accent;
+                if (r.type === "combo") return capturing && r === row ? Theme.accent : value(r) ? Theme.blue : Theme.gray;
                 if (r.key === "shell.accent") return Theme.accent;
                 return Theme.fg;
             }
@@ -209,11 +223,19 @@ Scope {
                 const file = S.niriFileOf(r.key);
                 // файл первым: подсказка длинная и обрезается справа
                 const parts = [file ? "niri/nopox/" + file : "", r.hint ?? ""];
+                if (r.type === "combo" && value(r)) {
+                    if (!S.COMBO_RE.test(value(r))) parts.unshift("не похоже на сочетание (Mod+Shift+M) — бинд не создан");
+                    const other = Binds.conflict(value(r), r.action);
+                    if (other) parts.unshift("занято: " + other.action + " — конфликт");
+                }
                 if (r.type !== "action") parts.push(r.key + "  ·  по умолчанию " + JSON.stringify(r.def));
                 return parts.filter(x => x).join("  ·  ");
             }
 
-            onCurChanged: list.positionViewAtIndex(cur, ListView.Contain)
+            onCurChanged: {
+                capturing = false;
+                list.positionViewAtIndex(cur, ListView.Contain);
+            }
 
             TextMetrics {
                 id: cell
@@ -263,6 +285,21 @@ Scope {
                     Keys.onPressed: event => {
                         const r = win.row;
                         const k = event.key;
+                        // захват сочетания: Esc — отмена, ⌫/Delete — убрать бинд, ⇥ — ввести текстом
+                        if (win.capturing) {
+                            event.accepted = true;
+                            const plain = !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier | Qt.ShiftModifier));
+                            if (plain && k === Qt.Key_Escape) win.capturing = false;
+                            else if (plain && (k === Qt.Key_Backspace || k === Qt.Key_Delete)) { win.reset(r); win.capturing = false; }
+                            else if (plain && k === Qt.Key_Tab) win.editComboAsText(r);
+                            else {
+                                const combo = Binds.comboOf(event);
+                                if (!combo) return;   // пока зажат только модификатор
+                                win.setValue(r, combo);
+                                win.capturing = false;
+                            }
+                            return;
+                        }
                         const shift = event.modifiers & Qt.ShiftModifier;
                         const isModule = r && r.type === "module";
                         if (isModule && ((shift && k === Qt.Key_Up) || (shift && k === Qt.Key_K))) {
@@ -558,7 +595,9 @@ Scope {
                         T {
                             textFormat: Text.StyledText
                             color: Theme.gray
-                            text: (win.editing
+                            text: (win.capturing
+                                ? [["…", "нажмите сочетание"], ["⇥", "ввести текстом"], ["⌫", "убрать"], ["esc", "отмена"]]
+                                : win.editing
                                 ? [["↵", "сохранить"], ["esc", "отмена"]]
                                 : search.activeFocus
                                 ? [["↑↓", "выбор"], ["↵", "к результатам"], ["esc", "сбросить"]]

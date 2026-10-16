@@ -23,32 +23,6 @@ Scope {
         function toggle(): void { root.open = !root.open; }
     }
 
-    // Qt-клавиша → имя клавиши niri (xkb keysym); символы с Shift — обратно к базовой клавише
-    function keyName(key, text) {
-        if (key >= Qt.Key_A && key <= Qt.Key_Z) return String.fromCharCode(key);
-        if (key >= Qt.Key_0 && key <= Qt.Key_9) return String.fromCharCode(key);
-        if (key >= Qt.Key_F1 && key <= Qt.Key_F35) return "F" + (key - Qt.Key_F1 + 1);
-        const map = {
-            [Qt.Key_Return]: "Return", [Qt.Key_Enter]: "KP_Enter", [Qt.Key_Space]: "Space", [Qt.Key_Tab]: "Tab",
-            [Qt.Key_Backtab]: "Tab", [Qt.Key_Backspace]: "BackSpace", [Qt.Key_Delete]: "Delete",
-            [Qt.Key_Escape]: "Escape", [Qt.Key_Left]: "Left", [Qt.Key_Right]: "Right", [Qt.Key_Up]: "Up",
-            [Qt.Key_Down]: "Down", [Qt.Key_Home]: "Home", [Qt.Key_End]: "End", [Qt.Key_PageUp]: "Page_Up",
-            [Qt.Key_PageDown]: "Page_Down", [Qt.Key_Insert]: "Insert", [Qt.Key_Print]: "Print",
-            [Qt.Key_Minus]: "Minus", [Qt.Key_Underscore]: "Minus", [Qt.Key_Equal]: "Equal", [Qt.Key_Plus]: "Equal",
-            [Qt.Key_Comma]: "Comma", [Qt.Key_Less]: "Comma", [Qt.Key_Period]: "Period", [Qt.Key_Greater]: "Period",
-            [Qt.Key_Slash]: "Slash", [Qt.Key_Question]: "Slash", [Qt.Key_Backslash]: "Backslash", [Qt.Key_Bar]: "Backslash",
-            [Qt.Key_Semicolon]: "Semicolon", [Qt.Key_Colon]: "Semicolon", [Qt.Key_Apostrophe]: "Apostrophe",
-            [Qt.Key_QuoteDbl]: "Apostrophe", [Qt.Key_BracketLeft]: "BracketLeft", [Qt.Key_BraceLeft]: "BracketLeft",
-            [Qt.Key_BracketRight]: "BracketRight", [Qt.Key_BraceRight]: "BracketRight", [Qt.Key_QuoteLeft]: "Grave",
-            [Qt.Key_AsciiTilde]: "Grave", [Qt.Key_Exclam]: "1", [Qt.Key_At]: "2", [Qt.Key_NumberSign]: "3",
-            [Qt.Key_Dollar]: "4", [Qt.Key_Percent]: "5", [Qt.Key_AsciiCircum]: "6", [Qt.Key_Ampersand]: "7",
-            [Qt.Key_Asterisk]: "8", [Qt.Key_ParenLeft]: "9", [Qt.Key_ParenRight]: "0",
-            [Qt.Key_VolumeUp]: "XF86AudioRaiseVolume", [Qt.Key_VolumeDown]: "XF86AudioLowerVolume",
-            [Qt.Key_VolumeMute]: "XF86AudioMute", [Qt.Key_MediaPlay]: "XF86AudioPlay",
-            [Qt.Key_MediaNext]: "XF86AudioNext", [Qt.Key_MediaPrevious]: "XF86AudioPrev"
-        };
-        return map[key] ?? "";
-    }
 
     // готовые действия nopox — в подсказках первыми
     readonly property var presets: [
@@ -288,7 +262,7 @@ Scope {
                                     text: Fuzzy.highlight(line.b.combo, line.modelData.pos, Theme.orange)
                                     color: line.b.off ? Theme.gray : Theme.blue
                                     font.bold: line.current
-                                    font.strikeout: line.b.off
+                                    font.strikeout: line.b.off === true   // у биндов config и nopox поля off нет
                                 }
                                 T {
                                     Layout.fillWidth: true
@@ -342,14 +316,9 @@ Scope {
                                 if (win.editorKeys(event)) return;
                                 const m = event.modifiers;
                                 if (!(m & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) return;
-                                const name = root.keyName(event.key, event.text);
-                                if (!name) return;      // нажат только модификатор
-                                const mods = [];
-                                if (m & Qt.MetaModifier) mods.push("Mod");
-                                if (m & Qt.ControlModifier) mods.push("Ctrl");
-                                if (m & Qt.AltModifier) mods.push("Alt");
-                                if (m & Qt.ShiftModifier) mods.push("Shift");
-                                comboField.text = mods.concat([name]).join("+");
+                                const combo = Binds.comboOf(event);
+                                if (!combo) return;      // нажат только модификатор
+                                comboField.text = combo;
                                 event.accepted = true;
                             }
                         }

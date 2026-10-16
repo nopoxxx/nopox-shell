@@ -153,6 +153,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `text` | `def` | ↵ — поле редактирования |
 | `action` | `action` | ↵ — действие; строится `act(name, label, hint)`, ключ `action.<name>` (значения нет); обработчик — `switch` в `SettingsWindow.runAction()` |
 | `module` | `id, zone` | строки раздела bar/ из `barRows()`: ←→ — зона, ⇧↑↓ / K/J — порядок |
+| `combo` | `def: "", action` | сочетание клавиш: ↵ — захват нажатия (`Binds.comboOf`), ⇥ — ввод текстом (занятое niri сочетание окну не нажать), ⌫ — убрать; `action` — строка KDL, по ней `Binds.conflict` ищет чужие бинды на том же сочетании |
 
 `S.niriFileOf(key)` — в каком файле `nopox/` живёт настройка (показывается в подсказке).
 
@@ -221,6 +222,9 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 - `replaceKey(old, new, …)`: старое сочетание из конфига — отключается (`off`), своё — удаляется.
 - Отключение = `Combo hotkey-overlay-title=null { spawn "true"; }`.
 - Список действий niri — из `niri msg action --help`; пресеты nopox — `BindsWindow.presets`.
+- `Binds.keyName(key, text)` (Qt-клавиша → keysym niri) и `Binds.comboOf(event)` — общие для окна биндов и строк `combo`.
+- Свои сочетания из настроек — `MUTE_BINDS` в settings.js (`niri.key.micMute`, `niri.key.audioMute` → `wpctl set-mute`
+  источника/приёмника по умолчанию, `allow-when-locked`): пишутся в `binds.kdl`, только если значение проходит `COMBO_RE`.
 
 ### 4.4 Панель
 
