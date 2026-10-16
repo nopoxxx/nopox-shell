@@ -227,6 +227,7 @@ function sections(outputs, layout) {
             { key: "shell.notify.timeout", label: "время показа, с", type: "int", min: 2, max: 60, step: 1, def: 6, hint: "если приложение не задало своё" },
             { key: "shell.notify.max", label: "максимум на экране", type: "int", min: 1, max: 10, step: 1, def: 4 },
             { key: "shell.notify.criticalSticky", label: "критичные не исчезают", type: "bool", def: true, hint: "ERROR висит, пока не закроете" },
+            { key: "shell.notify.mute", label: "мьют микрофона и звука", type: "bool", def: true, hint: "уведомление, когда микрофон или звук по умолчанию выключается и включается — биндом, клавишей, pavucontrol" },
             { key: "shell.notify.typing", label: "эффект набора", type: "bool", def: true, hint: "заголовок уведомления печатается по символу" }
         ] },
 

@@ -73,6 +73,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   Updates.qml        число обновлений (checkupdates + paru -Qua) раз в час, запуск paru -Syu
   Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.edit(path), Term.cmd(), configPath
   AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
+  MuteNotify.qml     уведомление при мьюте микрофона/звука по умолчанию (PipeWire, любым способом), shell.notify.mute
   DefaultApps.qml    оболочка входа и браузер по умолчанию (shell.sh, shell.browser): сверка с системой, chsh, xdg-settings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
@@ -322,7 +323,9 @@ Esc/Backspace/← на нём закрывают окно, а не подним�
 `clean()`). Запись: `{key, time, app, summary, body, urgency, actions, notif}`; `history` (до 100),
 `entries[key]`, попапы — `ListModel` только с ключами (карточки не пересоздаются). Уровни:
 Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO (акцент). DND пропускает только critical.
-`centerOpen` скрывает попапы, пока открыта история.
+`centerOpen` скрывает попапы, пока открыта история. Уведомления с hint `transient` — только попап, без истории и `unread`
+(так шлёт `MuteNotify`: `notify-send -p … -h boolean:transient:true`, прошлое своё закрывает по id через `CloseNotification`;
+смена устройства по умолчанию мьютом не считается).
 
 **Steam** — уведомления приходят от отдельного плагина Millennium [nopox-notify](https://github.com/nopoxxx/nopox-notify)
 (свой репозиторий): он забирает тосты из `NotificationStore` Steam до показа и шлёт их через `notify-send -a Steam`,
@@ -401,7 +404,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 `Settings.back()`) или пункт в меню. Заголовок — путь, откуда окно открывается: `[ ~/settings/system/displays/ ]`.
 
 **Новый сервис.** `services/Name.qml` с `pragma Singleton` и `Singleton { }`. Синглтон создаётся при первом
-обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`).
+обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`, `_muteNotify`).
 
 ## 8. Соглашения кода
 

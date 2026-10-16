@@ -44,8 +44,11 @@ Singleton {
             notif: n
         };
         entries[e.key] = e;
-        history = [e].concat(history).slice(0, 100);
-        unread++;
+        // transient (мьют, громкость и т.п.) — только попап, без истории
+        if (!n.transient) {
+            history = [e].concat(history).slice(0, 100);
+            unread++;
+        }
         n.closed.connect(() => {
             removePopup(e.key);
             e.notif = null;
