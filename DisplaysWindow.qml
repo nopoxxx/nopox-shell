@@ -78,7 +78,13 @@ Scope {
 
     function byName(n) { return Settings.outputs.find(o => o.name === n) ?? null; }
 
-    // «right:DP-1» → координаты рядом с DP-1; повторяем, чтобы цепочки отношений сошлись
+    // записать координату явно, даже если она совпадает с текущей: в displays.kdl попадает только заданное
+    function pin(o, prop, v) {
+        if (!(key(o, prop) in Settings.values) || Settings.values[key(o, prop)] !== v) Settings.set(key(o, prop), v);
+    }
+
+    // «right:DP-1» → координаты рядом с DP-1; повторяем, чтобы цепочки отношений сошлись.
+    // Опора тоже получает явные координаты (текущие) — иначе её положение решает niri и сосед уезжает.
     function recomputePlacements() {
         for (let pass = 0; pass < 3; pass++) {
             for (const o of Settings.outputs) {
@@ -87,12 +93,16 @@ Scope {
                 const [rel, name] = place.split(":");
                 const t = byName(name), tr = t ? rect(t) : null, r = rect(o);
                 if (!tr || !r) continue;
+                if (val(t, "place") === "auto") {
+                    pin(t, "x", tr.x);
+                    pin(t, "y", tr.y);
+                }
                 const pos = rel === "right" ? [tr.x + tr.w, tr.y]
                     : rel === "left" ? [tr.x - r.w, tr.y]
                     : rel === "above" ? [tr.x, tr.y - r.h]
                     : [tr.x, tr.y + tr.h];
-                if (val(o, "x") !== pos[0]) Settings.set(key(o, "x"), pos[0]);
-                if (val(o, "y") !== pos[1]) Settings.set(key(o, "y"), pos[1]);
+                pin(o, "x", pos[0]);
+                pin(o, "y", pos[1]);
             }
         }
     }
@@ -111,6 +121,12 @@ Scope {
         if (prop === "place" && v === "auto") {
             Settings.reset(key(o, "x"));
             Settings.reset(key(o, "y"));
+        }
+        // «A слева от B» при «B справа от A» — встречная ссылка: B становится опорой (place сбрасываем,
+        // координаты он получит в recomputePlacements)
+        if (prop === "place" && v !== "auto") {
+            const t = byName(v.split(":")[1]);
+            if (t && val(t, "place").split(":")[1] === o.name) Settings.reset(key(t, "place"));
         }
         Settings.set(key(o, prop), v);
         recomputePlacements();

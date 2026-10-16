@@ -572,7 +572,8 @@ function niriFiles(get, outs) {
             if (o.mode) body.push("    mode " + q(o.mode));
             if (o.scale !== undefined) body.push("    scale " + f(o.scale));
             if (o.transform) body.push("    transform " + q(o.transform));
-            if (o.x !== undefined && o.y !== undefined) body.push("    position x=" + Math.round(o.x) + " y=" + Math.round(o.y));
+            // окно мониторов пишет обе координаты, но в старых настройках бывает одна — вторая тогда 0
+            if (o.x !== undefined || o.y !== undefined) body.push("    position x=" + Math.round(o.x ?? 0) + " y=" + Math.round(o.y ?? 0));
             if (o.vrr) body.push("    variable-refresh-rate");
             if (o.primary) body.push("    focus-at-startup");
         }
