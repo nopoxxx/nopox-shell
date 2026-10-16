@@ -5,11 +5,14 @@ import QtQuick
 import QtQuick.Layouts
 import qs.services
 import "services/fuzzy.js" as Fuzzy
+import "services/calc.js" as Calc
 
 // Меню в духе omarchy: сначала раздел (apps/, packages/, system/ …), потом действие.
 // Разделы ведут себя как каталоги: путь в заголовке, Esc или ← — на уровень выше
 // (но не выше раздела, в котором меню открыли: там Esc закрывает окно).
 //   qs ipc call launcher toggle — корень меню
+// Запрос в корне ищет по всему меню сразу: программы и вложенные действия (system/reboot).
+// «=выражение» — калькулятор, ↵ копирует ответ.
 //   qs ipc call launcher apps   — сразу список программ
 Scope {
     id: root
@@ -67,6 +70,7 @@ Scope {
     // ── дерево меню ────────────────────────────────────────────────
     // Меню — для действий; всё, что настраивается, — в окне настроек (setup, Mod+S).
     // узел: { label, desc, icon, children | provider | run }
+    //   alias — синонимы, ищутся как имя; confirm — запуск только со второго ↵
 
     readonly property var icons: ({
         apps: String.fromCodePoint(0xF003B),
@@ -82,26 +86,39 @@ Scope {
         label: "~",
         children: [
             { label: "apps", icon: icons.apps, desc: "запуск программ (Mod+Space)", provider: "apps" },
-            { label: "wallpaper", icon: icons.wallpaper, desc: "обои; Tab — wallhaven (Mod+Shift+W)", run: () => openPicker("local") },
+            { label: "wallpaper", icon: icons.wallpaper, desc: "обои; Tab — wallhaven (Mod+Shift+W)", alias: ["обои"], run: () => openPicker("local") },
             // пауза — чтобы закрывающееся меню не попало в замороженный кадр
-            { label: "screenshot", icon: icons.shot, desc: "снимок с разметкой (Mod+Shift+S); w — окно", run: () => spawn(["sh", "-c", "sleep 0.3; qs ipc call shot region"]) },
-            { label: "setup", icon: icons.setup, desc: "все настройки, мониторы, сеть, звук (Mod+S)", run: () => Settings.show("") },
+            { label: "screenshot", icon: icons.shot, desc: "снимок с разметкой (Mod+Shift+S); w — окно", alias: ["скриншот", "снимок"], run: () => spawn(["sh", "-c", "sleep 0.3; qs ipc call shot region"]) },
+            { label: "setup", icon: icons.setup, desc: "все настройки, мониторы, сеть, звук (Mod+S)", alias: ["settings", "настройки"], run: () => Settings.show("") },
             { label: "packages", icon: icons.packages, desc: "установить, удалить, обновить", children: [
                 { label: "install", desc: "из репозиториев pacman", provider: "repo" },
                 { label: "aur", desc: "поиск в AUR через paru", provider: "aur" },
                 { label: "remove", desc: "удалить установленные", provider: "installed" },
-                { label: "update", desc: "обновить систему: paru -Syu" + (Updates.count > 0 ? " — доступно " + Updates.count : ""), run: () => Updates.run() }
+                { label: "update", desc: "обновить систему: paru -Syu" + (Updates.count > 0 ? " — доступно " + Updates.count : ""), alias: ["upgrade", "обновить"], run: () => Updates.run() }
             ] },
             { label: "system", icon: icons.system, desc: "питание и сессия", children: [
-                { label: "lock", desc: "заблокировать экран (Super+Alt+L)", run: () => spawn(["qs", "ipc", "call", "lock", "lock"]) },
-                { label: "suspend", desc: "заблокировать и уснуть", run: () => spawn(["sh", "-c", "qs ipc call lock lock; sleep 0.5; systemctl suspend"]) },
-                { label: "logout", desc: "выйти из niri", run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) },
-                { label: "reboot", desc: "перезагрузка", run: () => spawn(["systemctl", "reboot"]) },
-                { label: "poweroff", desc: "выключение", run: () => spawn(["systemctl", "poweroff"]) }
+                { label: "lock", desc: "заблокировать экран (Super+Alt+L)", alias: ["блокировка"], run: () => spawn(["qs", "ipc", "call", "lock", "lock"]) },
+                { label: "suspend", desc: "заблокировать и уснуть", alias: ["sleep", "сон"], run: () => spawn(["sh", "-c", "qs ipc call lock lock; sleep 0.5; systemctl suspend"]) },
+                { label: "logout", desc: "выйти из niri", alias: ["выход"], confirm: true, run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) },
+                { label: "reboot", desc: "перезагрузка", alias: ["restart"], confirm: true, run: () => spawn(["systemctl", "reboot"]) },
+                { label: "poweroff", desc: "выключение", alias: ["shutdown", "выключить"], confirm: true, run: () => spawn(["systemctl", "poweroff"]) }
             ] },
             { label: "about", icon: icons.about, desc: "о системе: fastfetch", run: () => about() }
         ]
     })
+
+    // Дерево плоским списком для поиска из корня. trail — узлы над пунктом: вход в найденный
+    // раздел кладёт их в стек, чтобы путь и Esc работали как при обычном переходе.
+    function flatten(nodes, trail) {
+        let out = [];
+        for (const n of nodes) {
+            const path = trail.map(t => t.label + "/").join("");
+            // search — с путём: «sys reb» находит system/reboot
+            out.push(trail.length ? Object.assign({}, n, { trail, path, search: path + n.label + " " + (n.desc ?? "") }) : n);
+            if (n.children) out = out.concat(flatten(n.children, trail.concat([n])));
+        }
+        return out;
+    }
 
     // ── источники динамических списков ─────────────────────────────
 
@@ -117,6 +134,7 @@ Scope {
                 .map(e => ({
                     label: e.name,
                     desc: e.genericName,
+                    app: true,
                     search: [e.genericName, e.comment, ...e.keywords].join(" "),
                     run: () => launchApp(e)
                 }));
@@ -176,18 +194,45 @@ Scope {
             property int base: 1
             readonly property var node: stack[stack.length - 1] ?? null
             readonly property string path: "~/" + stack.slice(1).map(n => n.label + "/").join("")
-            readonly property var items: node ? (node.children ?? root.providerItems(node.provider, input.text.trim())) : []
+            readonly property string query: input.text.trim()
+            // в списках пакетов «=» — часть запроса, калькулятор там не нужен
+            readonly property bool calcMode: query.startsWith("=") && !["aur", "repo", "installed"].includes(node?.provider)
+            // запрос в корне ищет по всему меню (кроме списков пакетов: их тысячи)
+            readonly property bool searchAll: node === root.menu && query !== ""
+            readonly property var everything: root.flatten(root.menu.children, []).concat(root.providerItems("apps"))
+            readonly property var items: !node ? [] : searchAll ? everything : (node.children ?? root.providerItems(node.provider, query))
+
+            // пункт с confirm, по которому уже нажали ↵ один раз (ключ path + label)
+            property string armed: ""
+
+            function keyOf(it) { return (it.path ?? "") + it.label; }
+
+            readonly property var calc: {
+                if (!calcMode) return null;
+                const r = Calc.evaluate(query.slice(1));
+                if (r.value !== undefined)
+                    return { label: "= " + r.value, desc: "↵ — скопировать", run: () => root.spawn(["wl-copy", "--", r.value]) };
+                return { label: "=", desc: r.error || "+ - * / % ^ ( )  sqrt ln log sin cos …  pi e" };
+            }
 
             readonly property var results: {
+                if (calc) return [{ item: calc, pos: [] }];
                 if (!items) return [];
-                const q = input.text.trim();
+                const q = query;
                 if (!q || node.provider === "aur") return items.map(it => ({ item: it, pos: [] }));
                 const out = [];
                 for (const it of items) {
-                    const byName = Fuzzy.match(q, it.label);
+                    // в общем поиске при равенстве действия меню выше программ
+                    const bonus = searchAll && !it.app ? 3 : 0;
+                    let byName = Fuzzy.match(q, it.label);
+                    // синоним совпал лучше имени — счёт его, подсветки нет
+                    for (const a of it.alias ?? []) {
+                        const m = Fuzzy.match(q, a);
+                        if (m && (!byName || m.score > byName.score)) byName = { score: m.score, pos: [] };
+                    }
                     const byExtra = Fuzzy.match(q, it.search ?? it.desc ?? "");
-                    const nameScore = byName ? byName.score + 5 : -Infinity;
-                    const extraScore = byExtra ? byExtra.score * 0.8 : -Infinity;
+                    const nameScore = byName ? byName.score + 5 + bonus : -Infinity;
+                    const extraScore = byExtra ? byExtra.score * 0.8 + bonus : -Infinity;
                     if (byName && nameScore >= extraScore)
                         out.push({ item: it, pos: byName.pos, score: nameScore });
                     else if (byExtra)
@@ -206,12 +251,16 @@ Scope {
             }
 
             onNodeChanged: if (node?.provider) root.load(node.provider)
-            onResultsChanged: list.currentIndex = 0
+            onResultsChanged: { list.currentIndex = 0; armed = ""; }
 
             function enter(it) {
                 if (it.children || it.provider) {
-                    stack = stack.concat([it]);
+                    stack = stack.concat(it.trail ?? [], [it]);
                     input.text = "";
+                } else if (!it.run) {
+                    // строка калькулятора с ошибкой: запускать нечего
+                } else if (it.confirm && armed !== keyOf(it)) {
+                    armed = keyOf(it);
                 } else {
                     it.run();
                     root.open = false;
@@ -324,7 +373,7 @@ Scope {
                         }
 
                         T {
-                            text: win.items === null ? "загрузка…" : win.results.length + "/" + win.items.length
+                            text: win.calcMode ? "calc" : win.items === null ? "загрузка…" : win.results.length + "/" + win.items.length
                             color: Theme.gray
                         }
                     }
@@ -344,6 +393,7 @@ Scope {
                         model: win.results
                         highlightMoveDuration: 0
                         boundsBehavior: Flickable.StopAtBounds
+                        onCurrentIndexChanged: win.armed = ""
 
                         delegate: Rectangle {
                             id: row
@@ -353,6 +403,7 @@ Scope {
                             readonly property var item: modelData.item
                             readonly property bool isDir: !!(item.children || item.provider)
                             readonly property bool current: ListView.isCurrentItem
+                            readonly property bool armed: win.armed !== "" && win.armed === win.keyOf(item)
 
                             width: list.width
                             height: cell.height * 1.25
@@ -371,6 +422,12 @@ Scope {
                                     text: (row.item.icon ?? "") + " "
                                     color: row.current ? Theme.accent : Theme.gray
                                 }
+                                // где пункт лежит в меню — при поиске из корня
+                                T {
+                                    visible: !!row.item.path
+                                    text: row.item.path ?? ""
+                                    color: Theme.gray
+                                }
                                 // разделы — как каталоги в ls: синие и со слешем
                                 T {
                                     textFormat: Text.StyledText
@@ -381,8 +438,8 @@ Scope {
                                 T {
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 0
-                                    text: row.item.desc ? "  " + row.item.desc : ""
-                                    color: Theme.gray
+                                    text: row.armed ? "  точно? ↵" : row.item.desc ? "  " + row.item.desc : ""
+                                    color: row.armed ? Theme.red : Theme.gray
                                     elide: Text.ElideRight
                                 }
                             }

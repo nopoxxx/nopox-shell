@@ -46,7 +46,7 @@ Bar.qml              PanelWindow панели: три BarZone, автоскры�
 BarZone.qml          Row модулей по списку id; Loader по bar/<file>.qml; разделители между видимыми
 TuiPopup.qml         PopupWindow в TUI-рамке с заголовком [ title ] — база всех попапов панели
 Background.qml       обои на слое Background (namespace nopox-wallpaper), плавная смена, fill/fit/stretch
-Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск
+Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск, поиск по всему меню из корня, калькулятор `=`
 WallPicker.qml       выбор обоев: local и wallhaven, сетка превью, бесконечная прокрутка
 HomePanel.qml        меню home — панель во всю высоту у края: секции home/ по shell.home.layout, фокус с клавиатуры
 OsdWindow.qml        индикатор громкости и яркости при изменении (namespace nopox-osd, клики насквозь)
@@ -88,6 +88,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   glyphs.js          значки Nerd Font по именам: G.g("wifi"); рисовать Theme.iconFont
   DefaultApps.qml    оболочка входа и браузер по умолчанию (shell.sh, shell.browser): сверка с системой, chsh, xdg-settings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
+  calc.js            evaluate(expr) → {value} | {error}: свой разбор арифметики для `=` в меню (без eval)
 
 bar/                 модули панели и их попапы
   Seg.qml            базовый сегмент «label value» + сигналы leftClicked/rightClicked/middleClicked/scrolled (при scrollable)
@@ -389,6 +390,12 @@ logout, reboot, poweroff), `about` (`about()`: fastfetch с `extras/fastfetch/co
 `repo`/`installed` кешируются до следующего открытия. Разделы показываются как каталоги (синие, со `/`).
 Если меню открыто сразу в разделе (`launcher apps`), этот уровень — нижняя граница (`win.base`):
 Esc/Backspace/← на нём закрывают окно, а не поднимаются в корень.
+Запрос в корне ищет по всему меню (`searchAll`): `flatten()` даёт пункты дерева с `path` (`system/`) и `trail`
+(узлы над пунктом — вход в найденный раздел кладёт их в стек) плюс программы; содержимое provider'ов пакетов
+в общий поиск не входит. При равном счёте действия меню выше программ (`app: true` у программ). `alias` узла —
+синонимы, сравниваются как имя (`settings` → `setup`). `confirm: true` (logout, reboot, poweroff) — запуск
+только со второго ↵ (`win.armed`, «точно? ↵»), сбрасывается сменой строки или запроса.
+Запрос с `=` (кроме provider'ов пакетов) — калькулятор `services/calc.js`, одна строка с ответом, ↵ — `wl-copy`.
 
 **DisplaysWindow**: любое изменение → `begin()` снимает снимок `niri.out.*`, 15 с на `y`;
 иначе (или `n`/Esc) `revert()` через `replacePrefix`. Последний включённый монитор выключить нельзя.

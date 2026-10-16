@@ -337,11 +337,15 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   <div class="ttl">~/docs/menu</div>
   <h2>Меню</h2>
   <p><kbd>Mod+D</kbd> — меню действий в духе omarchy с нечётким поиском, <kbd>Mod+Space</kbd> — сразу программы.
-  Разделы ведут себя как каталоги: <kbd>↵</kbd> или <kbd>→</kbd> — войти, <kbd>Esc</kbd> или <kbd>←</kbd> — на уровень выше.</p>
+  Разделы ведут себя как каталоги: <kbd>↵</kbd> или <kbd>→</kbd> — войти, <kbd>Esc</kbd> или <kbd>←</kbd> — на уровень выше.
+  Набор в корне ищет сразу по всему меню: программы и вложенные действия (<code>firefox</code>, <code>update</code>,
+  <code>settings</code>, <code>reboot</code>). <code>logout</code>, <code>reboot</code> и <code>poweroff</code> просят второе <kbd>↵</kbd>.</p>
 <div class="mock"><div class="win"><div class="ttl">~/</div><span class="row"><span class="c-acc">❯</span> <span class="blink">█</span></span><span class="row"> </span><span class="sel"><span class="c-acc">▌</span> <span class="c-blue">apps/</span>        <span class="c-gray">запуск программ (Mod+Space)</span></span><span class="row">  wallpaper    <span class="c-gray">обои; Tab — wallhaven</span></span><span class="row">  setup        <span class="c-gray">все настройки, мониторы, сеть, звук</span></span><span class="row">  <span class="c-blue">packages/</span>    <span class="c-gray">установить, удалить, обновить</span></span><span class="row">  <span class="c-blue">system/</span>      <span class="c-gray">питание и сессия</span></span><span class="row">  about        <span class="c-gray">о системе: fastfetch</span></span></div></div>
   <ul>
     <li><code>packages/</code> — <code>install</code> (репозитории pacman), <code>aur</code> (поиск через paru), <code>remove</code>, <code>update</code> (<code>paru -Syu</code>);</li>
     <li><code>system/</code> — <code>lock</code>, <code>suspend</code>, <code>logout</code>, <code>reboot</code>, <code>poweroff</code>;</li>
+    <li><code>=</code> и выражение — калькулятор: <code>=2^10</code>, <code>=(1,5+2)*3</code>, <code>=sqrt(2)</code>; <kbd>↵</kbd> копирует ответ.
+      Есть <code>+ - * / % ^</code>, скобки, <code>sqrt abs round floor ceil ln log sin cos tan</code>, <code>pi</code>, <code>e</code>;</li>
     <li>всё настраиваемое — не в меню, а в окне настроек (<code>setup</code>).</li>
   </ul>
 </section>
