@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nopox-shell — документация</title>
+<meta name="description" content="nopox-shell: оболочка рабочего стола для niri на Quickshell в стиле терминала — панель как строка shell, меню как fzf, настройки как menuconfig.">
+<meta name="theme-color" content="#1d2021">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231d2021'/%3E%3Ctext x='2' y='13' font-family='monospace' font-size='13' fill='%23fabd2f'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
+<style>
+@font-face { font-family: "Terminess"; src: url("fonts/terminess-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Terminess"; src: url("fonts/terminess-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+/* Gruvbox dark hard — та же палитра, что в Theme.qml */
+:root {
+  --bg: #1d2021; --bg0: #282828; --bg1: #3c3836; --bg2: #504945;
+  --fg: #ebdbb2; --gray: #928374;
+  --red: #fb4934; --green: #b8bb26; --yellow: #fabd2f; --blue: #83a598;
+  --purple: #d3869b; --aqua: #8ec07c; --orange: #fe8019;
+  --accent: var(--yellow);
+  --font: "Terminess", "Terminess Nerd Font Mono", "Terminus", ui-monospace, "DejaVu Sans Mono", monospace;
+  --bar: 2.1rem;
+  color-scheme: dark;
+}
+:root[data-accent="orange"] { --accent: var(--orange); }
+:root[data-accent="green"]  { --accent: var(--green); }
+:root[data-accent="aqua"]   { --accent: var(--aqua); }
+:root[data-accent="blue"]   { --accent: var(--blue); }
+:root[data-accent="purple"] { --accent: var(--purple); }
+:root[data-accent="red"]    { --accent: var(--red); }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--bar) + 1.5rem); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 18px/1.45 var(--font); -webkit-font-smoothing: none;
+}
+::selection { background: var(--accent); color: var(--bg); }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+code, kbd, pre { font-family: inherit; font-size: inherit; }
+p { margin: .5em 0 .9em; }
+ul { margin: .3em 0 .9em; padding-left: 2ch; list-style: none; }
+ul > li::before { content: "- "; color: var(--gray); margin-left: -2ch; }
+b, strong { color: var(--fg); font-weight: 700; }
+code { color: var(--aqua); }
+.c-acc { color: var(--accent); } .c-gray { color: var(--gray); } .c-red { color: var(--red); }
+.c-green { color: var(--green); } .c-blue { color: var(--blue); } .c-aqua { color: var(--aqua); }
+.c-purple { color: var(--purple); } .c-yellow { color: var(--yellow); } .c-orange { color: var(--orange); }
+.b { font-weight: 700; }
+
+/* ── панель сверху: как bar nopox ── */
+.topbar {
+  position: fixed; inset: 0 0 auto 0; height: var(--bar); z-index: 10;
+  display: flex; align-items: center; gap: 2ch; padding: 0 1.5ch;
+  background: var(--bg); border-bottom: 1px solid var(--bg1);
+  white-space: nowrap; overflow: hidden;
+}
+.topbar .left { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.topbar .right { flex: none; }
+.topbar .sep { color: var(--gray); }
+.topbar a { color: inherit; }
+.topbar .menu-btn { display: none; cursor: pointer; background: none; border: 0; color: var(--accent); font: inherit; padding: 0; }
+.nf { font-family: "Terminess Nerd Font", var(--font); }
+
+/* ── раскладка: дерево слева, окна справа ── */
+.layout { display: grid; grid-template-columns: 26ch minmax(0, 1fr); gap: 3ch; max-width: 128ch; margin: 0 auto; padding: calc(var(--bar) + 1.5rem) 2ch 4rem; }
+nav.tree { position: sticky; top: calc(var(--bar) + 1.5rem); align-self: start; max-height: calc(100vh - var(--bar) - 3rem); overflow-y: auto; }
+nav.tree .root { color: var(--accent); font-weight: 700; margin-bottom: .3em; display: block; }
+nav.tree ol { list-style: none; margin: 0; padding: 0; }
+nav.tree li { white-space: nowrap; }
+nav.tree li a { display: block; color: var(--fg); padding: 0 1ch 0 0; text-decoration: none; }
+nav.tree li a .br { color: var(--gray); }
+nav.tree li a.dir .nm { color: var(--blue); }
+nav.tree li a .mk { color: transparent; }
+nav.tree li a:hover { background: var(--bg0); }
+nav.tree li a.active { background: var(--bg1); }
+nav.tree li a.active .mk { color: var(--accent); }
+.accent-ctl { margin-top: 1.4em; color: var(--gray); user-select: none; }
+.accent-ctl button { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; }
+.accent-ctl button:hover { text-decoration: underline; }
+
+/* ── окно в TUI-рамке с заголовком [ ~/путь/ ] на линии рамки ── */
+.win { position: relative; border: 2px solid var(--accent); padding: 1.4em 2.5ch 1em; margin: 0 0 2.6em; background: var(--bg); }
+.win > .ttl { position: absolute; top: -0.78em; left: 2ch; padding: 0 1ch; background: var(--bg); color: var(--accent); font-weight: 700; }
+.win > .ttl::before { content: "[ "; } .win > .ttl::after { content: " ]"; }
+h1, h2, h3 { font-size: inherit; margin: 1.1em 0 .4em; }
+h1 { margin: 0 0 .3em; color: var(--accent); }
+h2 { display: flex; gap: 1ch; color: var(--fg); }
+h2::before { content: "──"; color: var(--gray); }
+h2::after { content: ""; flex: 1; border-bottom: 2px solid var(--bg2); transform: translateY(-.55em); }
+h3 { color: var(--blue); }
+h3::before { content: "## "; color: var(--gray); }
+.win > :first-child + h2, .win > h2:first-of-type { margin-top: .2em; }
+
+/* сочетания клавиш — как кнопки [текст] */
+kbd { color: var(--accent); white-space: nowrap; }
+kbd::before { content: "["; color: var(--gray); } kbd::after { content: "]"; color: var(--gray); }
+
+/* код */
+pre { margin: .6em 0 1.1em; padding: .7em 2ch; background: var(--bg0); border-left: 2px solid var(--bg2); overflow-x: auto; position: relative; white-space: pre; }
+pre.cmd code { color: var(--fg); }
+pre .p { color: var(--accent); user-select: none; }
+pre .cm { color: var(--gray); }
+.codewrap { position: relative; }
+.codewrap > pre { padding-top: 1.9em; }
+.copy { position: absolute; top: .45em; right: 1ch; background: var(--bg0); border: 0; font: inherit; color: var(--gray); cursor: pointer; padding: 0 .5ch; }
+.copy:hover, .copy.ok { color: var(--accent); }
+.copy::before { content: "["; } .copy::after { content: "]"; }
+
+/* таблицы */
+.tbl { overflow-x: auto; margin: .6em 0 1.2em; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: .2em 2ch .2em 0; }
+th { color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--bg2); }
+tr + tr td { border-top: 1px dashed var(--bg1); }
+td:first-child { white-space: nowrap; }
+
+/* макеты экранов shell, нарисованные текстом */
+.mock { background: var(--bg0); padding: .6em 2ch; margin: .6em 0 1.2em; overflow-x: auto; white-space: pre; line-height: 1.35; }
+.mock.screen { padding: 1.6em 2ch 1em; }
+.mock .win { margin: .6em 0 .2em; padding: 1em 2ch .6em; background: var(--bg0); white-space: pre; display: inline-block; min-width: min(100%, 60ch); }
+.mock .win > .ttl { background: var(--bg0); }
+.mock .row { display: block; }
+.mock .sel { background: var(--bg1); display: block; }
+.mock .hints { color: var(--gray); }
+.mock .hints i { font-style: normal; color: var(--accent); }
+/* часы как BigClock.qml: цифры 3×5, «пиксель» — прямоугольник 2 клетки шириной */
+.clock { display: inline-flex; gap: 2ch; white-space: normal; }
+.clock .g { display: grid; grid-auto-rows: .62em; }
+.clock .g i { display: block; height: 100%; }
+.clock .g i.on { background: var(--accent); }
+
+.note { border-left: 2px solid var(--accent); padding: .1em 0 .1em 2ch; margin: .8em 0 1.1em; }
+.note::before { content: "! "; color: var(--accent); font-weight: 700; }
+details { margin: .4em 0 1em; }
+summary { cursor: pointer; color: var(--blue); }
+summary::marker { color: var(--accent); }
+footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
+.blink { animation: blink 1.06s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .blink { animation: none; } }
+
+@media (max-width: 860px) {
+  body { font-size: 16px; }
+  .layout { grid-template-columns: minmax(0, 1fr); padding: calc(var(--bar) + 1rem) 16px 3rem; }
+  .topbar .right { display: none; }
+  .topbar .menu-btn { display: inline; }
+  nav.tree { position: fixed; top: var(--bar); left: 0; right: 0; max-height: calc(100vh - var(--bar)); z-index: 9;
+    background: var(--bg); border-bottom: 2px solid var(--accent); padding: 1em 16px; display: none; }
+  body.nav-open nav.tree { display: block; }
+  .win { padding: 1.3em 1.5ch .8em; }
+  .win > .ttl { left: 1ch; max-width: calc(100% - 2ch); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Разделы" aria-expanded="false">[≡]</button>
+  <div class="left"><span class="c-acc b">nopox</span>@docs <span class="c-blue">~/docs/<span id="crumb">about</span>/</span> <span class="c-acc">❯</span> less README<span class="blink">█</span></div>
+  <div class="right"><span class="c-gray">[</span><span class="c-gray">‹</span> <span class="nf">󰙯</span> <span class="nf">󰓓</span><span class="c-gray">]</span> <span class="sep">·</span> <a href="https://github.com/nopoxxx/nopox-shell"><span class="c-gray">git</span> nopox-shell</a> <span class="sep">·</span> <span id="barClock">--:--</span></div>
+</header>
+
+<div class="layout">
+
+<nav class="tree" id="tree" aria-label="Разделы">
+  <a class="root" href="#about">~/docs/</a>
+  <ol>
+    <li><a href="#about"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">about</span></a></li>
+    <li><a href="#install" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">install/</span></a></li>
+    <li><a href="#keys"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">keys</span></a></li>
+    <li><a href="#bar" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">bar/</span></a></li>
+    <li><a href="#menu"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">menu</span></a></li>
+    <li><a href="#settings" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">settings/</span></a></li>
+    <li><a href="#monitors"><span class="mk">▌</span><span class="br">│  ├─ </span><span class="nm">monitors</span></a></li>
+    <li><a href="#binds"><span class="mk">▌</span><span class="br">│  ├─ </span><span class="nm">binds</span></a></li>
+    <li><a href="#wallpapers"><span class="mk">▌</span><span class="br">│  ├─ </span><span class="nm">wallpapers</span></a></li>
+    <li><a href="#apps"><span class="mk">▌</span><span class="br">│  └─ </span><span class="nm">apps</span></a></li>
+    <li><a href="#themes"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">themes</span></a></li>
+    <li><a href="#lock" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">lock/</span></a></li>
+    <li><a href="#notify" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">notify/</span></a></li>
+    <li><a href="#update"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">update</span></a></li>
+    <li><a href="#files"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">files</span></a></li>
+    <li><a href="#ipc"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">ipc</span></a></li>
+    <li><a href="#faq"><span class="mk">▌</span><span class="br">└─ </span><span class="nm">faq</span></a></li>
+  </ol>
+  <div class="accent-ctl">акцент: <button id="accentBtn" title="Сменить акцент — как в Mod+S → look/">‹ yellow ›</button></div>
+</nav>
+
+<main>
+
+<!-- ─────────────────────────── about ─────────────────────────── -->
+<section class="win" id="about">
+  <div class="ttl">~/docs/about</div>
+  <h1>nopox-shell</h1>
+  <p>Оболочка рабочего стола для композитора <a href="https://github.com/YaLTeR/niri">niri</a> на
+  <a href="https://quickshell.org">Quickshell</a>, целиком в стиле терминала: панель — строка shell-приглашения,
+  меню — <code>fzf</code>, настройки — <code>menuconfig</code>, уведомления — строки лога, блокировка — <code>getty</code>.
+  Палитра Gruvbox dark hard, шрифт Terminess (Terminus). Для Arch Linux и производных.</p>
+
+<div class="mock"><span class="c-acc b">nopox</span>@nopox-os <span class="c-blue">~/ws/{1,<span class="c-acc">[2]</span>}</span> <span class="c-gray">[1]</span> <span class="c-acc">❯</span> kitty  <span class="c-gray"># ~/projects</span>        <span class="c-gray">[‹</span> <span class="nf">󰙯</span> <span class="nf">󰓓</span><span class="c-gray">]</span> <span class="c-gray">·</span> <span class="c-gray">cpu</span> <span class="c-acc">▂▃▅▇</span> 4% <span class="c-gray">·</span> <span class="c-gray">mem</span> 1.7G <span class="c-gray">·</span> <span class="c-gray">vol</span> 40% <span class="c-gray">·</span> <span class="c-gray">upd</span> <span class="c-green">2</span> <span class="c-gray">·</span> <span class="c-gray">log</span> 0 <span class="c-gray">·</span> <span class="c-purple">ru</span> <span class="c-gray">·</span> <span class="c-acc">21:58</span></div>
+
+  <ul>
+    <li><b>панель</b> из 17 модулей по зонам left / center / right, TUI-попапы по клику;</li>
+    <li><b>меню</b> <kbd>Mod+D</kbd> для действий: программы, обои, пакеты pacman/AUR, питание;</li>
+    <li><b>настройки</b> <kbd>Mod+S</kbd> в стиле menuconfig с поиском — без правки конфигов руками;</li>
+    <li><b>окна</b> мониторов, биндов и обоев (wallhaven.cc);</li>
+    <li><b>темы GTK и Qt</b> в той же палитре, с тем же акцентом и шрифтом;</li>
+    <li><b>блокировка и greeter</b> как getty, уведомления как лог, обновление shell одним кликом.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────── install ─────────────────────────── -->
+<section class="win" id="install">
+  <div class="ttl">~/docs/install/</div>
+  <h2>Установка</h2>
+  <p>Arch Linux и производные (CachyOS, EndeavourOS, …), от обычного пользователя:</p>
+<pre class="cmd"><code><span class="p">❯ </span>bash &lt;(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)</code></pre>
+  <p>Установщик сначала задаёт вопросы, показывает итог и только потом ставит:</p>
+  <div class="tbl"><table>
+    <tr><th>выбор</th><th>варианты</th></tr>
+    <tr><td>терминал</td><td>kitty, alacritty, ghostty, foot — конфиг в Gruvbox + Terminess, <kbd>Mod+Return</kbd></td></tr>
+    <tr><td>оболочка</td><td>zsh (подсказки и подсветка), fish, bash — приглашение как панель: <code>user@host ~/путь ❯</code>, красный <span class="c-red">❯</span> после ошибки</td></tr>
+    <tr><td>браузер</td><td>Helium, Firefox, Zen, Chromium, Brave, Vivaldi — станет браузером по умолчанию, <kbd>Mod+Shift+B</kbd></td></tr>
+    <tr><td>файлы</td><td>Thunar, Nautilus, Dolphin, Nemo или yazi в терминале, <kbd>Mod+E</kbd></td></tr>
+    <tr><td>программы</td><td>по группам: медиа, общение, графика, работа и код, игры, утилиты</td></tr>
+    <tr><td>Discord</td><td>как есть, с Vencord, с BetterDiscord или Vesktop вместо него</td></tr>
+  </table></div>
+  <p>Дальше — пакеты (программы через <code>paru</code>: репозитории или AUR), клон shell в <code>~/.config/quickshell</code>,
+  конфиг niri (или два <code>include</code> к вашему) и, по желанию, greeter. Всё, что заменяется, остаётся рядом как <code>*.bak-&lt;дата&gt;</code>.</p>
+
+  <h3>флаги</h3>
+  <div class="tbl"><table>
+    <tr><th>флаг</th><th>что делает</th></tr>
+    <tr><td><code>--yes</code></td><td>без вопросов, всё по умолчанию; pacman и paru получают <code>--noconfirm</code></td></tr>
+    <tr><td><code>--terminal</code> <code>--shell</code> <code>--browser</code> <code>--files</code></td><td>выбор без вопроса, например <code>--terminal foot</code></td></tr>
+    <tr><td><code>--apps mpv,discord,steam</code></td><td>программы (<code>none</code> — никаких)</td></tr>
+    <tr><td><code>--discord-mod vencord</code></td><td><code>none</code>, <code>vencord</code>, <code>betterdiscord</code>, <code>vesktop</code></td></tr>
+    <tr><td><code>--keep-niri-config</code></td><td>не заменять ваш <code>config.kdl</code>, только дописать <code>include</code></td></tr>
+    <tr><td><code>--no-greeter</code></td><td>не ставить greeter</td></tr>
+    <tr><td><code>--branch &lt;ветка&gt;</code></td><td>другая ветка репозитория</td></tr>
+  </table></div>
+
+  <details>
+    <summary>вручную</summary>
+<pre class="cmd"><code><span class="p">❯ </span>sudo pacman -S --needed niri quickshell xwayland-satellite kitty git networkmanager pipewire \
+    pipewire-pulse wireplumber upower pacman-contrib libnotify polkit-gnome ttf-terminus-nerd paru \
+    qt6ct adw-gtk-theme xdg-desktop-portal-gnome
+<span class="p">❯ </span>git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell</code></pre>
+    <p>Затем подключите shell к niri — см. <a href="https://github.com/nopoxxx/nopox-shell/blob/main/extras/niri.kdl"><code>extras/niri.kdl</code></a>.</p>
+  </details>
+</section>
+
+<!-- ─────────────────────────── keys ─────────────────────────── -->
+<section class="win" id="keys">
+  <div class="ttl">~/docs/keys</div>
+  <h2>Клавиши</h2>
+  <p><kbd>Mod</kbd> — клавиша Super (Win). Полный список niri — <kbd>Mod+Shift+/</kbd>; изменить любое сочетание — в
+  <a href="#binds">окне биндов</a>.</p>
+  <h3>shell</h3>
+  <div class="tbl"><table>
+    <tr><th>сочетание</th><th>действие</th></tr>
+    <tr><td><kbd>Mod+D</kbd></td><td>меню</td></tr>
+    <tr><td><kbd>Mod+Space</kbd></td><td>сразу список программ</td></tr>
+    <tr><td><kbd>Mod+S</kbd></td><td>настройки</td></tr>
+    <tr><td><kbd>Mod+Return</kbd></td><td>терминал (выбранный в настройках)</td></tr>
+    <tr><td><kbd>Mod+E</kbd></td><td>файловый менеджер</td></tr>
+    <tr><td><kbd>Mod+Shift+B</kbd></td><td>браузер</td></tr>
+    <tr><td><kbd>Mod+Shift+W</kbd></td><td>обои</td></tr>
+    <tr><td><kbd>Super+Alt+L</kbd></td><td>заблокировать экран</td></tr>
+  </table></div>
+  <h3>окна и столы</h3>
+  <div class="tbl"><table>
+    <tr><th>сочетание</th><th>действие</th></tr>
+    <tr><td><kbd>Mod+Tab</kbd></td><td>обзор столов и окон</td></tr>
+    <tr><td><kbd>Mod+Q</kbd></td><td>закрыть окно</td></tr>
+    <tr><td><kbd>Mod+H/J/K/L</kbd> <kbd>Mod+стрелки</kbd></td><td>фокус влево / вниз / вверх / вправо; с <kbd>Ctrl</kbd> — переместить</td></tr>
+    <tr><td><kbd>Mod+1…9</kbd></td><td>стол по номеру; с <kbd>Ctrl</kbd> — перенести окно туда</td></tr>
+    <tr><td><kbd>Mod+колёсико</kbd></td><td>вниз — следующее окно, вверх — предыдущее; с <kbd>Ctrl</kbd> — переместить окно</td></tr>
+    <tr><td><kbd>Mod+Shift+колёсико</kbd></td><td>вверх — предыдущий стол, вниз — следующий</td></tr>
+    <tr><td><kbd>Mod+F</kbd> / <kbd>Mod+Shift+F</kbd></td><td>развернуть колонку / во весь экран</td></tr>
+    <tr><td><kbd>Mod+V</kbd></td><td>плавающее окно</td></tr>
+    <tr><td><kbd>Mod+R</kbd></td><td>сменить ширину колонки</td></tr>
+    <tr><td><kbd>Mod+Shift+S</kbd></td><td>скриншот области; <kbd>Ctrl+Print</kbd> — экран, <kbd>Alt+Print</kbd> — окно</td></tr>
+    <tr><td><kbd>Mod+Shift+E</kbd></td><td>выйти из niri</td></tr>
+  </table></div>
+  <p class="c-gray">Колёсико над самой панелью тоже листает столы её монитора, а над <code>vol</code> и <code>kbd</code> — громкость и раскладку.</p>
+</section>
+
+<!-- ─────────────────────────── bar ─────────────────────────── -->
+<section class="win" id="bar">
+  <div class="ttl">~/docs/bar/</div>
+  <h2>Панель</h2>
+  <p>Строка shell-приглашения из модулей. Модули расставляются по зонам left / center / right в
+  <kbd>Mod+S</kbd> → <code>bar/</code>: <kbd>←→</kbd> — зона, <kbd>Shift+↑↓</kbd> — порядок. Там же положение,
+  высота, floating-стиль, автоскрытие, разделитель и вид prompt.</p>
+  <div class="tbl"><table>
+    <tr><th>модуль</th><th>что показывает · клики</th></tr>
+    <tr><td><code>user</code></td><td><code>user@host</code> — стиль prompt настраивается</td></tr>
+    <tr><td><code>workspaces</code></td><td><code>~/ws/{1,[2]}</code> — столы этого монитора; клик — перейти</td></tr>
+    <tr><td><code>jobs</code></td><td><code>[N]</code> окон на активном столе</td></tr>
+    <tr><td><code>command</code></td><td><code>❯ app # title</code> активного окна с эффектом набора; <span class="c-red">❯</span> красный, если окно просит внимания</td></tr>
+    <tr><td><code>media</code></td><td>плеер (MPRIS): клик — пауза, правый — следующий, средний — предыдущий</td></tr>
+    <tr><td><code>tray</code></td><td><code>[‹ <span class="nf">󰙯</span> <span class="nf">󰓓</span>]</code> — значки Nerd Font или названия; клик — открыть, правый — меню, <code>‹</code> — свернуть в <code>[+N]</code></td></tr>
+    <tr><td><code>cpu</code> <code>mem</code></td><td>загрузка с графиком <code>▂▃▅▇</code> и память; клик — процессы как <code>ps</code> с <code>[kill]</code></td></tr>
+    <tr><td><code>gpu</code> <code>temp</code></td><td>загрузка и температура (без датчика скрыты)</td></tr>
+    <tr><td><code>netspeed</code> <code>net</code></td><td>скорость ↓↑ и подключение; клик по <code>net</code> — <code>nmtui</code></td></tr>
+    <tr><td><code>vol</code></td><td>громкость: колёсико ±5%, клик — микшер, правый — mute</td></tr>
+    <tr><td><code>bat</code></td><td>батарея ноутбука, если есть</td></tr>
+    <tr><td><code>updates</code></td><td>число обновлений: клик — <code>paru -Syu</code>, правый — проверить</td></tr>
+    <tr><td><code>shellupd</code></td><td><code>nopox ↑N</code> — вышла новая версия shell, см. <a href="#update">update</a></td></tr>
+    <tr><td><code>notify</code></td><td><code>log N</code> / <code>dnd</code>: клик — история уведомлений, правый — «не беспокоить»</td></tr>
+    <tr><td><code>kbd</code></td><td>раскладка: клик или колёсико — переключить</td></tr>
+    <tr><td><code>clock</code></td><td>часы; клик — календарь как <code>cal</code></td></tr>
+  </table></div>
+  <p>Трей показывает значки известных программ — Discord, Steam, Telegram, VPN-клиенты, торренты, облака и др.;
+  незнакомые — первой буквой. Вернуть названия: <code>bar/</code> → <code>трей</code> → <code>names</code>.</p>
+</section>
+
+<!-- ─────────────────────────── menu ─────────────────────────── -->
+<section class="win" id="menu">
+  <div class="ttl">~/docs/menu</div>
+  <h2>Меню</h2>
+  <p><kbd>Mod+D</kbd> — меню действий в духе omarchy с нечётким поиском, <kbd>Mod+Space</kbd> — сразу программы.
+  Разделы ведут себя как каталоги: <kbd>↵</kbd> или <kbd>→</kbd> — войти, <kbd>Esc</kbd> или <kbd>←</kbd> — на уровень выше.</p>
+<div class="mock"><div class="win"><div class="ttl">~/</div><span class="row"><span class="c-acc">❯</span> <span class="blink">█</span></span><span class="row"> </span><span class="sel"><span class="c-acc">▌</span> <span class="c-blue">apps/</span>        <span class="c-gray">запуск программ (Mod+Space)</span></span><span class="row">  wallpaper    <span class="c-gray">обои; Tab — wallhaven</span></span><span class="row">  setup        <span class="c-gray">все настройки, мониторы, сеть, звук</span></span><span class="row">  <span class="c-blue">packages/</span>    <span class="c-gray">установить, удалить, обновить</span></span><span class="row">  <span class="c-blue">system/</span>      <span class="c-gray">питание и сессия</span></span><span class="row">  about        <span class="c-gray">о системе: fastfetch</span></span></div></div>
+  <ul>
+    <li><code>packages/</code> — <code>install</code> (репозитории pacman), <code>aur</code> (поиск через paru), <code>remove</code>, <code>update</code> (<code>paru -Syu</code>);</li>
+    <li><code>system/</code> — <code>lock</code>, <code>suspend</code>, <code>logout</code>, <code>reboot</code>, <code>poweroff</code>;</li>
+    <li>всё настраиваемое — не в меню, а в окне настроек (<code>setup</code>).</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────── settings ─────────────────────────── -->
+<section class="win" id="settings">
+  <div class="ttl">~/docs/settings/</div>
+  <h2>Настройки</h2>
+  <p><kbd>Mod+S</kbd> — окно в стиле menuconfig. Изменения применяются сразу, руками ничего править не нужно.
+  <kbd>/</kbd> — поиск по всем настройкам, <kbd>Tab</kbd> — разделы, <kbd>←→</kbd> — значение, <kbd>r</kbd> — вернуть по умолчанию.
+  Изменённые значения помечены <span class="c-acc">*</span>.</p>
+<div class="mock"><div class="win"><div class="ttl">~/settings/look/</div><span class="row"><span class="c-gray">── shell ─────────────────────────────────</span></span><span class="sel"><span class="c-acc">▌</span> акцентный цвет           <span class="c-acc">‹ yellow ›</span></span><span class="row">  размер шрифта            16</span><span class="row"><span class="c-gray">── приложения ────────────────────────────</span></span><span class="row">  темы Qt и GTK            <span class="c-green">[*]</span></span><span class="row">  шрифт shell в приложениях <span class="c-green">[*]</span></span><span class="row"><span class="c-gray">── обои ──────────────────────────────────</span></span><span class="row">  выбрать                  <span class="c-gray">…</span></span><span class="row">  заполнение               <span class="c-acc">‹ fill ›</span> <span class="c-acc">*</span></span><span class="row"> </span><span class="hints"><i>←→</i> изменить  <i>r</i> сброс  <i>/</i> поиск  <i>⇥</i> раздел  <i>esc</i> выход</span></div></div>
+  <div class="tbl"><table>
+    <tr><th>раздел</th><th>что внутри</th></tr>
+    <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота меню</td></tr>
+    <tr><td><code>windows/</code></td><td>отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, анимации</td></tr>
+    <tr><td><code>input/</code></td><td>клавиатура и раскладки, <a href="#binds">бинды</a>, мышь и тачпад, курсор</td></tr>
+    <tr><td><code>bar/</code></td><td>модули по зонам, положение и стиль панели, prompt, часы, график cpu, трей</td></tr>
+    <tr><td><code>notify/</code></td><td>«не беспокоить», положение, время показа, максимум на экране, критичные</td></tr>
+    <tr><td><code>lock/</code></td><td>блокировка по бездействию, эхо пароля, часы, обои, предпросмотр</td></tr>
+    <tr><td><code>system/</code></td><td><a href="#monitors">мониторы</a>, сеть, звук, <a href="#apps">приложения</a>, конфиги, обновления shell</td></tr>
+  </table></div>
+  <p class="c-gray">Окна, открытые из настроек (мониторы, бинды, обои), по <kbd>Esc</kbd> возвращают в них.</p>
+</section>
+
+<section class="win" id="monitors">
+  <div class="ttl">~/docs/settings/monitors</div>
+  <h2>Мониторы</h2>
+  <p><code>system/</code> → <code>мониторы</code>: карта расположения, режим и частота, масштаб, поворот, расположение относительно
+  другого монитора (<code>справа от DP-1</code> и т.п.), VRR и основной монитор.</p>
+  <p class="note">Любое изменение ждёт подтверждения <kbd>y</kbd> 15 секунд — иначе (или <kbd>n</kbd> / <kbd>Esc</kbd>) всё
+  возвращается как было. Выключить последний работающий монитор нельзя.</p>
+</section>
+
+<section class="win" id="binds">
+  <div class="ttl">~/docs/settings/binds</div>
+  <h2>Бинды</h2>
+  <p><code>input/</code> → <code>бинды</code>: все сочетания niri и nopox с поиском — изменить, добавить, отключить, вернуть.
+  Сочетание можно нажать или ввести текстом; перед применением конфиг проверяется <code>niri validate</code>, и если не прошёл — изменение откатывается.</p>
+  <p>Бинды собираются из трёх слоёв, следующий перекрывает предыдущий:</p>
+  <div class="tbl"><table>
+    <tr><th>слой</th><th>файл</th><th>кто пишет</th></tr>
+    <tr><td>1. nopox</td><td><code>~/.config/niri/nopox/binds.kdl</code></td><td>shell, из настроек (терминал, браузер…)</td></tr>
+    <tr><td>2. ваши</td><td><code>~/.config/niri/config.kdl</code></td><td>вы, руками</td></tr>
+    <tr><td>3. из окна биндов</td><td><code>~/.config/niri/nopox/keys.kdl</code></td><td>shell, из окна биндов</td></tr>
+  </table></div>
+  <p class="note">Файлы в <code>~/.config/niri/nopox/</code> перезаписываются при каждом запуске shell — ручные правки там пропадут.
+  Свои бинды задавайте в окне биндов или в своём <code>config.kdl</code>.</p>
+</section>
+
+<section class="win" id="wallpapers">
+  <div class="ttl">~/docs/settings/wallpapers</div>
+  <h2>Обои</h2>
+  <p><kbd>Mod+Shift+W</kbd>: сетка превью локальной коллекции <code>~/Pictures/Wallpapers/</code>, <kbd>Tab</kbd> — поиск на
+  <a href="https://wallhaven.cc">wallhaven.cc</a> с бесконечной прокруткой; выбранное скачивается в коллекцию.
+  Режимы заполнения fill / fit / stretch, смена — плавная.</p>
+</section>
+
+<section class="win" id="apps">
+  <div class="ttl">~/docs/settings/apps</div>
+  <h2>Приложения по умолчанию</h2>
+  <p><code>system/</code> → <code>приложения</code>:</p>
+  <ul>
+    <li><b>терминал</b> — для <kbd>Mod+Return</kbd> и окон, которые открывает shell (обновления, <code>nmtui</code>…);</li>
+    <li><b>файловый менеджер</b> — для <kbd>Mod+E</kbd>;</li>
+    <li><b>оболочка</b> — zsh / fish / bash: откроется терминал с <code>chsh</code> (спросит пароль), действует с нового входа; нет пакета — поставит;</li>
+    <li><b>браузер</b> — станет браузером по умолчанию и откроется по <kbd>Mod+Shift+B</kbd>; нет пакета — поставит через paru.</li>
+  </ul>
+  <p class="c-gray">Оболочка и браузер берутся из системы: если отменить <code>chsh</code>, настройка сама вернётся к тому, что стоит на самом деле.</p>
+</section>
+
+<!-- ─────────────────────────── themes ─────────────────────────── -->
+<section class="win" id="themes">
+  <div class="ttl">~/docs/themes</div>
+  <h2>Темы приложений</h2>
+  <p><code>look/</code> → <code>темы Qt и GTK</code>: GTK- и Qt-приложения в той же палитре Gruvbox, с тем же акцентом и шрифтом,
+  что и shell, и иконками Gruvbox Plus — через adw-gtk3 / libadwaita и qt6ct. Firefox и Chromium берут тёмную схему через портал.</p>
+  <p class="c-gray">Уже открытые окна подхватывают изменения после перезапуска приложения; новые — сразу.
+  Свои стили GTK пишите в <code>gtk.css</code> после строки <code>@import "nopox.css";</code>.</p>
+</section>
+
+<!-- ─────────────────────────── lock ─────────────────────────── -->
+<section class="win" id="lock">
+  <div class="ttl">~/docs/lock/</div>
+  <h2>Блокировка и greeter</h2>
+  <p>Блокировка (<kbd>Super+Alt+L</kbd>, <code>system/ → lock</code>, после бездействия) и greeter для greetd — один и тот же экран
+  в духе getty. Блокировка проверяет пароль через PAM, greeter — через greetd.</p>
+<div class="mock screen"><span class="clock" id="bigClock"></span>
+
+<span class="c-gray">Arch Linux 6.x (tty1)</span>
+
+nopox-os login: <span class="c-acc">nopox</span>
+Password: <span class="blink">█</span></div>
+  <p>В greeter сначала вводится имя (подставлено последнее), <kbd>Tab</kbd> — сессия, <kbd>F11</kbd> / <kbd>F12</kbd> — перезагрузка / выключение.</p>
+<pre class="cmd"><code><span class="p">❯ </span>sudo ./extras/install-greeter.sh   <span class="cm"># shell → /usr/share/nopox-shell, niri для greeter, greetd</span>
+<span class="p">❯ </span>sudo systemctl restart greetd</code></pre>
+  <p>Greeter работает под пользователем <code>greeter</code> и не видит вашу домашнюю папку — поэтому сессия копирует настройки
+  и обои в <code>/var/lib/nopox-greeter/&lt;user&gt;/</code>, и greeter выглядит как shell последнего вошедшего.
+  После обновления shell greeter переустанавливается отдельно: <code>system/</code> → <code>обновить greeter</code>.</p>
+</section>
+
+<!-- ─────────────────────────── notify ─────────────────────────── -->
+<section class="win" id="notify">
+  <div class="ttl">~/docs/notify/</div>
+  <h2>Уведомления</h2>
+  <p>Shell — сам демон уведомлений. Уведомление — запись лога в рамке, уровень виден по цвету: INFO — акцент, ERROR (критичные) —
+  красный, DEBUG (неважные) — серый. Клик — действие, правый клик — закрыть, наведение ставит таймер на паузу.</p>
+<div class="mock"><span class="c-acc">┌─[ 21:58 INFO Steam ]────────────────┐
+│</span> <span class="b">friend</span>                              <span class="c-acc">│
+│</span> Ready to play?                      <span class="c-acc">│
+└─────────────────────────────────────┘</span>
+<span class="c-red">┌─[ 21:59 ERROR nopox-shell ]─────────┐
+│</span> <span class="b">Настройки не прочитаны</span>              <span class="c-red">│
+└─────────────────────────────────────┘</span></div>
+  <p>Клик по <code>log</code> на панели — история (до 100), правый клик — «не беспокоить» (проходят только критичные).
+  Положение, время показа и максимум на экране — в <code>notify/</code>.</p>
+
+  <h3>Steam</h3>
+  <p>Steam рисует свои уведомления отдельным окном, и в niri оно оказывается посреди экрана. Плагин
+  <a href="https://steambrew.app">Millennium</a> <a href="https://github.com/nopoxxx/nopox-notify">nopox-notify</a> забирает их у Steam
+  до показа и отправляет как обычные уведомления; свои всплывающие окна Steam больше не показывает.</p>
+<pre class="cmd"><code><span class="p">❯ </span>git clone https://github.com/nopoxxx/nopox-notify &amp;&amp; cd nopox-notify
+<span class="p">❯ </span>bun install &amp;&amp; bun run build   <span class="cm"># соберёт и положит в ~/.local/share/millennium/plugins/</span></code></pre>
+  <p>Затем включите <b>nopox notify</b> в Steam → Millennium → Plugins и перезапустите Steam.</p>
+</section>
+
+<!-- ─────────────────────────── update ─────────────────────────── -->
+<section class="win" id="update">
+  <div class="ttl">~/docs/update</div>
+  <h2>Обновления</h2>
+  <p>Shell, установленный через <code>git clone</code>, сам раз в несколько часов делает <code>git fetch</code>. Когда вышли новые коммиты,
+  на панели появляется <code class="c-acc">nopox ↑N</code>: клик — список изменений и <code>[обновить]</code>
+  (<code>git pull --ff-only</code> и перезапуск shell). Частота и уведомление — в <code>system/</code>.</p>
+  <p>Обновления системы — модуль <code>upd</code> или <code>packages/ → update</code> в меню (<code>paru -Syu</code>).</p>
+</section>
+
+<!-- ─────────────────────────── files ─────────────────────────── -->
+<section class="win" id="files">
+  <div class="ttl">~/docs/files</div>
+  <h2>Где что хранится</h2>
+  <div class="tbl"><table>
+    <tr><th>путь</th><th>что</th></tr>
+    <tr><td><code>~/.config/quickshell/</code></td><td>сам shell (git-клон)</td></tr>
+    <tr><td><code>~/.config/nopox/settings.json</code></td><td>настройки — только отличия от умолчаний</td></tr>
+    <tr><td><code>~/.config/niri/nopox/*.kdl</code></td><td>конфиг niri по разделам — генерирует shell, не править</td></tr>
+    <tr><td><code>~/.config/niri/config.kdl</code></td><td>ваш конфиг niri — подключает <code>nopox/main.kdl</code> в начале и <code>nopox/keys.kdl</code> в конце</td></tr>
+    <tr><td><code>~/.config/gtk-{3,4}.0/nopox.css</code></td><td>палитра GTK, подключается первой строкой <code>gtk.css</code></td></tr>
+    <tr><td><code>~/.config/qt6ct/</code></td><td>палитра и шрифт Qt</td></tr>
+    <tr><td><code>~/.local/state/nopox/</code></td><td>текущие обои и режим заполнения</td></tr>
+    <tr><td><code>~/Pictures/Wallpapers/</code></td><td>коллекция обоев и загрузки с wallhaven</td></tr>
+    <tr><td><code>/var/lib/nopox-greeter/</code></td><td>копия настроек и обоев для greeter</td></tr>
+  </table></div>
+</section>
+
+<!-- ─────────────────────────── ipc ─────────────────────────── -->
+<section class="win" id="ipc">
+  <div class="ttl">~/docs/ipc</div>
+  <h2>IPC</h2>
+  <p>Всё, что открывается клавишами, можно вызвать командой — для своих биндов и скриптов:</p>
+<pre class="cmd"><code><span class="p">❯ </span>qs ipc call launcher toggle     <span class="cm"># меню; launcher apps — сразу программы</span>
+<span class="p">❯ </span>qs ipc call settings toggle     <span class="cm"># настройки; settings open &lt;раздел&gt; — look, input, system…</span>
+<span class="p">❯ </span>qs ipc call wallpaper picker    <span class="cm"># обои; wallpaper set &lt;путь&gt;, wallpaper fill &lt;fill|fit|stretch&gt;</span>
+<span class="p">❯ </span>qs ipc call displays toggle     <span class="cm"># мониторы</span>
+<span class="p">❯ </span>qs ipc call binds toggle        <span class="cm"># бинды</span>
+<span class="p">❯ </span>qs ipc call lock lock           <span class="cm"># блокировка; lock preview — предпросмотр без пароля</span>
+<span class="p">❯ </span>qs ipc call notify dnd          <span class="cm"># «не беспокоить»; notify clear — очистить историю</span></code></pre>
+</section>
+
+<!-- ─────────────────────────── faq ─────────────────────────── -->
+<section class="win" id="faq">
+  <div class="ttl">~/docs/faq</div>
+  <h2>Вопросы</h2>
+
+  <h3>пропали бинды, которые я вписал в nopox/*.kdl</h3>
+  <p>Эти файлы генерирует shell и перезаписывает при каждом запуске. Задавайте бинды в <a href="#binds">окне биндов</a>
+  (сохраняются в <code>settings.json</code>) или в своём <code>~/.config/niri/config.kdl</code>.</p>
+
+  <h3>пришло «Настройки не прочитаны»</h3>
+  <p><code>settings.json</code> повреждён. Чтобы не затереть его, shell работает на умолчаниях и ничего не сохраняет.
+  Исправьте JSON (или удалите файл — настройки сбросятся) и перезапустите shell: <code>system/ → перезапустить shell</code>.</p>
+
+  <h3>как сбросить всё по умолчанию</h3>
+  <p>Удалите <code>~/.config/nopox/settings.json</code> и перезапустите shell. Отдельное значение — <kbd>r</kbd> на нём в настройках.</p>
+
+  <h3>в трее у программы буква вместо значка</h3>
+  <p>Программы нет в таблице значков. Её можно добавить в <code>TRAY_ICONS</code> в <code>services/settings.js</code>
+  (пришлите PR) или переключить трей на названия: <code>bar/ → трей → names</code>.</p>
+
+  <h3>как перезапустить shell</h3>
+<pre class="cmd"><code><span class="p">❯ </span>pkill -x qs; niri msg action spawn -- qs</code></pre>
+  <p>Или <code>system/</code> → <code>перезапустить shell</code> в настройках.</p>
+
+  <h3>хочу поправить код</h3>
+  <p>Shell — обычный QML и JS в <code>~/.config/quickshell/</code>. Карта проекта, соглашения и подводные камни —
+  в <a href="https://github.com/nopoxxx/nopox-shell/blob/main/AGENTS.md"><code>AGENTS.md</code></a>.</p>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <span class="c-acc">❯</span> <a href="https://github.com/nopoxxx/nopox-shell">github.com/nopoxxx/nopox-shell</a>
+  <span class="c-gray">·</span> шрифт Terminess (Terminus, <a href="fonts/LICENSE.txt">OFL</a>)
+</footer>
+
+<script>
+(() => {
+  const root = document.documentElement;
+
+  // ── акцент: как в Mod+S → look/, запоминается в браузере ──
+  const ACCENTS = ["yellow", "orange", "green", "aqua", "blue", "purple", "red"];
+  const btn = document.getElementById("accentBtn");
+  let accent = "yellow";
+  try { accent = localStorage.getItem("nopox-docs-accent") || "yellow"; } catch (e) {}
+  if (!ACCENTS.includes(accent)) accent = "yellow";
+  const applyAccent = () => {
+    root.dataset.accent = accent;
+    btn.textContent = "‹ " + accent + " ›";
+    try { localStorage.setItem("nopox-docs-accent", accent); } catch (e) {}
+  };
+  btn.addEventListener("click", () => { accent = ACCENTS[(ACCENTS.indexOf(accent) + 1) % ACCENTS.length]; applyAccent(); });
+  applyAccent();
+
+  // ── часы: в панели и крупные, как BigClock.qml (цифры 3×5) ──
+  const G = {
+    "0": ["###", "# #", "# #", "# #", "###"], "1": ["## ", " # ", " # ", " # ", "###"],
+    "2": ["###", "  #", "###", "#  ", "###"], "3": ["###", "  #", "###", "  #", "###"],
+    "4": ["# #", "# #", "###", "  #", "  #"], "5": ["###", "#  ", "###", "  #", "###"],
+    "6": ["###", "#  ", "###", "# #", "###"], "7": ["###", "  #", "  #", "  #", "  #"],
+    "8": ["###", "# #", "###", "# #", "###"], "9": ["###", "# #", "###", "  #", "###"],
+    ":": [" ", "#", " ", "#", " "]
+  };
+  const barClock = document.getElementById("barClock"), bigClock = document.getElementById("bigClock");
+  const tick = () => {
+    const d = new Date(), hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    barClock.textContent = hm;
+    bigClock.replaceChildren(...[...hm].map(ch => {
+      const g = document.createElement("span");
+      g.className = "g";
+      g.style.gridTemplateColumns = `repeat(${G[ch][0].length}, 2ch)`;
+      for (const row of G[ch]) for (const px of row) {
+        const i = document.createElement("i");
+        if (px === "#") i.className = "on";
+        g.appendChild(i);
+      }
+      return g;
+    }));
+  };
+  tick(); setInterval(tick, 10000);
+
+  // ── дерево: подсветка раздела, который сейчас на экране ──
+  const links = [...document.querySelectorAll("nav.tree li a")];
+  const crumb = document.getElementById("crumb");
+  const byId = Object.fromEntries(links.map(a => [a.getAttribute("href").slice(1), a]));
+  const setActive = id => {
+    links.forEach(a => a.classList.toggle("active", a === byId[id]));
+    crumb.textContent = byId[id] ? byId[id].querySelector(".nm").textContent.replace(/\/$/, "") : id;
+  };
+  const sections = [...document.querySelectorAll("main > section")];
+  const onScroll = () => {
+    const y = window.scrollY + window.innerHeight * 0.25;
+    let cur = sections[0].id;
+    for (const s of sections) if (s.offsetTop <= y) cur = s.id;
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) cur = sections[sections.length - 1].id;
+    setActive(cur);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // ── телефон: дерево разделов по кнопке [≡] ──
+  const menuBtn = document.getElementById("menuBtn");
+  const setNav = open => { document.body.classList.toggle("nav-open", open); menuBtn.setAttribute("aria-expanded", open); };
+  menuBtn.addEventListener("click", () => setNav(!document.body.classList.contains("nav-open")));
+  links.concat(document.querySelector("nav.tree .root")).forEach(a => a.addEventListener("click", () => setNav(false)));
+
+  // ── [copy] у команд: без приглашения ❯ и комментариев ──
+  document.querySelectorAll("pre.cmd").forEach(pre => {
+    const b = document.createElement("button");
+    b.className = "copy"; b.type = "button"; b.textContent = "copy";
+    b.addEventListener("click", async () => {
+      const text = [...pre.querySelector("code").childNodes]
+        .filter(n => !(n.classList && (n.classList.contains("p") || n.classList.contains("cm"))))
+        .map(n => n.textContent).join("").replace(/[ \t]+$/gm, "").trim();
+      try { await navigator.clipboard.writeText(text); b.textContent = "ok"; b.classList.add("ok"); }
+      catch (e) { b.textContent = "err"; }
+      setTimeout(() => { b.textContent = "copy"; b.classList.remove("ok"); }, 1200);
+    });
+    // кнопка — в обёртке, а не в pre: иначе прокручивается вместе с длинной командой и ложится на текст
+    const wrap = document.createElement("div");
+    wrap.className = "codewrap";
+    pre.replaceWith(wrap);
+    wrap.append(pre, b);
+  });
+})();
+</script>
+</body>
+</html>

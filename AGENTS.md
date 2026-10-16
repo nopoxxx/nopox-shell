@@ -5,7 +5,8 @@
 > должно в том же коммите обновить `AGENTS.md`**: новые/удалённые/переименованные файлы, модули панели,
 > настройки, IPC-команды, пути хранения, форматы данных, соглашения, подводные камни.
 > Перед завершением задачи перечитай затронутые разделы и сверь их с кодом.
-> Если изменение пользователю видно — обнови и `README.md`.
+> Если изменение пользователю видно — обнови документацию `docs/index.html` (сайт на GitHub Pages),
+> а если оно меняет установку или главные клавиши — и короткий `README.md`.
 
 ## 1. Что это
 
@@ -14,7 +15,7 @@
 настройки — menuconfig, уведомления — строки лога, блокировка — getty. Палитра Gruvbox dark hard,
 шрифт `Terminess Nerd Font Mono`. Целевая система — Arch Linux и производные (pacman, paru).
 
-- Язык интерфейса, комментариев и README — **русский**. Сообщения коммитов — **английский**,
+- Язык интерфейса, комментариев, README и документации — **русский**. Сообщения коммитов — **английский**,
   формат `Area: what changed` (например `Binds window: …`, `install.sh: …`).
 - Репозиторий: `https://github.com/nopoxxx/nopox-shell`, ветка `main`.
 - Установлен у пользователя как git-клон в `~/.config/quickshell` (Quickshell грузит `shell.qml` оттуда).
@@ -91,7 +92,11 @@ extras/              не грузится shell'ом; эталонные кон
   fastfetch/config.jsonc  fastfetch в стиле панели; его же берёт about в меню (с акцентом shell)
   shell/             zshrc, fish_prompt.fish, nopox.fish, bashrc — приглашение как у панели
 install.sh           установщик для Arch (вопросы → итог → установка), см. §10
-README.md            пользовательская документация
+README.md            коротко: что это, установка, главные клавиши, ссылка на документацию
+docs/                документация — GitHub Pages из main /docs (https://nopoxxx.github.io/nopox-shell/)
+  index.html         одна страница без сборки: стили и JS внутри, макеты экранов shell нарисованы текстом
+  fonts/             Terminess (Regular/Bold), урезанный pyftsubset до латиницы, кириллицы, псевдографики и пары
+                     значков трея (~12 КБ), + LICENSE.txt (OFL); новый символ вне набора — пересобрать подмножество
 ```
 
 ## 4. Архитектура и потоки данных
@@ -325,7 +330,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
   сессия остаётся заблокированной — это поведение протокола. `IdleMonitor` по `shell.lock.idle` (мин).
 - `LoginPrompt` ничего не проверяет: отдаёт сигналы `submit(password)`, `userChosen`, `power`, `cancel`.
   `askUser: true` — greeter (сначала имя, Tab — сессия, F11/F12 — reboot/poweroff).
-- Greeter: `extras/install-greeter.sh` копирует shell (без `.git`, `extras`, `README.md`, `AGENTS.md`,
+- Greeter: `extras/install-greeter.sh` копирует shell (без `.git`, `extras`, `docs`, `README.md`, `AGENTS.md`,
   `CLAUDE.md`) в `/usr/share/nopox-shell`; greetd запускает `niri -c /etc/greetd/nopox-niri.kdl`, тот — `qs -p …/greeter.qml`.
   Greeter работает под пользователем `greeter`, домашние папки не видит — поэтому `GreeterSync`
   из сессии пользователя копирует `settings.json`, обои и `wallpaper-fill` в `/var/lib/nopox-greeter/$USER/`.
@@ -379,7 +384,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 со свойствами `bar` и `available`; запись в `MODULES` (`id`, `file: "Name"`, `desc`, `inline` при
 необходимости); при желании — в `DEFAULT_LAYOUT` (иначе появится в «выключены»). Данные — из сервиса
 в `services/`, а не опросом в каждом модуле (модулей по экземпляру на монитор). Обновить таблицы в
-этом файле и список модулей в README.
+этом файле и список модулей в документации (`docs/index.html`, раздел bar).
 
 **Новый попап.** `bar/NamePopup.qml` на `TuiPopup { title: "…" }`, внутри — `T`, `RowLayout`,
 `Repeater`; кликабельные элементы — `[текст]` с `MouseArea` и `Qt.PointingHandCursor`.
@@ -447,4 +452,4 @@ Bash, `set -euo pipefail`, запуск от обычного пользоват
 конфиг niri (замена или дописать два include; затем `niri validate`, при ошибке — откат) → конфиг
 терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию → Discord → greeter → итог.
 Всё заменяемое уходит в `*.bak-<дата>`. С `--yes` вопросов нет и pacman/paru получают `--noconfirm`.
-Флаги описаны в шапке файла и в README — менять синхронно.
+Флаги описаны в шапке файла и в документации (`docs/index.html`, раздел install) — менять синхронно.
