@@ -48,6 +48,7 @@ TuiPopup.qml         PopupWindow в TUI-рамке с заголовком [ tit
 Background.qml       обои на слое Background (namespace nopox-wallpaper), плавная смена, fill/fit/stretch
 Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск
 WallPicker.qml       выбор обоев: local и wallhaven, сетка превью, бесконечная прокрутка
+ClipboardWindow.qml  история буфера (cliphist): список с поиском слева, запись целиком справа (текст/картинка)
 ShotWindow.qml       скриншот с разметкой (по мотивам rishot, MIT): заморозка экранов, область/экран/окно, инструменты, экспорт
 SettingsWindow.qml   окно настроек в стиле menuconfig: строки из S.sections(), поиск (/), действия — runAction()
 DisplaysWindow.qml   мониторы: карта, режим/масштаб/поворот/расположение/VRR/основной, откат через 15 с
@@ -75,6 +76,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.edit(path), Term.cmd(), configPath
   AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
   MuteNotify.qml     уведомление при мьюте микрофона/звука по умолчанию (PipeWire, любым способом), shell.notify.mute
+  Clipboard.qml      cliphist: один `wl-paste --watch cliphist store` пока жив shell (прежние гасит pkill); entries, copy, remove, wipe
   DefaultApps.qml    оболочка входа и браузер по умолчанию (shell.sh, shell.browser): сверка с системой, chsh, xdg-settings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
@@ -214,7 +216,7 @@ wallhaven, lockPreview ставит `Settings.returnHere` — закрываяс
 config.kdl            пользовательский; include "nopox/main.kdl" и В САМОМ КОНЦЕ include "nopox/keys.kdl"
 nopox/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
 nopox/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
-nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
+nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+V, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
 nopox/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
 ```
 
@@ -395,6 +397,8 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 | `/var/lib/nopox-greeter/<user>/` | копия для greeter | GreeterSync |
 | `/var/lib/nopox-greeter/.greeter/last` | последний пользователь и сессия | greeter.qml |
 | `/usr/share/nopox-shell/` | копия shell для greeter | install-greeter.sh |
+| `~/.cache/cliphist/db` | история буфера | cliphist (через Clipboard) |
+| `$XDG_RUNTIME_DIR/nopox-clip/` | картинки из истории для предпросмотра | ClipboardWindow |
 
 ## 6. IPC (`qs ipc call <target> <fn>`)
 
@@ -408,6 +412,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 | `lock` | `lock`, `locked`, `preview` | LockScreen.qml |
 | `notify` | `dnd`, `clear` | services/Notifs.qml |
 | `shot` | `region`, `window`, `edit <путь>` | ShotWindow.qml |
+| `clipboard` | `toggle` | ClipboardWindow.qml |
 
 Новые IPC-функции нужно объявлять с типами (`function x(): void`, аргументы `name: string`).
 
@@ -435,7 +440,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 `Settings.back()`) или пункт в меню. Заголовок — путь, откуда окно открывается: `[ ~/settings/system/displays/ ]`.
 
 **Новый сервис.** `services/Name.qml` с `pragma Singleton` и `Singleton { }`. Синглтон создаётся при первом
-обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`, `_muteNotify`).
+обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`, `_muteNotify`, `_clipboard`).
 
 ## 8. Соглашения кода
 
@@ -465,6 +470,9 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 - Приложения, запущенные из shell, наследуют окружение процесса `qs`, а не текущий `environment` из niri. Для тем это
   закрыто `Settings.appEnv()` (меню, `Term`); новая переменная в `misc.kdl` — добавить в `S.APP_ENV`, иначе до программ
   из shell она дойдёт только после перезапуска shell. Уже запущенные программы окружение не меняют — их надо перезапустить.
+- Одинаковое сочетание в `nopox/binds.kdl` и в `config.kdl` niri принимает молча, побеждает подключённое позже —
+  `config.kdl`. Бинд nopox, занятый в старом эталоне (`Mod+Shift+V` был `switch-focus-between-floating-and-tiling`,
+  теперь `Mod+Ctrl+V`), у таких пользователей не сработает, пока строку не убрать из их `config.kdl` (install.sh предлагает перенести).
 - `normalizeLayout` хранит `off` явно: модуль, которого нет ни в одной зоне, считается новым.
 - Repeater отдаёт копии объектов — сравнивать по `name`/`id`, а не `===` (см. DisplaysWindow).
 - `Niri.windows` — объект по id; `Niri.workspaces` отсортированы по `idx`; номер стола относится к монитору.
@@ -499,7 +507,8 @@ nvidia (он отключает nouveau), иначе `vulkan-nouveau`; ни од
 через `makepkg`, не запустился — предупреждение; **сам установщик paru не пользуется** →
 клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files/sh/browser` →
 конфиг niri (замена или дописать два include; если nopox уже подключён — предлагает закомментировать
-встроенный `Mod+Shift+S`/`Print { screenshot; }` старого эталона: он перекрыл бы скриншот nopox; затем `niri validate`,
+встроенный `Mod+Shift+S`/`Print { screenshot; }` старого эталона: он перекрыл бы скриншот nopox, и перенести
+`Mod+Shift+V { switch-focus-between-floating-and-tiling; }` на `Mod+Ctrl+V` — иначе не откроется история буфера; затем `niri validate`,
 при ошибке — откат; стартовые `nopox/*.kdl` — вывод генератора с настройками по умолчанию, пересобирать при его изменении) → конфиг
 терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию (`desktop_of <пакет> <mime>`: тот
 `.desktop`, у которого есть нужный MimeType, — у thunar первым по алфавиту идёт `thunar-bulk-rename.desktop`) → Discord →

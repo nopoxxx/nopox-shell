@@ -334,7 +334,7 @@ PKGS=(
     networkmanager pipewire pipewire-pulse wireplumber upower pacman-contrib libnotify
     polkit-gnome gnome-keyring xdg-desktop-portal-gnome xdg-desktop-portal-gtk qt6ct adw-gtk-theme
     ttf-terminus-nerd noto-fonts noto-fonts-emoji
-    wl-clipboard brightnessctl playerctl pavucontrol fastfetch base-devel
+    wl-clipboard cliphist brightnessctl playerctl pavucontrol fastfetch base-devel
     "$TERMINAL"
 )
 read -ra sp <<<"${SHELL_PKGS[$SHELL_CHOICE]}"
@@ -545,6 +545,23 @@ else
     } >> "$conf"
     ok "к вашему config.kdl дописаны include nopox"
     warn "флаги в ваших секциях input / layout (например, tap) окно настроек (Mod+S) выключить не сможет"
+fi
+
+# Mod+Shift+V — история буфера nopox; в старом эталоне и в стандартном конфиге niri там фокус плавающих окон,
+# а config.kdl, подключённый после nopox/binds.kdl (и старая схема после миграции), перекрыл бы бинд nopox
+clip_re='^([[:space:]]*)Mod\+Shift\+V([[:space:]]*\{[[:space:]]*switch-focus-between-floating-and-tiling;[[:space:]]*\})'
+if grep -qE "$clip_re" "$conf"; then
+    if ask "В config.kdl Mod+Shift+V — фокус плавающих окон; он перекрывает историю буфера nopox. Перенести на Mod+Ctrl+V?" y; then
+        [ -f "$conf.bak-$STAMP" ] || cp "$conf" "$conf.bak-$STAMP"
+        if grep -qE '^[[:space:]]*Mod\+Ctrl\+V[[:space:]]' "$conf"; then
+            # Mod+Ctrl+V уже занят: второй такой бинд в одном блоке niri не примет — просто отключаем
+            sed -i -E "s#$clip_re#\1// Mod+Shift+V\2   // nopox: история буфера#" "$conf"
+            ok "Mod+Shift+V — история буфера (фокус плавающих окон отключён: Mod+Ctrl+V у вас занят)"
+        else
+            sed -i -E "s#$clip_re#\1Mod+Ctrl+V\2   // Mod+Shift+V — история буфера nopox#" "$conf"
+            ok "фокус плавающих окон — Mod+Ctrl+V, Mod+Shift+V — история буфера"
+        fi
+    fi
 fi
 
 if command -v niri >/dev/null && ! niri validate -c "$conf" >/dev/null 2>&1; then
@@ -784,7 +801,7 @@ cat <<EOF
   ${A}Mod+Return${N}   $TERMINAL$(printf '%*s' $((17 - ${#TERMINAL})) '')${A}Mod+Shift+W${N}   обои
   ${A}Mod+Space${N}    программы        ${A}Super+Alt+L${N}   блокировка$([ "$FILES" != none ] && printf '\n  %sMod+E%s        %s' "$A" "$N" "$FILES")
   ${A}Mod+Tab${N}      обзор            ${A}Mod+Shift+S${N}   скриншот с разметкой (и Print)$([ "$BROWSER" != none ] && printf '\n  %sMod+Shift+B%s  %s' "$A" "$N" "$BROWSER")
-  ${A}Mod+Shift+/${N}  все клавиши niri
+  ${A}Mod+Shift+/${N}  все клавиши niri  ${A}Mod+Shift+V${N}   история буфера
 
   ${D}документация: https://nopoxxx.github.io/nopox-shell/${N}
 EOF

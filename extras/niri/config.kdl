@@ -371,7 +371,7 @@ binds {
 
     // Move the focused window between the floating and the tiling layout.
     Mod+V       { toggle-window-floating; }
-    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+    Mod+Ctrl+V  { switch-focus-between-floating-and-tiling; }   // Mod+Shift+V — история буфера nopox
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,

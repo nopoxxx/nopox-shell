@@ -178,6 +178,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <li><a href="#wallpapers"><span class="mk">▌</span><span class="br">│  ├─ </span><span class="nm">wallpapers</span></a></li>
     <li><a href="#apps"><span class="mk">▌</span><span class="br">│  └─ </span><span class="nm">apps</span></a></li>
     <li><a href="#shot"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">shot</span></a></li>
+    <li><a href="#clipboard"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">clipboard</span></a></li>
     <li><a href="#themes"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">themes</span></a></li>
     <li><a href="#lock" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">lock/</span></a></li>
     <li><a href="#notify" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">notify/</span></a></li>
@@ -274,6 +275,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td><kbd>Mod+Shift+B</kbd></td><td>браузер</td></tr>
     <tr><td><kbd>Mod+Shift+W</kbd></td><td>обои</td></tr>
     <tr><td><kbd>Mod+Shift+S</kbd> <kbd>Print</kbd></td><td><a href="#shot">скриншот с разметкой</a></td></tr>
+    <tr><td><kbd>Mod+Shift+V</kbd></td><td><a href="#clipboard">история буфера обмена</a></td></tr>
     <tr><td><kbd>Super+Alt+L</kbd></td><td>заблокировать экран</td></tr>
   </table></div>
   <h3>окна и столы</h3>
@@ -286,7 +288,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td><kbd>Mod+колёсико</kbd></td><td>вниз — следующее окно, вверх — предыдущее; с <kbd>Ctrl</kbd> — переместить окно</td></tr>
     <tr><td><kbd>Mod+Shift+колёсико</kbd></td><td>вверх — предыдущий стол, вниз — следующий</td></tr>
     <tr><td><kbd>Mod+F</kbd> / <kbd>Mod+Shift+F</kbd></td><td>развернуть колонку / во весь экран</td></tr>
-    <tr><td><kbd>Mod+V</kbd></td><td>плавающее окно</td></tr>
+    <tr><td><kbd>Mod+V</kbd></td><td>плавающее окно; <kbd>Mod+Ctrl+V</kbd> — фокус между плавающими и колонками</td></tr>
     <tr><td><kbd>Mod+R</kbd></td><td>сменить ширину колонки</td></tr>
     <tr><td><kbd>Ctrl+Print</kbd> / <kbd>Alt+Print</kbd></td><td>встроенный скриншот niri: экран / окно, сразу в буфер и файл</td></tr>
     <tr><td><kbd>Mod+Shift+E</kbd></td><td>выйти из niri</td></tr>
@@ -430,6 +432,19 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   <p class="c-gray">По мотивам <a href="https://github.com/ryoku-dev/ryoshot">rishot</a> (MIT).</p>
 </section>
 
+<section class="win" id="clipboard">
+  <div class="ttl">~/docs/clipboard</div>
+  <h2>Буфер обмена</h2>
+  <p><kbd>Mod+Shift+V</kbd>: история всего, что копировали, — текст и картинки, новые сверху. Слева список с нечётким поиском,
+  справа выбранная запись целиком.</p>
+  <ul>
+    <li><kbd>↵</kbd> или клик — положить запись в буфер, дальше вставляйте как обычно (<kbd>Ctrl+V</kbd>, в терминале <kbd>Ctrl+Shift+V</kbd>);</li>
+    <li><kbd>Del</kbd> / <kbd>Ctrl+D</kbd> — удалить запись, <kbd>Shift+Del</kbd> — очистить всю историю (спросит <kbd>y</kbd>).</li>
+  </ul>
+  <p class="c-gray">Историю хранит <a href="https://github.com/sentriz/cliphist">cliphist</a>, пишет её сам shell, пока запущен.
+  Пароли из менеджеров паролей (KeePassXC и другие помечают их) не сохраняются.</p>
+</section>
+
 <section class="win" id="themes">
   <div class="ttl">~/docs/themes</div>
   <h2>Темы приложений</h2>
@@ -513,6 +528,7 @@ Password: <span class="blink">█</span></div>
     <tr><td><code>~/.config/qt6ct/</code></td><td>палитра и шрифт Qt</td></tr>
     <tr><td><code>~/.local/state/nopox/</code></td><td>текущие обои и режим заполнения</td></tr>
     <tr><td><code>~/Pictures/Wallpapers/</code></td><td>коллекция обоев и загрузки с wallhaven</td></tr>
+    <tr><td><code>~/.cache/cliphist/db</code></td><td>история буфера обмена</td></tr>
     <tr><td><code>/var/lib/nopox-greeter/</code></td><td>копия настроек и обоев для greeter</td></tr>
   </table></div>
 </section>
@@ -527,6 +543,7 @@ Password: <span class="blink">█</span></div>
 <span class="p">❯ </span>qs ipc call wallpaper picker    <span class="cm"># обои; wallpaper set &lt;путь&gt;, wallpaper fill &lt;fill|fit|stretch&gt;</span>
 <span class="p">❯ </span>qs ipc call displays toggle     <span class="cm"># мониторы</span>
 <span class="p">❯ </span>qs ipc call binds toggle        <span class="cm"># бинды</span>
+<span class="p">❯ </span>qs ipc call clipboard toggle    <span class="cm"># история буфера обмена</span>
 <span class="p">❯ </span>qs ipc call shot region         <span class="cm"># скриншот; shot window — сразу окно, shot edit &lt;путь&gt; — разметить файл</span>
 <span class="p">❯ </span>qs ipc call lock lock           <span class="cm"># блокировка; lock preview — предпросмотр без пароля</span>
 <span class="p">❯ </span>qs ipc call notify dnd          <span class="cm"># «не беспокоить»; notify clear — очистить историю</span></code></pre>

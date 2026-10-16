@@ -739,6 +739,7 @@ function niriFiles(get, outs) {
         '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
         '    Mod+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
         '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',
+        '    Mod+Shift+V hotkey-overlay-title="Clipboard History" { spawn "qs" "ipc" "call" "clipboard" "toggle"; }',
         '    Mod+Shift+S hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
         '    Print hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
         '    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }',
