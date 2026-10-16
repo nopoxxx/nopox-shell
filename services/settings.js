@@ -80,10 +80,10 @@ const DEFAULT_HOME = {
 const LAYOUTS = {
     "shell.bar.layout": { items: MODULES, zones: ["left", "center", "right", "off"], def: DEFAULT_LAYOUT,
                           labels: { left: "left", center: "center", right: "right", off: "выключены" },
-                          hint: "←→ зона, ⇧↑↓ или K/J — порядок" },
+                          hint: "←→ зона, ↵ — применить, ⇧↑↓ или K/J — порядок" },
     "shell.home.layout": { items: HOME_SECTIONS, zones: ["on", "off"], def: DEFAULT_HOME,
                            labels: { on: "показаны", off: "скрыты" },
-                           hint: "←→ показать / скрыть, ⇧↑↓ или K/J — порядок" }
+                           hint: "←→ показать / скрыть, ↵ — применить, ⇧↑↓ или K/J — порядок" }
 };
 const ZONES = LAYOUTS["shell.bar.layout"].zones;
 
@@ -130,6 +130,17 @@ function moveModule(l, id, d, key) {
     n[to].push(id);
     return n;
 }
+
+// поставить в зону (в конец); строки раскладки в окне настроек меняют зону черновиком и применяют этим
+function setZone(l, id, zone, key) {
+    const n = normalizeLayout(l, key);
+    for (const z of LAYOUTS[key ?? "shell.bar.layout"].zones) n[z] = n[z].filter(x => x !== id);
+    n[zone].push(id);
+    return n;
+}
+
+function layoutZones(key) { return LAYOUTS[key ?? "shell.bar.layout"].zones; }
+function zoneLabel(key, zone) { return LAYOUTS[key ?? "shell.bar.layout"].labels[zone] ?? zone; }
 
 // сдвиг внутри зоны; null — двигать некуда
 function reorderModule(l, id, d, key) {

@@ -170,7 +170,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `enum` | `options, def` | ←→ по кругу в черновик |
 | `text` | `def` | ↵ — поле редактирования |
 | `action` | `action` | ↵ — действие; строится `act(name, label, hint)`, ключ `action.<name>` (значения нет); обработчик — `switch` в `SettingsWindow.runAction()` |
-| `module` | `id, zone, zoneLabel, key` | элемент раскладки (`layoutRows(key)`: модули bar/, секции home/): ←→ — зона, ⇧↑↓ / K/J — порядок; `key` — чья раскладка |
+| `module` | `id, zone, zoneLabel, key` | элемент раскладки (`layoutRows(key)`: модули bar/, секции home/): ←→ — зона в черновик, ↵ — применить (`S.setZone`), r — зона по умолчанию; ⇧↑↓ / K/J — порядок, сразу; `key` — чья раскладка, черновик — по `key` и `id` |
 | `combo` | `def: "", action` | сочетание клавиш: ↵ — захват нажатия (`Binds.comboOf`), ⇥ — ввод текстом (занятое niri сочетание окну не нажать), ⌫ — убрать; `action` — строка KDL, по ней `Binds.conflict` ищет чужие бинды на том же сочетании |
 
 `S.niriFileOf(key)` — в каком файле `nopox/` живёт настройка (показывается в подсказке).

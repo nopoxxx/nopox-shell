@@ -101,8 +101,11 @@ Scope {
 
             // ── значения ──
 
-            // обои хранят заполнение сами, остальное — в Settings
-            function value(r) { return r.key === "wallpaper.fill" ? Wallpaper.fill : Settings.get(r.key); }
+            // обои хранят заполнение сами, остальное — в Settings; у строки раскладки значение — её зона
+            function value(r) {
+                if (r.type === "module") return r.zone;
+                return r.key === "wallpaper.fill" ? Wallpaper.fill : Settings.get(r.key);
+            }
             function changed(r) {
                 if (r.type === "module") return S.zoneOf(null, r.id, r.key) !== r.zone;
                 if (r.type === "action") return false;
@@ -113,11 +116,6 @@ Scope {
             function selectModule(id, key) {
                 const i = rows.findIndex(x => x.type === "module" && x.id === id && x.key === key);
                 if (i >= 0) cur = i;
-            }
-
-            function moveModule(r, d) {
-                Settings.set(r.key, S.moveModule(Settings.get(r.key), r.id, d, r.key));
-                selectModule(r.id, r.key);
             }
 
             function reorderModule(r, d) {
@@ -133,25 +131,31 @@ Scope {
             }
 
             // ── черновик ──
-            function drafted(r) { return !!draft && !!r && draft.key === r.key; }
+            // у строк раскладки ключ общий (shell.bar.layout) — черновик ещё и по id
+            function drafted(r) { return !!draft && !!r && draft.key === r.key && (r.type !== "module" || draft.id === r.id); }
             function shown(r) { return drafted(r) ? draft.value : value(r); }
 
             function propose(r, v) {
                 // вернулись к текущему значению — черновика нет
-                draft = v === value(r) ? null : { key: r.key, value: v };
+                draft = v === value(r) ? null : { key: r.key, id: r.id, value: v };
             }
 
             function apply() {
-                if (!draft || !row || draft.key !== row.key) return;
-                setValue(row, draft.value);
+                if (!drafted(row)) return;
+                const r = row, v = draft.value;
                 draft = null;
+                if (r.type === "module") {
+                    Settings.set(r.key, S.setZone(Settings.get(r.key), r.id, v, r.key));
+                    selectModule(r.id, r.key);   // строки раскладки пересоздались — выделение идёт за элементом
+                } else {
+                    setValue(r, v);
+                }
             }
 
             function reset(r) {
                 if (r.type === "action") return;
                 if (r.type === "module") {
-                    Settings.reset(r.key);
-                    selectModule(r.id, r.key);
+                    propose(r, S.zoneOf(null, r.id, r.key));   // зона по умолчанию — черновиком, ↵ применит
                 } else if (r.type === "combo" || r.type === "text") {
                     Settings.reset(r.key);
                 } else {
@@ -162,7 +166,8 @@ Scope {
             function adjust(r, d) {
                 const v = shown(r);
                 if (r.type === "module") {
-                    moveModule(r, d);
+                    const z = S.layoutZones(r.key);
+                    propose(r, z[(z.indexOf(v) + d + z.length) % z.length]);
                 } else if (r.type === "bool") {
                     propose(r, !v);
                 } else if (r.type === "enum") {
@@ -186,10 +191,8 @@ Scope {
                     editor.forceActiveFocus();
                 } else if (r.type === "action") {
                     runAction(r.action);
-                } else if (r.type === "module") {
-                    adjust(r, 1);
                 }
-                // значения (bool/enum/int/float) без черновика: ↵ ничего не меняет — выбирают ←→, Space или клик
+                // значения (bool/enum/int/float/module) без черновика: ↵ ничего не меняет — выбирают ←→, Space или клик
             }
 
             // ⇥ в захвате: сочетание, занятое niri (Mod+D и т.п.), не нажать — niri перехватит его раньше окна
@@ -218,8 +221,8 @@ Scope {
             }
 
             function fmt(r, v) {
-                if (r.type === "module") return "‹ " + r.zoneLabel + " ›";
                 if (v === undefined) v = shown(r);
+                if (r.type === "module") return "‹ " + S.zoneLabel(r.key, v) + " ›";
                 if (r.type === "bool") return v ? "[x]" : "[ ]";
                 if (r.type === "text") return JSON.stringify(v);
                 if (r.type === "combo") return capturing && r === row ? "нажмите сочетание…" : v ? "[" + v + "]" : "—";
@@ -567,7 +570,7 @@ Scope {
                                                     win.cur = line.index;
                                                     const r = line.modelData;
                                                     // значения — в черновик (кнопка [↵] рядом применяет), остальное — как ↵
-                                                    if (["bool", "enum", "int", "float"].includes(r.type))
+                                                    if (["bool", "enum", "int", "float", "module"].includes(r.type))
                                                         win.adjust(r, mouse.button === Qt.RightButton ? -1 : 1);
                                                     else if (mouse.button === Qt.RightButton) win.adjust(r, -1);
                                                     else win.activate(r);
