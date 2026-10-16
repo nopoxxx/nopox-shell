@@ -253,6 +253,14 @@ function sections(outputs, layout) {
             { key: "shell.sh", label: "оболочка", type: "enum", options: SHELLS, def: "zsh", hint: "chsh в терминале (спросит пароль), действует с нового входа; нет пакета — поставит" },
             { key: "shell.browser", label: "браузер", type: "enum", options: Object.keys(BROWSERS), def: "none", hint: "Mod+Shift+B и браузер по умолчанию (xdg-settings); нет пакета — поставит через paru" },
 
+            { header: "скриншоты" },
+            { key: "shell.shot.dir", label: "папка", type: "text", def: "~/Pictures/Screenshots", hint: "куда сохраняет ^S; Mod+Shift+S или Print — снимок с разметкой" },
+            { key: "shell.shot.enter", label: "по ↵", type: "enum", options: ["copy", "save", "both"], def: "copy", hint: "что делает ↵ в редакторе; ^C — копировать, ^S — сохранить, ⇧↵ — и то и другое" },
+            { key: "shell.shot.notify", label: "уведомление", type: "bool", def: true, hint: "после копирования или сохранения" },
+            { key: "shell.shot.tool", label: "инструмент", type: "enum", options: SHOT_TOOLS, def: "rect", hint: "последний выбранный в редакторе" },
+            { key: "shell.shot.color", label: "цвет", type: "enum", options: SHOT_COLORS, def: "red", hint: "последний выбранный в редакторе (1-9)" },
+            { key: "shell.shot.width", label: "толщина", type: "int", min: 1, max: 12, step: 1, def: 3, hint: "линий, текста и шагов ([ ] или колёсико в редакторе)" },
+
             { header: "конфиги" },
             act("editNiri", "niri", "~/.config/niri/config.kdl — свои настройки niri; nopox/ генерирует shell"),
             act("editShell", "код shell", "~/.config/quickshell/ — QML и JS nopox-shell"),
@@ -306,6 +314,10 @@ function defaultOf(key, outputs) {
 
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
+
+// ── скриншоты (ShotWindow) ───────────────────────────────────────────
+var SHOT_TOOLS = ["rect", "ellipse", "line", "arrow", "pen", "marker", "text", "step", "blur", "pixel"];
+var SHOT_COLORS = ["red", "orange", "yellow", "green", "aqua", "blue", "purple", "white", "black"];   // = ShotWindow.colors
 
 // ── свои сочетания из настроек (type: "combo") ─────────────────────
 // Пустое значение — бинда нет. action — готовая строка KDL: по ней Binds.conflict отличает этот бинд от чужих.
@@ -706,6 +718,8 @@ function niriFiles(get, outs) {
         '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
         '    Mod+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
         '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',
+        '    Mod+Shift+S hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
+        '    Print hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
         '    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }',
         '    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "qs" "ipc" "call" "lock" "lock"; }',
         "}"

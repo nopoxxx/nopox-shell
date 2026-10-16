@@ -28,6 +28,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/ins
 | `Mod+Space` | программы |
 | `Mod+S` | настройки |
 | `Mod+Return` | терминал |
+| `Mod+Shift+S` | скриншот с разметкой |
 | `Super+Alt+L` | блокировка |
 | `Mod+Shift+/` | все клавиши niri |
 

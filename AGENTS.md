@@ -48,6 +48,7 @@ TuiPopup.qml         PopupWindow в TUI-рамке с заголовком [ tit
 Background.qml       обои на слое Background (namespace nopox-wallpaper), плавная смена, fill/fit/stretch
 Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск
 WallPicker.qml       выбор обоев: local и wallhaven, сетка превью, бесконечная прокрутка
+ShotWindow.qml       скриншот с разметкой (по мотивам rishot, MIT): заморозка экранов, область/экран/окно, инструменты, экспорт
 SettingsWindow.qml   окно настроек в стиле menuconfig: строки из S.sections(), поиск (/), действия — runAction()
 DisplaysWindow.qml   мониторы: карта, режим/масштаб/поворот/расположение/VRR/основной, откат через 15 с
 BindsWindow.qml      бинды niri: список с поиском, редактор (сочетание/действие/подпись), конфликты
@@ -141,7 +142,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `bar` | панель | модули по зонам; панель; prompt; вид модулей (часы, график cpu, трей) |
 | `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора |
 | `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
-| `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
+| `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; скриншоты; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
 
 Новую настройку кладите туда, где её будут искать; раздел и группу (`header`) поиск тоже учитывает.
 Строка — `{header}` или `{key, label, type, def, hint, …}`. Типы:
@@ -203,7 +204,7 @@ wallhaven, lockPreview ставит `Settings.returnHere` — закрываяс
 config.kdl            пользовательский; include "nopox/main.kdl" и В САМОМ КОНЦЕ include "nopox/keys.kdl"
 nopox/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
 nopox/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
-nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+S, Super+Alt+L)
+nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
 nopox/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
 ```
 
@@ -267,6 +268,22 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 - Попап: `SomePopup { id: p; owner: root; bar: root.bar }` и `p.toggle()`. `TuiPopup` сам
   позиционируется у `owner`, закрывается кликом мимо (`grabFocus`), учитывается в `bar.openPopups`
   (держит автоскрываемую панель открытой). Содержимое — дочерние элементы (ColumnLayout внутри).
+
+### 4.4a Скриншоты (`ShotWindow.qml`)
+
+- Окно на **каждый** экран (Variants в LazyLoader): `ScreencopyView { live: false }` ловит один кадр при создании.
+  Пока `hasContent` нет, ничего своего не рисуем — иначе затемнение попадёт в кадр. Режим `window` вместо кадра
+  показывает картинку (`openImage`): снимок окна (`niri msg --json pick-window` → `screenshot-window --id --path`, файл
+  niri пишет в фоне — ждём его) или любой файл (`shot edit`).
+- Разметка `anns` — в координатах экрана `target`, область `sel` только обрезает (ручки меняют её, не двигая рисунок).
+  Фигуры — один `Canvas` размером с область; шаги и текст — элементы; размытие (`MultiEffect`) и пиксели
+  (`ShaderEffectSource` с крошечным `textureSize` и `smooth: false`) — по `base`, то есть по чистому кадру.
+- Экспорт — `crop.grabToImage(cb, sel × factor)` (factor — пикселей кадра на логический пиксель), файл в
+  `$XDG_RUNTIME_DIR/nopox-shot/shot.png` (папка создаётся при открытии: `saveToFile` в несуществующую молча падает),
+  дальше `wl-copy` / копия в `shell.shot.dir` и уведомление — через `execDetached`, окно закрывается сразу.
+- Клавиши инструментов — по скан-коду (`letter()`): в ru-раскладке `event.key` для R — «К». Enter, закончивший ввод текста,
+  экспорт не запускает (`textClosedAt`). `Mod+Shift+S`/`Print` — в `binds.kdl`; в эталонном `config.kdl` niri остались `Ctrl/Alt+Print`.
+- Настройки `shell.shot.*`: `dir`, `enter` (copy/save/both), `notify`, а `tool`/`color`/`width` — последние выбранные.
 
 ### 4.5 Полноэкранные окна (Launcher, WallPicker, Settings, Displays, Binds, lock preview)
 
@@ -377,6 +394,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 | `binds` | `toggle` | BindsWindow.qml |
 | `lock` | `lock`, `locked`, `preview` | LockScreen.qml |
 | `notify` | `dnd`, `clear` | services/Notifs.qml |
+| `shot` | `region`, `window`, `edit <путь>` | ShotWindow.qml |
 
 Новые IPC-функции нужно объявлять с типами (`function x(): void`, аргументы `name: string`).
 

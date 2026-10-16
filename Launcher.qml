@@ -69,7 +69,8 @@ Scope {
         setup: String.fromCodePoint(0xF0493),
         packages: String.fromCodePoint(0xF03D7),
         system: String.fromCodePoint(0xF0425),
-        about: String.fromCodePoint(0xF02FD)
+        about: String.fromCodePoint(0xF02FD),
+        shot: String.fromCodePoint(0xF0100)
     })
 
     readonly property var menu: ({
@@ -77,6 +78,8 @@ Scope {
         children: [
             { label: "apps", icon: icons.apps, desc: "запуск программ (Mod+Space)", provider: "apps" },
             { label: "wallpaper", icon: icons.wallpaper, desc: "обои; Tab — wallhaven (Mod+Shift+W)", run: () => openPicker("local") },
+            // пауза — чтобы закрывающееся меню не попало в замороженный кадр
+            { label: "screenshot", icon: icons.shot, desc: "снимок с разметкой (Mod+Shift+S); w — окно", run: () => spawn(["sh", "-c", "sleep 0.3; qs ipc call shot region"]) },
             { label: "setup", icon: icons.setup, desc: "все настройки, мониторы, сеть, звук (Mod+S)", run: () => Settings.show("") },
             { label: "packages", icon: icons.packages, desc: "установить, удалить, обновить", children: [
                 { label: "install", desc: "из репозиториев pacman", provider: "repo" },

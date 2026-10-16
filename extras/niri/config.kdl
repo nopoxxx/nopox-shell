@@ -386,7 +386,7 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    Mod+Shift+S { screenshot; }
+    // Mod+Shift+S и Print — скриншот nopox с разметкой (nopox/binds.kdl); здесь — встроенные niri
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 

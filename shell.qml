@@ -29,6 +29,7 @@ ShellRoot {
 
     Launcher {}
     WallPicker {}
+    ShotWindow {}
     SettingsWindow {}
     NotifPopups {}
     LockScreen {}

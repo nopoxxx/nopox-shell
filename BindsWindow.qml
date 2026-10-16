@@ -33,6 +33,8 @@ Scope {
         { name: 'spawn "qs" "ipc" "call" "lock" "lock"', desc: "nopox: блокировка" },
         { name: 'spawn "qs" "ipc" "call" "notify" "dnd"', desc: "nopox: не беспокоить" },
         { name: 'spawn "qs" "ipc" "call" "displays" "toggle"', desc: "nopox: мониторы" },
+        { name: 'spawn "qs" "ipc" "call" "shot" "region"', desc: "nopox: скриншот с разметкой" },
+        { name: 'spawn "qs" "ipc" "call" "shot" "window"', desc: "nopox: скриншот окна" },
         { name: "spawn kitty", desc: "запустить программу: spawn <команда> [аргументы]" },
         { name: "off", desc: "отключить сочетание" }
     ]
