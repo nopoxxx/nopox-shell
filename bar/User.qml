@@ -13,7 +13,7 @@ Item {
     function c(color, s) { return `<font color="${color}">${s}</font>`; }
 
     implicitWidth: t.implicitWidth
-    implicitHeight: t.implicitHeight
+    implicitHeight: t.height
 
     MouseArea {
         anchors.fill: parent
@@ -21,7 +21,7 @@ Item {
         onClicked: Home.toggle(root.bar?.screen?.name)
     }
 
-    T {
+    BarText {
         id: t
         textFormat: Text.StyledText
         text: {

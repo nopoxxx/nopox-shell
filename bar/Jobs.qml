@@ -14,7 +14,7 @@ Item {
     property bool available: count > 0
 
     implicitWidth: t.implicitWidth
-    implicitHeight: t.implicitHeight
+    implicitHeight: t.height
 
-    T { id: t; text: "[" + root.count + "]"; color: Theme.purple }
+    BarText { id: t; text: "[" + root.count + "]"; color: Theme.purple }
 }

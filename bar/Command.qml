@@ -57,16 +57,16 @@ Item {
     Row {
         id: row
 
-        T {
+        BarText {
             text: Settings.get("shell.bar.symbol") + " "
             color: Niri.urgent ? Theme.red : Theme.accent
             font.bold: true
         }
-        T { text: root.shownText.slice(0, root.app.length); color: Theme.fg }
-        T { text: root.shownText.slice(root.app.length); color: Theme.gray }
+        BarText { text: root.shownText.slice(0, root.app.length); color: Theme.fg }
+        BarText { text: root.shownText.slice(root.app.length); color: Theme.gray }
 
         // курсор: мигает, когда «команды» нет, и стоит в конце, пока она печатается
-        T {
+        BarText {
             id: cursor
 
             visible: !root.win || root.typing

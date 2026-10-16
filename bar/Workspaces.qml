@@ -24,8 +24,8 @@ Item {
     Row {
         id: row
 
-        T { text: "~/ws/"; color: Theme.blue }
-        T { visible: root.braces; text: "{"; color: Theme.gray }
+        BarText { text: "~/ws/"; color: Theme.blue }
+        BarText { visible: root.braces; text: "{"; color: Theme.gray }
 
         Repeater {
             model: root.shown
@@ -37,8 +37,8 @@ Item {
                 required property int index
                 readonly property string name: modelData.name ?? String(modelData.idx)
 
-                T { visible: ws.index > 0; text: ","; color: Theme.gray }
-                T {
+                BarText { visible: ws.index > 0; text: ","; color: Theme.gray }
+                BarText {
                     text: ws.modelData.is_active && root.braces ? "[" + ws.name + "]" : ws.name
                     color: ws.modelData.is_urgent ? Theme.red : ws.modelData.is_active ? Theme.accent : Theme.blue
                     font.bold: ws.modelData.is_active
@@ -52,7 +52,7 @@ Item {
             }
         }
 
-        T { visible: root.braces; text: "}"; color: Theme.gray }
-        T { visible: Niri.overview; text: " (overview)"; color: Theme.purple }
+        BarText { visible: root.braces; text: "}"; color: Theme.gray }
+        BarText { visible: Niri.overview; text: " (overview)"; color: Theme.purple }
     }
 }

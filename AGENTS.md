@@ -92,6 +92,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
 
 bar/                 модули панели и их попапы
   Seg.qml            базовый сегмент «label value» + сигналы leftClicked/rightClicked/middleClicked/scrolled (при scrollable)
+  BarText.qml        T для модулей панели: высота и базовая линия от шрифта, не от содержимого (см. §9)
   User Workspaces Jobs Command          inline-модули (часть «приглашения»)
   Media Tray Cpu Mem Gpu Temp NetSpeed Net Vol Bat Upd ShellUpd Notify Kbd Clock
   Rec Home           ● REC во время записи; значок меню home (для тех, кто убрал user@host)
@@ -275,7 +276,7 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
   или `Seg` без `scrollable` его пропускают — `wheel.accepted = false`.
 - **Контракт модуля**: корневой элемент имеет `property var bar` и `property bool available`
   (false — модуль скрыт и не порождает разделитель). Большинство модулей — `Seg { label; value; valueColor; bold }`
-  с сигналами кликов/колёсика. Разделитель между модулями — `shell.bar.separator`, между двумя
+  с сигналами кликов/колёсика. Текст в модулях — `BarText`, а не `T` (иначе запасной шрифт сдвигает панель, §9). Разделитель между модулями — `shell.bar.separator`, между двумя
   `inline`-модулями — пробел.
 - Реестр модулей — `MODULES` в settings.js: `{id, file, inline?, desc}`; зоны по умолчанию — `DEFAULT_LAYOUT`.
 
@@ -525,6 +526,10 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 
 - `Settings.set` сравнивает с умолчанием через `===` — для объектов (layout, keys) ключ всегда пишется.
 - Не писать файлы `nopox/*.kdl` часто: niri перечитывает конфиг на каждую запись (отсюда задержки и кэш `_written`).
+- Знаки, которых нет в Terminess (◑ ✳ в заголовке Claude Code, эмодзи), Qt рисует запасным шрифтом (Noto Sans Mono,
+  DejaVu) с более высокой строкой: `Text` вырастает с 16 до 19–22 px, а базовая линия опускается. В панели зоны
+  центрируются по высоте — весь текст прыгал вверх. `bar/BarText.qml` держит высоту `FontMetrics.height` и поднимает
+  текст на `ascent − baselineOffset`; `lineHeight` одной высоты не хватает — базовая линия всё равно съезжает.
 - Глифы Nerd Font вне BMP — два UTF-16 знака: длину и срез для анимации печати считать через `Array.from`.
   В `Terminess Nerd Font Mono` значки ужаты в клетку и не читаются — Tray рисует их обычным `Terminess Nerd Font`.
   Новый глиф в `TRAY_ICONS` проверять по шрифту (fontTools, имена вида `md-discord`); в иконке элемента трея

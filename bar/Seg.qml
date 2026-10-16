@@ -24,8 +24,8 @@ Item {
 
     Row {
         id: row
-        T { visible: seg.label !== ""; text: seg.label + " "; color: Theme.gray }
-        T { text: seg.value; color: seg.valueColor; font.bold: seg.bold }
+        BarText { visible: seg.label !== ""; text: seg.label + " "; color: Theme.gray }
+        BarText { text: seg.value; color: seg.valueColor; font.bold: seg.bold }
     }
 
     MouseArea {

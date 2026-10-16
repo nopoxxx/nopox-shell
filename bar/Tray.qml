@@ -84,7 +84,7 @@ Item {
 
         // переключатель «[‹» / «[+N»: ‹ — свернуть, +N — развернуть.
         // Кликабельна и скобка, и немного вокруг — один символ слишком мелкая цель.
-        T {
+        BarText {
             textFormat: Text.StyledText
             text: `<font color="${Theme.gray}">[</font>`
                 + `<font color="${root.collapsed ? Theme.accent : Theme.gray}">${root.collapsed ? "+" + root.hidden : "‹"}</font>`
@@ -99,7 +99,7 @@ Item {
         Repeater {
             model: root.items
 
-            T {
+            BarText {
                 id: item
 
                 required property var modelData
@@ -133,9 +133,9 @@ Item {
         }
 
         // курсор, пока названия печатаются или стираются
-        T { visible: root.typing; text: "█"; color: Theme.fg }
+        BarText { visible: root.typing; text: "█"; color: Theme.fg }
 
-        T { text: "]"; color: Theme.gray }
+        BarText { text: "]"; color: Theme.gray }
     }
 
     // своё меню вместо it.display(): нативному QMenu нужен режим QApplication, и он не в стиле shell
