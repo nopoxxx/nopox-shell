@@ -483,6 +483,13 @@ else
     info "оставил ваш конфиг"
 fi
 
+# fastfetch в стиле панели — только если своего конфига нет (about в меню берёт конфиг из shell сам)
+ff="$HOME/.config/fastfetch/config.jsonc"
+if [ ! -f "$ff" ]; then
+    install -Dm644 "$DEST/extras/fastfetch/config.jsonc" "$ff"
+    ok "fastfetch: конфиг nopox"
+fi
+
 # ── оболочка ─────────────────────────────────────────────────────────
 step "Оболочка: $SHELL_CHOICE"
 case "$SHELL_CHOICE" in

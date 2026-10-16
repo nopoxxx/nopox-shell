@@ -37,6 +37,15 @@ Scope {
 
     function spawn(argv) { Quickshell.execDetached(argv); }
 
+    // fastfetch с конфигом nopox и акцентом shell; окно закрывается по Enter
+    function about() {
+        const c = Theme.accent;
+        const ansi = "38;2;" + [c.r, c.g, c.b].map(x => Math.round(x * 255)).join(";");
+        Term.float(["bash", "-c",
+            'printf "\\e[?25l"; fastfetch -c "$1" --logo-color-1 "$2" --logo-color-2 "$2"; printf "\\n  \\e[90m↵ — закрыть\\e[0m"; read -rs',
+            "bash", Quickshell.shellDir + "/extras/fastfetch/config.jsonc", ansi]);
+    }
+
     function openPicker(source) {
         Wallpaper.pickerSource = source;
         Wallpaper.pickerOpen = true;
@@ -81,7 +90,7 @@ Scope {
                 { label: "reboot", desc: "перезагрузка", run: () => spawn(["systemctl", "reboot"]) },
                 { label: "poweroff", desc: "выключение", run: () => spawn(["systemctl", "poweroff"]) }
             ] },
-            { label: "about", icon: icons.about, desc: "fastfetch", run: () => term("fastfetch") }
+            { label: "about", icon: icons.about, desc: "о системе: fastfetch", run: () => about() }
         ]
     })
 

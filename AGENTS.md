@@ -87,6 +87,7 @@ extras/              не грузится shell'ом; эталонные кон
   greeter/niri.kdl   конфиг niri для greeter (/etc/greetd/nopox-niri.kdl)
   install-greeter.sh sudo: копия shell в /usr/share/nopox-shell, каталоги синхронизации, greetd
   kitty/ alacritty/ ghostty/ foot/   конфиги терминалов в Gruvbox + Terminess
+  fastfetch/config.jsonc  fastfetch в стиле панели; его же берёт about в меню (с акцентом shell)
   shell/             zshrc, fish_prompt.fish, nopox.fish, bashrc — приглашение как у панели
 install.sh           установщик для Arch (вопросы → итог → установка), см. §10
 README.md            пользовательская документация
@@ -271,7 +272,8 @@ Scope {
 
 **Launcher**: меню — только действия, всё настраиваемое — в окне настроек (`setup` открывает его).
 Корень: `apps/`, `wallpaper`, `setup`, `packages/` (install, aur, remove, update), `system/` (lock, suspend,
-logout, reboot, poweroff), `about`. Узел дерева `{label, desc, icon, children | provider | run}`. Провайдеры:
+logout, reboot, poweroff), `about` (`about()`: fastfetch с `extras/fastfetch/config.jsonc` из shell,
+акцент — truecolor `--logo-color-1/2`, окно закрывается по Enter). Узел дерева `{label, desc, icon, children | provider | run}`. Провайдеры:
 `apps` (DesktopEntries), `repo` (`pacman -Sl`), `installed` (`pacman -Qe`), `aur` (одна строка `paru <запрос>`).
 `repo`/`installed` кешируются до следующего открытия. Разделы показываются как каталоги (синие, со `/`).
 
@@ -407,6 +409,6 @@ Bash, `set -euo pipefail`, запуск от обычного пользоват
 программы и иконки `gruvbox-plus-icon-theme` (AUR) через `paru`, затем сверка `pacman -Qq` и честный список непоставленных →
 клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files` →
 конфиг niri (замена или дописать два include; затем `niri validate`, при ошибке — откат) → конфиг
-терминала → оболочка → приложения по умолчанию → Discord → greeter → итог.
+терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию → Discord → greeter → итог.
 Всё заменяемое уходит в `*.bak-<дата>`. С `--yes` вопросов нет и pacman/paru получают `--noconfirm`.
 Флаги описаны в шапке файла и в README — менять синхронно.
