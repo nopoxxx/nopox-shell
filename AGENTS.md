@@ -237,7 +237,7 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 | jobs | Jobs | `[N]` окон на активном столе |
 | command | Command | `❯ app  # title` активного окна, эффект набора; ❯ красный при urgent |
 | media | Media | MPRIS: клик пауза, правый next, средний prev |
-| tray | Tray | `[‹ a b]` текстом, сворачивается в `[+N]`; правый клик — TrayMenu (свой DBusMenu) |
+| tray | Tray | `[‹ 󰙯 󰓓]` значками (`S.trayGlyph` по `S.TRAY_ICONS`, иначе первая буква) или названиями (`shell.bar.trayStyle`), сворачивается в `[+N]`; правый клик — TrayMenu (свой DBusMenu) |
 | cpu / mem | Cpu / Mem | загрузка (+ спарклайн) / память; клик — ProcsPopup (ps, [kill]) |
 | gpu / temp | Gpu / Temp | amdgpu busy+temp / k10temp·coretemp·zenpower; без датчика скрыты |
 | netspeed | NetSpeed | ↓↑ по всем интерфейсам кроме lo |
@@ -408,6 +408,10 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 
 - `Settings.set` сравнивает с умолчанием через `===` — для объектов (layout, keys) ключ всегда пишется.
 - Не писать файлы `nopox/*.kdl` часто: niri перечитывает конфиг на каждую запись (отсюда задержки и кэш `_written`).
+- Глифы Nerd Font вне BMP — два UTF-16 знака: длину и срез для анимации печати считать через `Array.from`.
+  В `Terminess Nerd Font Mono` значки ужаты в клетку и не читаются — Tray рисует их обычным `Terminess Nerd Font`.
+  Новый глиф в `TRAY_ICONS` проверять по шрифту (fontTools, имена вида `md-discord`); в иконке элемента трея
+  смотреть только `image://icon/<имя>` — в URL pixmap-иконок путь DBus (`/org/chromium/…` у любого Electron).
 - Приложения, запущенные из shell (меню, трей), наследуют окружение процесса `qs`, а не текущий `environment`
   из niri: переменная, добавленная в `misc.kdl`, дойдёт до них после перезапуска shell или нового входа.
 - `normalizeLayout` хранит `off` явно: модуль, которого нет ни в одной зоне, считается новым.

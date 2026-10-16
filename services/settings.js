@@ -212,6 +212,7 @@ function sections(outputs, layout) {
             { header: "модули" },
             { key: "shell.bar.clock", label: "формат часов", type: "enum", options: ["HH:mm", "HH:mm:ss", "ddd HH:mm", "dd.MM HH:mm"], def: "HH:mm" },
             { key: "shell.bar.cpuGraph", label: "график cpu", type: "bool", def: true, hint: "▂▃▅▇ — история загрузки, как в btop" },
+            { key: "shell.bar.trayStyle", label: "трей", type: "enum", options: ["icons", "names"], def: "icons", hint: "icons — значки Nerd Font для известных программ, остальные — первой буквой; names — короткие названия" },
             { key: "shell.bar.trayCollapsed", label: "трей свёрнут", type: "bool", def: false, hint: "на панели переключается кликом по ‹ / +N; просящие внимания видны всегда" },
             { key: "shell.bar.trayTyping", label: "анимация трея", type: "bool", def: true, hint: "названия печатаются при разворачивании и стираются при сворачивании" }
         ] },
@@ -301,6 +302,50 @@ function defaultOf(key, outputs) {
 
 const q = s => JSON.stringify(String(s));
 const f = x => Number(x).toFixed(2);
+
+// ── значки трея ────────────────────────────────────────────────────
+// Глифы Terminess Nerd Font: шаблон ищется в id, заголовке и имени иконки элемента трея (в нижнем регистре).
+// Первое совпадение выигрывает — частные шаблоны выше общих. Новый глиф проверять по шрифту
+// (fontTools: getBestCmap() и имена вида md-discord), иначе вместо значка будет пустой квадрат.
+var TRAY_ICONS = [
+    [/discord|vesktop|webcord|legcord|armcord/, 0xF066F],       // md-discord
+    [/steam/, 0xF04D3],                                         // md-steam
+    [/telegram|ayugram|kotatogram/, 0xF2C6],                    // fa-telegram
+    [/spotify/, 0xF04C7],                                       // md-spotify
+    [/firefox|librewolf|floorp|\bzen\b/, 0xF0239],                  // md-firefox
+    [/chrom|helium|brave|vivaldi/, 0xF02AF],                    // md-google_chrome
+    [/slack/, 0xF04B1],                                         // md-slack
+    [/skype/, 0xF04AF],                                         // md-skype
+    [/whatsapp/, 0xF05A3],                                      // md-whatsapp
+    [/element|matrix|nheko|fractal/, 0xF0628],                  // md-matrix
+    [/\bobs\b|obs-studio/, 0xF044B],                            // md-record_rec
+    [/throne|nekoray|nekobox|hiddify|v2ray|clash|sing-?box|mullvad|proton.?vpn|wireguard|vpn/, 0xF099D], // md-shield_lock
+    [/qbittorrent|transmission|deluge|ktorrent|fragments/, 0xF0347], // md-magnet
+    [/syncthing/, 0xF04E6],                                     // md-sync
+    [/nextcloud|owncloud|insync|megasync|rclone/, 0xF015F],     // md-cloud
+    [/dropbox/, 0xF01E3],                                       // md-dropbox
+    [/keepass|bitwarden|1password|proton.?pass/, 0xF0306],      // md-key
+    [/kdeconnect|gsconnect|valent/, 0xF0121],                   // md-cellphone_link
+    [/blueman|bluetooth/, 0xF00AF],                             // md-bluetooth
+    [/nm-applet|network|iwgtk/, 0xF05A9],                       // md-wifi
+    [/easyeffects|pavucontrol|pasystray|volume|audio/, 0xF057E], // md-volume_high
+    [/lutris|heroic|bottles|gamemode/, 0xF0296],                // md-gamepad
+    [/\bcode\b|vscode|codium/, 0xF0A1E],                     // md-microsoft_visual_studio_code
+    [/solaar|piper|mouse/, 0xF037D],                            // md-mouse
+    [/clipboard|copyq|clipman|cliphist/, 0xF014D],              // md-clipboard_text
+    [/mpv|vlc|player|music/, 0xF040C],                          // md-play_circle
+    [/update|pamac|octopi/, 0xF06B0],                           // md-update
+    [/docker|podman/, 0xF0868],                                 // md-docker
+    [/mail|thunderbird|geary/, 0xF01EE]                         // md-email
+];
+
+// значок элемента трея или "" — тогда Tray покажет первую букву
+function trayGlyph(id, title, icon) {
+    const hay = [id, title, icon].filter(x => x).join(" ").toLowerCase();
+    for (const [re, cp] of TRAY_ICONS)
+        if (re.test(hay)) return String.fromCodePoint(cp);
+    return "";
+}
 
 // ── терминал и файловый менеджер ───────────────────────────────────
 
