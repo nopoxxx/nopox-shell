@@ -11,6 +11,9 @@ ShellRoot {
     readonly property var _defaultApps: DefaultApps   // оболочка и браузер — из системы в настройки
     readonly property var _muteNotify: MuteNotify   // уведомление при мьюте микрофона и звука
     readonly property var _clipboard: Clipboard   // запись истории буфера (cliphist), даже если окно не открывали
+    readonly property var _home: Home             // IPC home: меню открывается и биндом, до первого клика
+    readonly property var _night: NightLight      // ночной режим держится с запуска shell
+    readonly property var _recorder: Recorder     // IPC record (Mod+Alt+R)
 
     Variants {
         model: Quickshell.screens
@@ -38,4 +41,6 @@ ShellRoot {
     DisplaysWindow {}
     BindsWindow {}
     ClipboardWindow {}
+    HomePanel {}
+    OsdWindow {}
 }

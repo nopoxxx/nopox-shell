@@ -2,7 +2,7 @@ import QtQuick
 import qs
 import qs.services
 
-// user@host — стиль задаётся в настройках (shell.bar.prompt)
+// user@host — стиль задаётся в настройках (shell.bar.prompt); клик — меню home (HomePanel.qml)
 Item {
     id: root
 
@@ -14,6 +14,12 @@ Item {
 
     implicitWidth: t.implicitWidth
     implicitHeight: t.implicitHeight
+
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        onClicked: Home.toggle(root.bar?.screen?.name)
+    }
 
     T {
         id: t

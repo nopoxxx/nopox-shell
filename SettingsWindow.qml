@@ -33,7 +33,7 @@ Scope {
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
             WlrLayershell.namespace: "nopox-settings"
 
-            readonly property var sections: S.sections(Settings.outputs, Settings.get("shell.bar.layout"))
+            readonly property var sections: S.sections(Settings.outputs, Settings.get("shell.bar.layout"), Settings.get("shell.home.layout"))
             property int section: 0
             readonly property string query: search.text.trim()
             readonly property var rows: query ? S.searchRows(sections, query) : sections[section].rows
@@ -85,6 +85,8 @@ Scope {
                 case "displays": ipc("displays", "toggle"); break;
                 case "lock": ipc("lock", "lock"); break;
                 case "lockPreview": ipc("lock", "preview"); break;
+                case "home": ipc("home", "open"); break;
+                case "record": ipc("record", "toggle"); break;
                 case "wifi": Term.float(["nmtui"]); break;
                 case "audio": Quickshell.execDetached(["pavucontrol"]); break;
                 case "editNiri": Term.edit(Quickshell.env("HOME") + "/.config/niri/config.kdl"); break;
@@ -102,27 +104,27 @@ Scope {
             // обои хранят заполнение сами, остальное — в Settings
             function value(r) { return r.key === "wallpaper.fill" ? Wallpaper.fill : Settings.get(r.key); }
             function changed(r) {
-                if (r.type === "module") return S.zoneOf(null, r.id) !== r.zone;
+                if (r.type === "module") return S.zoneOf(null, r.id, r.key) !== r.zone;
                 if (r.type === "action") return false;
                 return r.key === "wallpaper.fill" ? Wallpaper.fill !== r.def : !Settings.isDefault(r.key);
             }
 
-            // строки модулей панели пересоздаются при каждом изменении раскладки — выделение идёт за модулем
-            function selectModule(id) {
-                const i = rows.findIndex(x => x.type === "module" && x.id === id);
+            // строки модулей панели и секций home пересоздаются при каждом изменении раскладки — выделение идёт за ними
+            function selectModule(id, key) {
+                const i = rows.findIndex(x => x.type === "module" && x.id === id && x.key === key);
                 if (i >= 0) cur = i;
             }
 
             function moveModule(r, d) {
-                Settings.set("shell.bar.layout", S.moveModule(Settings.get("shell.bar.layout"), r.id, d));
-                selectModule(r.id);
+                Settings.set(r.key, S.moveModule(Settings.get(r.key), r.id, d, r.key));
+                selectModule(r.id, r.key);
             }
 
             function reorderModule(r, d) {
-                const l = S.reorderModule(Settings.get("shell.bar.layout"), r.id, d);
+                const l = S.reorderModule(Settings.get(r.key), r.id, d, r.key);
                 if (!l) return;
-                Settings.set("shell.bar.layout", l);
-                selectModule(r.id);
+                Settings.set(r.key, l);
+                selectModule(r.id, r.key);
             }
 
             function setValue(r, v) {
@@ -149,7 +151,7 @@ Scope {
                 if (r.type === "action") return;
                 if (r.type === "module") {
                     Settings.reset(r.key);
-                    selectModule(r.id);
+                    selectModule(r.id, r.key);
                 } else if (r.type === "combo" || r.type === "text") {
                     Settings.reset(r.key);
                 } else {
@@ -216,7 +218,7 @@ Scope {
             }
 
             function fmt(r, v) {
-                if (r.type === "module") return "‹ " + r.zone + " ›";
+                if (r.type === "module") return "‹ " + r.zoneLabel + " ›";
                 if (v === undefined) v = shown(r);
                 if (r.type === "bool") return v ? "[x]" : "[ ]";
                 if (r.type === "text") return JSON.stringify(v);
@@ -244,7 +246,7 @@ Scope {
 
             function hint(r) {
                 if (!r) return "";
-                if (r.type === "module") return r.hint + "  ·  ←→ зона, ⇧↑↓ или K/J — порядок";
+                if (r.type === "module") return r.hint;
                 const file = S.niriFileOf(r.key);
                 // файл первым: подсказка длинная и обрезается справа
                 const parts = [file ? "niri/nopox/" + file : "", r.hint ?? ""];

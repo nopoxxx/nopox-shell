@@ -31,6 +31,8 @@ Scope {
         { name: 'spawn "qs" "ipc" "call" "settings" "toggle"', desc: "nopox: настройки" },
         { name: 'spawn "qs" "ipc" "call" "wallpaper" "picker"', desc: "nopox: обои" },
         { name: 'spawn "qs" "ipc" "call" "clipboard" "toggle"', desc: "nopox: история буфера обмена" },
+        { name: 'spawn "qs" "ipc" "call" "home" "toggle"', desc: "nopox: меню home" },
+        { name: 'spawn "qs" "ipc" "call" "record" "toggle"', desc: "nopox: запись экрана — начать / остановить" },
         { name: 'spawn "qs" "ipc" "call" "lock" "lock"', desc: "nopox: блокировка" },
         { name: 'spawn "qs" "ipc" "call" "notify" "dnd"', desc: "nopox: не беспокоить" },
         { name: 'spawn "qs" "ipc" "call" "displays" "toggle"', desc: "nopox: мониторы" },

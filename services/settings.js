@@ -39,61 +39,102 @@ const MODULES = [
     { id: "shellupd", file: "ShellUpd", desc: "nopox ↑3 — обновления nopox-shell с GitHub: клик — список и [обновить]" },
     { id: "notify", file: "Notify", desc: "уведомления: клик — история, правый — «не беспокоить»" },
     { id: "kbd", file: "Kbd", desc: "раскладка, клик — переключить" },
-    { id: "clock", file: "Clock", desc: "часы, клик — календарь" }
+    { id: "clock", file: "Clock", desc: "часы, клик — календарь" },
+    { id: "rec", file: "Rec", desc: "● REC 01:23 — идёт запись экрана, клик — остановить (видно только во время записи)" },
+    { id: "home", file: "Home", desc: "значок меню home — для тех, у кого user@host убран с панели" }
 ];
-
-const ZONES = ["left", "center", "right", "off"];
 
 const DEFAULT_LAYOUT = {
     left: ["user", "workspaces", "jobs", "command"],
     center: [],
-    right: ["media", "tray", "cpu", "mem", "net", "vol", "bat", "shellupd", "updates", "notify", "kbd", "clock"]
+    right: ["media", "rec", "tray", "cpu", "mem", "net", "vol", "bat", "shellupd", "updates", "notify", "kbd", "clock"]
 };
 
-function moduleById(id) {
-    return MODULES.find(m => m.id === id) ?? null;
+// ── секции меню home (клик по user@host, Mod+A) ────────────────────
+// file — home/<file>.qml, label — подпись в настройках (= заголовок секции). Секция без устройства (bluetooth, батарея, подсветка) прячется сама.
+
+const HOME_SECTIONS = [
+    { id: "user", label: "whoami", file: "User", desc: "user@host, время работы, ядро" },
+    { id: "quick", label: "быстро", file: "Quick", desc: "переключатели: wifi, bluetooth, ночной режим, не беспокоить, микрофон" },
+    { id: "levels", label: "звук и экран", file: "Levels", desc: "громкость, микрофон, яркость (если есть подсветка экрана)" },
+    { id: "media", label: "сейчас играет", file: "Media", desc: "плеер: обложка, трек, прогресс, кнопки; несколько плееров — ‹ › переключают" },
+    { id: "weather", label: "погода", file: "Weather", desc: "погода Open-Meteo: сейчас и на несколько дней; город — ниже, в погоде" },
+    { id: "calendar", label: "календарь", file: "Calendar", desc: "календарь месяца: ←→ — листать" },
+    { id: "notifs", label: "уведомления", file: "Notifs", desc: "последние уведомления: ↵ — действие, del — убрать" },
+    { id: "system", label: "система", file: "System", desc: "cpu, память, диск, температура" },
+    { id: "power", label: "питание", file: "Power", desc: "батарея и профиль питания (power-profiles-daemon)" },
+    { id: "wifi", label: "wi-fi", file: "Wifi", desc: "сети Wi-Fi: подключиться, отключиться, пароль" },
+    { id: "bluetooth", label: "bluetooth", file: "Bluetooth", desc: "устройства bluetooth: подключить, сопряжение, забыть" },
+    { id: "actions", label: "действия", file: "Actions", desc: "запись экрана, настройки, блокировка, сон, выход, перезагрузка, выключение" }
+];
+
+const DEFAULT_HOME = {
+    on: ["user", "quick", "levels", "media", "weather", "calendar", "notifs", "system", "power", "wifi", "bluetooth", "actions"]
+};
+
+// ── раскладки: модули панели и секции home устроены одинаково ──────
+// items — что раскладываем, zones — куда (последняя — «выключены»), labels — подписи зон в настройках.
+// off хранится явно: элемент, которого нет ни в одной зоне и ни в off, — новый (появился после обновления)
+// и встаёт в свою зону по умолчанию, а не пропадает в «выключенных».
+
+const LAYOUTS = {
+    "shell.bar.layout": { items: MODULES, zones: ["left", "center", "right", "off"], def: DEFAULT_LAYOUT,
+                          labels: { left: "left", center: "center", right: "right", off: "выключены" },
+                          hint: "←→ зона, ⇧↑↓ или K/J — порядок" },
+    "shell.home.layout": { items: HOME_SECTIONS, zones: ["on", "off"], def: DEFAULT_HOME,
+                           labels: { on: "показаны", off: "скрыты" },
+                           hint: "←→ показать / скрыть, ⇧↑↓ или K/J — порядок" }
+};
+const ZONES = LAYOUTS["shell.bar.layout"].zones;
+
+function moduleById(id, key) {
+    return LAYOUTS[key ?? "shell.bar.layout"].items.find(m => m.id === id) ?? null;
 }
 
-// убирает неизвестные и повторяющиеся id.
-// off хранится явно: модуль, которого нет ни в одной зоне и ни в off, — новый (появился после обновления)
-// и встаёт в свою зону по умолчанию, а не пропадает в «выключенных».
-function normalizeLayout(l) {
-    const src = l ?? DEFAULT_LAYOUT;
+// убирает неизвестные и повторяющиеся id; новые — в зону по умолчанию
+function normalizeLayout(l, key) {
+    const L = LAYOUTS[key ?? "shell.bar.layout"];
+    const src = l ?? L.def;
     const seen = new Set();
-    const out = { left: [], center: [], right: [], off: [] };
-    for (const z of ZONES)
+    const out = {};
+    for (const z of L.zones) out[z] = [];
+    for (const z of L.zones)
         for (const id of src[z] ?? [])
-            if (moduleById(id) && !seen.has(id)) {
+            if (L.items.some(m => m.id === id) && !seen.has(id)) {
                 seen.add(id);
                 out[z].push(id);
             }
-    for (const m of MODULES) {
+    for (const m of L.items) {
         if (seen.has(m.id)) continue;
-        const z = ["left", "center", "right"].find(z => DEFAULT_LAYOUT[z].includes(m.id)) ?? "off";
-        out[z].push(m.id);
+        const z = L.zones.find(z => (L.def[z] ?? []).includes(m.id)) ?? "off";
+        // рядом с соседом по раскладке по умолчанию: rec — после media, а не в конце после clock
+        const def = L.def[z] ?? [];
+        const prev = def.slice(0, def.indexOf(m.id)).reverse().find(id => out[z].includes(id));
+        out[z].splice(prev ? out[z].indexOf(prev) + 1 : (def.indexOf(m.id) === 0 ? 0 : out[z].length), 0, m.id);
     }
     return out;
 }
 
-function zoneOf(l, id) {
-    const n = normalizeLayout(l);
-    return ZONES.find(z => n[z].includes(id));
+function zoneOf(l, id, key) {
+    const n = normalizeLayout(l, key);
+    return LAYOUTS[key ?? "shell.bar.layout"].zones.find(z => n[z].includes(id));
 }
 
-// перенос в соседнюю зону (по кругу left → center → right → off), модуль встаёт в конец
-function moveModule(l, id, d) {
-    const n = normalizeLayout(l);
-    const from = ZONES.find(z => n[z].includes(id));
-    const to = ZONES[(ZONES.indexOf(from) + d + ZONES.length) % ZONES.length];
+// перенос в соседнюю зону (по кругу, последняя — off), элемент встаёт в конец
+function moveModule(l, id, d, key) {
+    const zones = LAYOUTS[key ?? "shell.bar.layout"].zones;
+    const n = normalizeLayout(l, key);
+    const from = zones.find(z => n[z].includes(id));
+    const to = zones[(zones.indexOf(from) + d + zones.length) % zones.length];
     n[from] = n[from].filter(x => x !== id);
     n[to].push(id);
     return n;
 }
 
 // сдвиг внутри зоны; null — двигать некуда
-function reorderModule(l, id, d) {
-    const n = normalizeLayout(l);
-    const z = ["left", "center", "right"].find(z => n[z].includes(id));
+function reorderModule(l, id, d, key) {
+    const n = normalizeLayout(l, key);
+    const z = LAYOUTS[key ?? "shell.bar.layout"].zones.slice(0, -1).find(z => n[z].includes(id));
     if (!z) return null;
     const a = n[z], i = a.indexOf(id), j = i + d;
     if (j < 0 || j >= a.length) return null;
@@ -101,16 +142,19 @@ function reorderModule(l, id, d) {
     return n;
 }
 
-function barRows(layout) {
-    const n = normalizeLayout(layout);
+function layoutRows(key, layout) {
+    const L = LAYOUTS[key];
+    const n = normalizeLayout(layout, key);
     const rows = [];
-    for (const z of ZONES) {
-        rows.push({ header: z === "off" ? "выключены" : z });
+    for (const z of L.zones) {
+        rows.push({ header: L.labels[z] });
         for (const id of n[z])
-            rows.push({ type: "module", id, zone: z, label: id, key: "shell.bar.layout", hint: moduleById(id).desc });
+            rows.push({ type: "module", id, zone: z, zoneLabel: L.labels[z], label: moduleById(id, key).label ?? id, key, hint: moduleById(id, key).desc + "  ·  " + L.hint });
     }
     return rows;
 }
+
+function barRows(layout) { return layoutRows("shell.bar.layout", layout); }
 
 // Строка раздела: { header } или { key, label, type, def, hint, … }.
 // type: bool | int | float (min, max, step) | enum (options) | text | action (action — имя действия,
@@ -123,7 +167,8 @@ function act(name, label, hint) {
 
 // outputs: [{ name, scale, make, model, mode }] из `niri msg --json outputs`
 // layout: текущее значение shell.bar.layout — из него строится раздел bar/
-function sections(outputs, layout) {
+// home: значение shell.home.layout — из него строится раздел home/
+function sections(outputs, layout, home) {
     return [
         { id: "look", title: "вид", rows: [
             { header: "цвет и шрифт" },
@@ -142,7 +187,11 @@ function sections(outputs, layout) {
             { key: "wallpaper.fill", label: "заполнение", type: "enum", options: ["fill", "fit", "stretch"], def: "fill", hint: "fill — обрезать, fit — вписать с полосами, stretch — растянуть" },
 
             { header: "меню" },
-            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12, hint: "высота меню Mod+D" }
+            { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12, hint: "высота меню Mod+D" },
+
+            { header: "индикаторы" },
+            { key: "shell.osd", label: "громкость и яркость", type: "bool", def: true, hint: "полоска на экране при изменении громкости или яркости — клавишами, колёсиком, из других программ" },
+            { key: "shell.osd.position", label: "положение", type: "enum", options: ["bottom", "top", "center"], def: "bottom" }
         ] },
 
         { id: "windows", title: "окна", rows: [
@@ -224,6 +273,32 @@ function sections(outputs, layout) {
             { key: "shell.bar.trayStyle", label: "трей", type: "enum", options: ["icons", "names"], def: "icons", hint: "icons — значки Nerd Font для известных программ, остальные — первой буквой; names — короткие названия" },
             { key: "shell.bar.trayCollapsed", label: "трей свёрнут", type: "bool", def: false, hint: "на панели переключается кликом по ‹ / +N; просящие внимания видны всегда" },
             { key: "shell.bar.trayTyping", label: "анимация трея", type: "bool", def: true, hint: "названия печатаются при разворачивании и стираются при сворачивании" }
+        ] },
+
+        { id: "home", title: "меню home", rows: [
+            ...layoutRows("shell.home.layout", home),
+
+            { header: "меню" },
+            act("home", "открыть", "клик по user@host на панели или Mod+A"),
+            { key: "shell.home.side", label: "край экрана", type: "enum", options: ["left", "right"], def: "left" },
+            { key: "shell.home.width", label: "ширина, символов", type: "int", min: 40, max: 80, step: 2, def: 52 },
+
+            { header: "погода" },
+            { key: "shell.weather.city", label: "город", type: "text", def: "", hint: "например Москва или Berlin; пусто — по IP (ipinfo.io). Данные — Open-Meteo, без ключа" },
+            { key: "shell.weather.units", label: "единицы", type: "enum", options: ["metric", "imperial"], def: "metric", hint: "metric — °C и м/с, imperial — °F и mph" },
+            { key: "shell.weather.days", label: "прогноз, дней", type: "int", min: 0, max: 7, step: 1, def: 3 },
+
+            { header: "ночной режим" },
+            { key: "shell.night.on", label: "включён", type: "bool", def: false, hint: "тёплые цвета экрана (gammastep); переключатель — и в меню home" },
+            { key: "shell.night.temp", label: "температура, K", type: "int", min: 2500, max: 6000, step: 100, def: 4000, hint: "меньше — теплее; днём — 6500" },
+            { key: "shell.night.auto", label: "по закату", type: "bool", def: false, hint: "включённый режим действует от заката до рассвета в городе погоды; выключено — всё время" },
+
+            { header: "запись экрана" },
+            act("record", "начать / остановить", "Mod+Alt+R; во время записи на панели ● REC — клик останавливает"),
+            { key: "shell.rec.target", label: "что записывать", type: "enum", options: ["region", "screen"], def: "region", hint: "region — выделить область (slurp), screen — монитор с фокусом" },
+            { key: "shell.rec.audio", label: "звук", type: "enum", options: ["none", "system", "mic"], def: "none", hint: "system — то, что слышно в колонках, mic — микрофон по умолчанию" },
+            { key: "shell.rec.dir", label: "папка", type: "text", def: "~/Videos/Screencasts" },
+            { key: "shell.rec.notify", label: "уведомление", type: "bool", def: true, hint: "по окончании записи: путь к файлу, клик — открыть папку" }
         ] },
 
         { id: "notify", title: "уведомления", rows: [
@@ -312,7 +387,7 @@ function find(key, outputs) {
 }
 
 function defaultOf(key, outputs) {
-    if (key === "shell.bar.layout") return JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+    if (key in LAYOUTS) return JSON.parse(JSON.stringify(LAYOUTS[key].def));
     return find(key, outputs)?.def;
 }
 
@@ -740,6 +815,8 @@ function niriFiles(get, outs) {
         '    Mod+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
         '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',
         '    Mod+Shift+V hotkey-overlay-title="Clipboard History" { spawn "qs" "ipc" "call" "clipboard" "toggle"; }',
+        '    Mod+A hotkey-overlay-title="Home Menu" { spawn "qs" "ipc" "call" "home" "toggle"; }',
+        '    Mod+Alt+R hotkey-overlay-title="Record the Screen" { spawn "qs" "ipc" "call" "record" "toggle"; }',
         '    Mod+Shift+S hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
         '    Print hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
         '    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }',

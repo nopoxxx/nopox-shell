@@ -25,6 +25,8 @@ Singleton {
     })[Settings.get("shell.accent")] ?? yellow
 
     readonly property string font: "Terminess Nerd Font Mono"
+    // значки Nerd Font: в Mono-версии они ужаты в клетку и не читаются (см. services/glyphs.js)
+    readonly property string iconFont: "Terminess Nerd Font"
     readonly property int fontSize: Settings.get("shell.fontSize")
     readonly property int barHeight: Settings.get("shell.bar.height")
     readonly property int pad: 10

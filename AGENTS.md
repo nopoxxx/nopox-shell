@@ -48,6 +48,9 @@ TuiPopup.qml         PopupWindow в TUI-рамке с заголовком [ tit
 Background.qml       обои на слое Background (namespace nopox-wallpaper), плавная смена, fill/fit/stretch
 Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск
 WallPicker.qml       выбор обоев: local и wallhaven, сетка превью, бесконечная прокрутка
+HomePanel.qml        меню home — панель во всю высоту у края: секции home/ по shell.home.layout, фокус с клавиатуры
+OsdWindow.qml        индикатор громкости и яркости при изменении (namespace nopox-osd, клики насквозь)
+CalGrid.qml          месяц как `cal` — общий для CalPopup и секции календаря в home
 ClipboardWindow.qml  история буфера (cliphist): список с поиском слева, запись целиком справа (текст/картинка)
 ShotWindow.qml       скриншот с разметкой (по мотивам rishot, MIT): заморозка экранов, область/экран/окно, инструменты, экспорт
 SettingsWindow.qml   окно настроек в стиле menuconfig: строки из S.sections(), поиск (/), действия — runAction()
@@ -77,6 +80,12 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
   MuteNotify.qml     уведомление при мьюте микрофона/звука по умолчанию (PipeWire, любым способом), shell.notify.mute
   Clipboard.qml      cliphist: один `wl-paste --watch cliphist store` пока жив shell (прежние гасит pkill); entries, copy, remove, wipe
+  Home.qml           открыто ли меню home и на каком мониторе; IPC home
+  Weather.qml        Open-Meteo: место (город → геокодер, пусто → ipinfo.io), current, daily, sun; раз в 30 мин
+  NightLight.qml     gammastep -O / -l по закату, пока shell.night.on; держится процессом
+  Recorder.qml       wf-recorder: область (slurp) или монитор, звук, SIGINT — стоп; IPC record
+  Brightness.qml     /sys/class/backlight: value, set() через brightnessctl; опрос 400 мс
+  glyphs.js          значки Nerd Font по именам: G.g("wifi"); рисовать Theme.iconFont
   DefaultApps.qml    оболочка входа и браузер по умолчанию (shell.sh, shell.browser): сверка с системой, chsh, xdg-settings
   fuzzy.js           match(query, str) → {score, pos} | null; highlight(str, pos, color) для StyledText
 
@@ -84,7 +93,11 @@ bar/                 модули панели и их попапы
   Seg.qml            базовый сегмент «label value» + сигналы leftClicked/rightClicked/middleClicked/scrolled (при scrollable)
   User Workspaces Jobs Command          inline-модули (часть «приглашения»)
   Media Tray Cpu Mem Gpu Temp NetSpeed Net Vol Bat Upd ShellUpd Notify Kbd Clock
+  Rec Home           ● REC во время записи; значок меню home (для тех, кто убрал user@host)
   CalPopup ProcsPopup MixerPopup VolBar TrayMenu NotifyCenter ShellUpdPopup   попапы/части
+
+home/                секции меню home (HomePanel): Section.qml — база, Btn.qml — [кнопка], Gauge.qml — ползунок
+  User Quick Levels Media Weather Calendar Notifs System Power Wifi Bluetooth Actions
 
 extras/              не грузится shell'ом; эталонные конфиги для install.sh и ручной установки
   niri/config.kdl    полный config.kdl nopox (свои бинды niri; include nopox/main.kdl в начале, nopox/keys.kdl в конце)
@@ -133,15 +146,16 @@ docs/                документация — GitHub Pages из main /docs (
 - Миграция старой схемы (`nopox.kdl`, `nopox-binds.kdl`, `nopox-keys.kdl` рядом с config.kdl) —
   процесс `migrate` после первой записи; при неудачном `niri validate` возвращает config.kdl.
 
-**Схема окна настроек** — `S.sections(outputs, layout)`: массив `{id, title, rows}`. Разделы — по тому,
+**Схема окна настроек** — `S.sections(outputs, layout, home)`: массив `{id, title, rows}`. Разделы — по тому,
 что ищет пользователь, а не по тому, кто читает настройку (niri или shell):
 
 | id | title | что внутри |
 |---|---|---|
-| `look` | вид | акцент, размер шрифта; темы Qt/GTK и шрифт в приложениях; обои (выбрать, wallhaven, заполнение); строк в меню |
+| `look` | вид | акцент, размер шрифта; темы Qt/GTK и шрифт в приложениях; обои (выбрать, wallhaven, заполнение); строк в меню; индикаторы (OSD) |
 | `windows` | окна | отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, CSD, анимации |
 | `input` | ввод | клавиатура; клавиши (бинды, подсказка niri, мьют); горячие углы; мышь и тачпад; курсор |
 | `bar` | панель | модули по зонам; панель; prompt; вид модулей (часы, график cpu, трей) |
+| `home` | меню home | секции (показаны / скрыты, порядок); край и ширина; погода; ночной режим; запись экрана |
 | `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора |
 | `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
 | `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; скриншоты; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
@@ -156,7 +170,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `enum` | `options, def` | ←→ по кругу в черновик |
 | `text` | `def` | ↵ — поле редактирования |
 | `action` | `action` | ↵ — действие; строится `act(name, label, hint)`, ключ `action.<name>` (значения нет); обработчик — `switch` в `SettingsWindow.runAction()` |
-| `module` | `id, zone` | строки раздела bar/ из `barRows()`: ←→ — зона, ⇧↑↓ / K/J — порядок |
+| `module` | `id, zone, zoneLabel, key` | элемент раскладки (`layoutRows(key)`: модули bar/, секции home/): ←→ — зона, ⇧↑↓ / K/J — порядок; `key` — чья раскладка |
 | `combo` | `def: "", action` | сочетание клавиш: ↵ — захват нажатия (`Binds.comboOf`), ⇥ — ввод текстом (занятое niri сочетание окну не нажать), ⌫ — убрать; `action` — строка KDL, по ней `Binds.conflict` ищет чужие бинды на том же сочетании |
 
 `S.niriFileOf(key)` — в каком файле `nopox/` живёт настройка (показывается в подсказке).
@@ -216,7 +230,7 @@ wallhaven, lockPreview ставит `Settings.returnHere` — закрываяс
 config.kdl            пользовательский; include "nopox/main.kdl" и В САМОМ КОНЦЕ include "nopox/keys.kdl"
 nopox/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
 nopox/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
-nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+V, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
+nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+V, Mod+A, Mod+Alt+R, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
 nopox/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
 ```
 
@@ -283,6 +297,35 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 - Попап: `SomePopup { id: p; owner: root; bar: root.bar }` и `p.toggle()`. `TuiPopup` сам
   позиционируется у `owner`, закрывается кликом мимо (`grabFocus`), учитывается в `bar.openPopups`
   (держит автоскрываемую панель открытой). Содержимое — дочерние элементы (ColumnLayout внутри).
+- `rec` (Rec) — `● REC мм:сс` только во время записи, клик — стоп; `home` (Home) — `≡`, открывает меню home
+  (по умолчанию выключен: меню открывает клик по `user`).
+
+### 4.4b Раскладки (`LAYOUTS` в settings.js)
+
+Модули панели и секции home — одна механика: `LAYOUTS[key] = {items, zones, def, labels, hint}`
+(`shell.bar.layout`: зоны left/center/right/off; `shell.home.layout`: on/off). `normalizeLayout(l, key)`,
+`moveModule(l, id, d, key)`, `reorderModule(l, id, d, key)`, `zoneOf(l, id, key)`, `layoutRows(key, layout)`;
+без `key` — панель. Элемент, которого нет в сохранённой раскладке (вышел с обновлением), встаёт в свою зону по умолчанию
+**после соседа** из `def` (`rec` — сразу за `media`), а не в конец. Новая раскладка — запись в `LAYOUTS`, строки
+`layoutRows(key, …)` в `sections()`, умолчание отдаёт `defaultOf`.
+
+### 4.4c Меню home (`HomePanel.qml`, `home/`, `services/Home.qml`)
+
+- Открывают клик по `user` на панели (`Home.toggle(bar.screen.name)` — на мониторе этой панели), `Mod+A`,
+  `qs ipc call home toggle`. Окно — `PanelWindow` на весь экран, кроме места панели (`barSpace`: панель остаётся
+  кликабельной, клик по `user` закрывает меню), клик мимо колонки закрывает. Колонка выезжает от края
+  (`shell.home.side`), ширина в символах — `shell.home.width`.
+- Секции — `home/<file>.qml` из `HOME_SECTIONS` по `shell.home.layout.on`, грузятся `Loader.setSource(url, {panel})`.
+  **Контракт секции** (`home/Section.qml`): `title`, `available` (false — секции не видно: нет устройства),
+  `count` — элементов под фокус (0 — только смотреть), `cur`, `focused`, `isCur(i)` для выделения,
+  `key(event)` → true, если обработала (←→ обычно двигают `cur` или значение), `activate(i)` — ↵ / Space / клик,
+  `pick(i)` — клик мышью ставит фокус. Панель двигает ↑↓ между элементами и секциями, Tab — по секциям, Esc — закрыть.
+  Ширина символа для отступов — `panel.cell`.
+- Данные — из сервисов (Weather, NightLight, Recorder, Brightness, Notifs, Sys) и модулей Quickshell
+  (Networking, Bluetooth, Mpris, UPower/PowerProfiles, Pipewire). Секции Wi-Fi и bluetooth, пока открыты, включают
+  поиск (`scannerEnabled`, `discovering`) и выключают при закрытии. Пароль новой сети — поле под ней, `connectWithPsk`.
+- Опасные действия (выход, перезагрузка, выключение) — двойное нажатие, «точно? ↵».
+- OSD (`OsdWindow.qml`) молчит, пока меню открыто: там свои ползунки.
 
 ### 4.4a Скриншоты (`ShotWindow.qml`)
 
@@ -398,6 +441,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 | `/var/lib/nopox-greeter/.greeter/last` | последний пользователь и сессия | greeter.qml |
 | `/usr/share/nopox-shell/` | копия shell для greeter | install-greeter.sh |
 | `~/.cache/cliphist/db` | история буфера | cliphist (через Clipboard) |
+| `~/Videos/Screencasts/` (`shell.rec.dir`) | записи экрана `rec_<дата>.mp4` | Recorder |
 | `$XDG_RUNTIME_DIR/nopox-clip/` | картинки из истории для предпросмотра | ClipboardWindow |
 
 ## 6. IPC (`qs ipc call <target> <fn>`)
@@ -413,6 +457,8 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 | `notify` | `dnd`, `clear` | services/Notifs.qml |
 | `shot` | `region`, `window`, `edit <путь>` | ShotWindow.qml |
 | `clipboard` | `toggle` | ClipboardWindow.qml |
+| `home` | `toggle`, `open`, `close` | services/Home.qml |
+| `record` | `toggle`, `region`, `screen`, `stop` | services/Recorder.qml |
 
 Новые IPC-функции нужно объявлять с типами (`function x(): void`, аргументы `name: string`).
 
@@ -429,6 +475,10 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 в `services/`, а не опросом в каждом модуле (модулей по экземпляру на монитор). Обновить таблицы в
 этом файле и список модулей в документации (`docs/index.html`, раздел bar).
 
+**Новая секция меню home.** `home/Name.qml` на `Section { title; count; … }` (контракт — §4.4c), запись в
+`HOME_SECTIONS` и, если нужна по умолчанию, в `DEFAULT_HOME.on`; данные — из сервиса. Обновить список секций
+в документации (`docs/index.html`, раздел home).
+
 **Новый попап.** `bar/NamePopup.qml` на `TuiPopup { title: "…" }`, внутри — `T`, `RowLayout`,
 `Repeater`; кликабельные элементы — `[текст]` с `MouseArea` и `Qt.PointingHandCursor`.
 
@@ -440,7 +490,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 `Settings.back()`) или пункт в меню. Заголовок — путь, откуда окно открывается: `[ ~/settings/system/displays/ ]`.
 
 **Новый сервис.** `services/Name.qml` с `pragma Singleton` и `Singleton { }`. Синглтон создаётся при первом
-обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`, `_muteNotify`, `_clipboard`).
+обращении: если он должен работать без UI — сослаться на него в `shell.qml` (как `_shellUpdate`, `_binds`, `_appTheme`, `_defaultApps`, `_muteNotify`, `_clipboard`, `_home`, `_night`, `_recorder`).
 
 ## 8. Соглашения кода
 
@@ -473,6 +523,15 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 - Одинаковое сочетание в `nopox/binds.kdl` и в `config.kdl` niri принимает молча, побеждает подключённое позже —
   `config.kdl`. Бинд nopox, занятый в старом эталоне (`Mod+Shift+V` был `switch-focus-between-floating-and-tiling`,
   теперь `Mod+Ctrl+V`), у таких пользователей не сработает, пока строку не убрать из их `config.kdl` (install.sh предлагает перенести).
+- Долгий `Process` нельзя перезапустить в том же такте (`running = false; running = true` — Quickshell может
+  пропустить): остановить и запустить таймером (NightLight). Короткие запросы, ответ которых может опоздать, — свой
+  процесс на запрос (`Component.createObject`, ClipboardWindow).
+- Дети `qs` при его выходе по сигналу не умирают: долгоживущие процессы (wl-paste, gammastep) при старте сначала гасят
+  прежние (`pkill -u … -x(f)`), иначе каждый перезапуск shell их удваивает.
+- sysfs (`/sys/class/backlight/*/brightness`) не шлёт inotify — яркость опрашивается (Brightness, 400 мс).
+- MPRIS не присылает позицию сам: пока играет, `player.positionChanged()` раз в секунду (home/Media).
+- `gammastep -O` под Wayland не выходит, а держит цвет, пока жив: ночной режим = запущенный процесс.
+- `wf-recorder` дописывает файл только по SIGINT (`Process.signal(2)`); kill оставит битый mp4.
 - `normalizeLayout` хранит `off` явно: модуль, которого нет ни в одной зоне, считается новым.
 - Repeater отдаёт копии объектов — сравнивать по `name`/`id`, а не `===` (см. DisplaysWindow).
 - `Niri.windows` — объект по id; `Niri.workspaces` отсортированы по `idx`; номер стола относится к монитору.
@@ -492,7 +551,7 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
 
 Bash, `set -euo pipefail`, запуск от обычного пользователя. Порядок: проверки → выбор (`choose`:
 терминал, оболочка, браузер, файловый менеджер, программы из `APP_CATALOG` `группа|id|описание|пакеты|умолч.`,
-мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`) → **niri ≥ `NIRI_MIN` (25.11)**: настраиваемые горячие
+мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`; bluez — только если есть адаптер, в конце `systemctl enable --now bluetooth`) → **niri ≥ `NIRI_MIN` (25.11)**: настраиваемые горячие
 углы и `screenshot-window --path` появились в 25.11, старый niri конфиг nopox не примет, а `pacman -S --needed` его не
 обновит — предлагает `pacman -Syu`, иначе выход → **chaotic-aur** (ключ `3056513887B78AEB`, keyring и mirrorlist с
 `cdn-mirror.chaotic.cx`, запись в `pacman.conf` с бэкапом; уже подключён — пропуск, `--no-chaotic` — без него) →

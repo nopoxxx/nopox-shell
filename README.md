@@ -30,6 +30,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/ins
 | `Mod+Return` | терминал |
 | `Mod+Shift+S` | скриншот с разметкой |
 | `Mod+Shift+V` | история буфера обмена |
+| `Mod+A` | меню home: переключатели, звук, медиа, погода, Wi-Fi, bluetooth (или клик по `user@host`) |
+| `Mod+Alt+R` | запись экрана |
 | `Super+Alt+L` | блокировка |
 | `Mod+Shift+/` | все клавиши niri |
 

@@ -172,6 +172,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <li><a href="#keys"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">keys</span></a></li>
     <li><a href="#bar" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">bar/</span></a></li>
     <li><a href="#menu"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">menu</span></a></li>
+    <li><a href="#home"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">home</span></a></li>
     <li><a href="#settings" class="dir"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">settings/</span></a></li>
     <li><a href="#monitors"><span class="mk">▌</span><span class="br">│  ├─ </span><span class="nm">monitors</span></a></li>
     <li><a href="#binds"><span class="mk">▌</span><span class="br">│  ├─ </span><span class="nm">binds</span></a></li>
@@ -276,6 +277,8 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td><kbd>Mod+Shift+W</kbd></td><td>обои</td></tr>
     <tr><td><kbd>Mod+Shift+S</kbd> <kbd>Print</kbd></td><td><a href="#shot">скриншот с разметкой</a></td></tr>
     <tr><td><kbd>Mod+Shift+V</kbd></td><td><a href="#clipboard">история буфера обмена</a></td></tr>
+    <tr><td><kbd>Mod+A</kbd></td><td><a href="#home">меню home</a> (или клик по <code>user@host</code>)</td></tr>
+    <tr><td><kbd>Mod+Alt+R</kbd></td><td><a href="#home">запись экрана</a>: начать / остановить</td></tr>
     <tr><td><kbd>Super+Alt+L</kbd></td><td>заблокировать экран</td></tr>
   </table></div>
   <h3>окна и столы</h3>
@@ -306,11 +309,12 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   высота, floating-стиль, автоскрытие, разделитель и вид prompt.</p>
   <div class="tbl"><table>
     <tr><th>модуль</th><th>что показывает · клики</th></tr>
-    <tr><td><code>user</code></td><td><code>user@host</code> — стиль prompt настраивается</td></tr>
+    <tr><td><code>user</code></td><td><code>user@host</code> — стиль prompt настраивается; клик — <a href="#home">меню home</a></td></tr>
     <tr><td><code>workspaces</code></td><td><code>~/ws/{1,[2]}</code> — столы этого монитора; клик — перейти</td></tr>
     <tr><td><code>jobs</code></td><td><code>[N]</code> окон на активном столе</td></tr>
     <tr><td><code>command</code></td><td><code>❯ app # title</code> активного окна с эффектом набора; <span class="c-red">❯</span> красный, если окно просит внимания</td></tr>
     <tr><td><code>media</code></td><td>плеер (MPRIS): клик — пауза, правый — следующий, средний — предыдущий</td></tr>
+    <tr><td><code>rec</code></td><td><span class="c-red">● REC 01:23</span> — идёт запись экрана; клик — остановить. Без записи не виден</td></tr>
     <tr><td><code>tray</code></td><td><code>[‹ <span class="nf">󰙯</span> <span class="nf">󰓓</span>]</code> — значки Nerd Font или названия; клик — открыть, правый — меню, <code>‹</code> — свернуть в <code>[+N]</code></td></tr>
     <tr><td><code>cpu</code> <code>mem</code></td><td>загрузка с графиком <code>▂▃▅▇</code> и память; клик — процессы как <code>ps</code> с <code>[kill]</code></td></tr>
     <tr><td><code>gpu</code> <code>temp</code></td><td>загрузка и температура (без датчика скрыты)</td></tr>
@@ -322,6 +326,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td><code>notify</code></td><td><code>log N</code> / <code>dnd</code>: клик — история уведомлений, правый — «не беспокоить»</td></tr>
     <tr><td><code>kbd</code></td><td>раскладка: клик или колёсико — переключить</td></tr>
     <tr><td><code>clock</code></td><td>часы; клик — календарь как <code>cal</code></td></tr>
+    <tr><td><code>home</code></td><td><code>≡</code> — открыть меню home; по умолчанию выключен (его открывает клик по <code>user</code>)</td></tr>
   </table></div>
   <p>Трей показывает значки известных программ — Discord, Steam, Telegram, VPN-клиенты, торренты, облака и др.;
   незнакомые — первой буквой. Вернуть названия: <code>bar/</code> → <code>трей</code> → <code>names</code>.</p>
@@ -341,6 +346,44 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   </ul>
 </section>
 
+<!-- ─────────────────────────── home ─────────────────────────── -->
+<section class="win" id="home">
+  <div class="ttl">~/docs/home</div>
+  <h2>Меню home</h2>
+  <p>Клик по <code>user@host</code> на панели или <kbd>Mod+A</kbd>: панель во всю высоту у края экрана — как «Пуск»,
+  только в виде терминала. Всё управляется и мышью, и с клавиатуры: <kbd>↑↓</kbd> — элементы и секции,
+  <kbd>←→</kbd> — внутри строки или значение, <kbd>↵</kbd> — действие, <kbd>Tab</kbd> — следующая секция, <kbd>Esc</kbd> — закрыть.</p>
+<div class="mock"><div class="win"><div class="ttl">~/home/user/</div><span class="row"><span class="c-gray">── whoami ────────────────────────────</span></span><span class="row"><span class="c-green b">user</span><span class="c-gray">@</span><span class="c-aqua b">arch</span></span><span class="row"><span class="c-gray">up 3ч 12м · Arch Linux · 6.17.1-arch1</span></span><span class="row"><span class="c-gray">── быстро ────────────────────────────</span></span><span class="sel"><span class="c-acc">[</span><span class="c-acc b">wifi: home</span><span class="c-acc">]</span> <span class="c-gray">[</span><span class="c-acc">bt</span><span class="c-gray">]</span> <span class="c-gray">[</span>ночь<span class="c-gray">]</span> <span class="c-gray">[</span>dnd<span class="c-gray">]</span> <span class="c-gray">[</span><span class="c-acc">mic</span><span class="c-gray">]</span> <span class="c-gray">[</span>rec<span class="c-gray">]</span></span><span class="row"><span class="c-gray">── звук и экран ──────────────────────</span></span><span class="row"> vol     <span class="c-acc">▕████████████░░░░░░░░▏</span><span class="c-gray">  62%</span></span><span class="row"> mic     <span class="c-acc">▕████████████████████▏</span><span class="c-gray"> 100%</span></span><span class="row"><span class="c-gray">── сейчас играет ─────────────────────</span></span><span class="row"><span class="b">Instant Crush</span></span><span class="row"><span class="c-gray">Daft Punk — Random Access Memories</span></span><span class="row"><span class="c-gray">1:42 </span><span class="c-acc">━━━━━━━━━━──────────────</span><span class="c-gray"> 5:37</span></span><span class="row"><span class="c-gray">── погода · Москва ───────────────────</span></span><span class="row"><span class="b">+7°C</span>  облачно</span><span class="row"><span class="c-gray">ощущается +4° · ветер 4 м/с · 81%</span></span><span class="row"><span class="c-gray">── действия ──────────────────────────</span></span><span class="row"><span class="c-gray">[</span>запись<span class="c-gray">] [</span>настройки<span class="c-gray">] [</span>lock<span class="c-gray">] [</span>сон<span class="c-gray">] [</span>выход<span class="c-gray">]</span></span><span class="row"> </span><span class="hints"><i>↑↓</i> выбор  <i>←→</i> изменить  <i>↵</i> действие  <i>tab</i> секция</span></div></div>
+  <div class="tbl"><table>
+    <tr><th>секция</th><th>что внутри</th></tr>
+    <tr><td><code>whoami</code></td><td><code>user@host</code>, время работы, система и ядро</td></tr>
+    <tr><td><code>быстро</code></td><td>переключатели: Wi-Fi, bluetooth, ночной режим, «не беспокоить», микрофон, запись экрана</td></tr>
+    <tr><td><code>звук и экран</code></td><td>громкость, микрофон и яркость (на ноутбуке): <kbd>←→</kbd> ±5%, <kbd>↵</kbd> — mute</td></tr>
+    <tr><td><code>сейчас играет</code></td><td>обложка, трек, прогресс (клик — перемотка), кнопки; несколько плееров — <code>‹ 1/2 ›</code></td></tr>
+    <tr><td><code>погода</code></td><td><a href="https://open-meteo.com">Open-Meteo</a>: сейчас и прогноз на несколько дней; <kbd>↵</kbd> — обновить</td></tr>
+    <tr><td><code>календарь</code></td><td>месяц как <code>cal</code>: <kbd>←→</kbd> — листать, <kbd>↵</kbd> — сегодня</td></tr>
+    <tr><td><code>уведомления</code></td><td>последние пять: <kbd>↵</kbd> — действие, <kbd>Del</kbd> — убрать, <code>[clear]</code></td></tr>
+    <tr><td><code>система</code></td><td>cpu, память, диск, температуры; <kbd>↵</kbd> — btop</td></tr>
+    <tr><td><code>питание</code></td><td>батарея и профиль питания (эконом / баланс / мощность), если есть power-profiles-daemon</td></tr>
+    <tr><td><code>wi-fi</code></td><td>сети рядом: <kbd>↵</kbd> — подключиться или отключиться; новой сети — поле пароля прямо под ней</td></tr>
+    <tr><td><code>bluetooth</code></td><td>устройства: <kbd>↵</kbd> — подключить, отключить или сопрячь; <kbd>Del</kbd> — забыть</td></tr>
+    <tr><td><code>действия</code></td><td>запись экрана, настройки, блокировка, сон; выход, перезагрузку и выключение надо подтвердить вторым <kbd>↵</kbd></td></tr>
+  </table></div>
+  <p><kbd>Mod+S</kbd> → <code>home/</code>: какие секции показывать и в каком порядке (<kbd>←→</kbd> — показать / скрыть,
+  <kbd>Shift+↑↓</kbd> — порядок), край экрана и ширина, город и единицы погоды (пустой город — по IP),
+  ночной режим, запись экрана. Секции без устройства — Wi-Fi на десктопе, bluetooth без адаптера, батарея — не видны.</p>
+  <h3>ночной режим</h3>
+  <p>Тёплые цвета экрана через <code>gammastep</code>: переключатель <code>ночь</code> в меню, температура — в настройках.
+  «По закату» включает его только от заката до рассвета в городе погоды.</p>
+  <h3>запись экрана</h3>
+  <p><kbd>Mod+Alt+R</kbd>, кнопка в меню или <code>qs ipc call record region</code> / <code>screen</code>: область выделяется мышью
+  (<code>slurp</code>), экран — монитор с фокусом. Звук — нет / системный / микрофон. Пока идёт запись, на панели
+  <span class="c-red">● REC</span> — клик останавливает; файл — в <code>~/Videos/Screencasts</code>, уведомление открывает папку.</p>
+  <h3>индикатор громкости и яркости</h3>
+  <p>При изменении громкости или яркости — клавишами, колёсиком, из других программ — внизу экрана появляется полоска
+  <code>vol ▕████████░░░░▏ 62%</code>. Выключить или перенести — <code>look/</code> → <code>индикаторы</code>.</p>
+</section>
+
 <!-- ─────────────────────────── settings ─────────────────────────── -->
 <section class="win" id="settings">
   <div class="ttl">~/docs/settings/</div>
@@ -352,10 +395,11 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <div class="mock"><div class="win"><div class="ttl">~/settings/look/</div><span class="row"><span class="c-gray">── shell ─────────────────────────────────</span></span><span class="sel"><span class="c-acc">▌</span> акцентный цвет    <span class="c-gray">yellow →</span> <span class="c-acc b">‹ blue ›</span>  <span class="c-acc b">[↵]</span></span><span class="row">  размер шрифта            16</span><span class="row"><span class="c-gray">── приложения ────────────────────────────</span></span><span class="row">  темы Qt и GTK            <span class="c-green">[*]</span></span><span class="row">  шрифт shell в приложениях <span class="c-green">[*]</span></span><span class="row"><span class="c-gray">── обои ──────────────────────────────────</span></span><span class="row">  выбрать                  <span class="c-gray">…</span></span><span class="row">  заполнение               <span class="c-acc">‹ fill ›</span> <span class="c-acc">*</span></span><span class="row"> </span><span class="hints"><i>↵</i> применить  <i>esc</i> отмена  <i>←→</i> значение  <i>r</i> по умолчанию</span></div></div>
   <div class="tbl"><table>
     <tr><th>раздел</th><th>что внутри</th></tr>
-    <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота меню</td></tr>
+    <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота меню, индикатор громкости и яркости</td></tr>
     <tr><td><code>windows/</code></td><td>отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, анимации</td></tr>
     <tr><td><code>input/</code></td><td>клавиатура и раскладки, <a href="#binds">бинды</a>, мьют микрофона и звука, горячие углы, мышь и тачпад, курсор</td></tr>
     <tr><td><code>bar/</code></td><td>модули по зонам, положение и стиль панели, prompt, часы, график cpu, трей</td></tr>
+    <tr><td><code>home/</code></td><td>секции <a href="#home">меню home</a> и их порядок, край и ширина, погода, ночной режим, запись экрана</td></tr>
     <tr><td><code>notify/</code></td><td>«не беспокоить», положение, время показа, максимум на экране, критичные</td></tr>
     <tr><td><code>lock/</code></td><td>блокировка по бездействию, эхо пароля, часы, обои, предпросмотр</td></tr>
     <tr><td><code>system/</code></td><td><a href="#monitors">мониторы</a>, сеть, звук, <a href="#apps">приложения</a>, конфиги, обновления shell</td></tr>
@@ -529,6 +573,7 @@ Password: <span class="blink">█</span></div>
     <tr><td><code>~/.local/state/nopox/</code></td><td>текущие обои и режим заполнения</td></tr>
     <tr><td><code>~/Pictures/Wallpapers/</code></td><td>коллекция обоев и загрузки с wallhaven</td></tr>
     <tr><td><code>~/.cache/cliphist/db</code></td><td>история буфера обмена</td></tr>
+    <tr><td><code>~/Videos/Screencasts/</code></td><td>записи экрана (папка — в <code>home/</code>)</td></tr>
     <tr><td><code>/var/lib/nopox-greeter/</code></td><td>копия настроек и обоев для greeter</td></tr>
   </table></div>
 </section>
@@ -544,6 +589,8 @@ Password: <span class="blink">█</span></div>
 <span class="p">❯ </span>qs ipc call displays toggle     <span class="cm"># мониторы</span>
 <span class="p">❯ </span>qs ipc call binds toggle        <span class="cm"># бинды</span>
 <span class="p">❯ </span>qs ipc call clipboard toggle    <span class="cm"># история буфера обмена</span>
+<span class="p">❯ </span>qs ipc call home toggle         <span class="cm"># меню home; home open, home close</span>
+<span class="p">❯ </span>qs ipc call record toggle       <span class="cm"># запись экрана; record region, record screen, record stop</span>
 <span class="p">❯ </span>qs ipc call shot region         <span class="cm"># скриншот; shot window — сразу окно, shot edit &lt;путь&gt; — разметить файл</span>
 <span class="p">❯ </span>qs ipc call lock lock           <span class="cm"># блокировка; lock preview — предпросмотр без пароля</span>
 <span class="p">❯ </span>qs ipc call notify dnd          <span class="cm"># «не беспокоить»; notify clear — очистить историю</span></code></pre>

@@ -335,10 +335,13 @@ PKGS=(
     polkit-gnome gnome-keyring xdg-desktop-portal-gnome xdg-desktop-portal-gtk qt6ct adw-gtk-theme
     ttf-terminus-nerd noto-fonts noto-fonts-emoji
     wl-clipboard cliphist brightnessctl playerctl pavucontrol fastfetch base-devel
+    gammastep wf-recorder slurp
     "$TERMINAL"
 )
 read -ra sp <<<"${SHELL_PKGS[$SHELL_CHOICE]}"
 PKGS+=("${sp[@]}")
+# есть адаптер bluetooth — нужен bluez: без него секция bluetooth в меню home не появится
+[ -d /sys/class/bluetooth ] && [ -n "$(ls -A /sys/class/bluetooth 2>/dev/null)" ] && PKGS+=(bluez bluez-utils)
 
 missing=()
 for p in "${PKGS[@]}"; do pacman -Qq "$p" &>/dev/null || missing+=("$p"); done
@@ -784,6 +787,9 @@ fi
 step "Готово"
 systemctl is-active --quiet NetworkManager \
     || warn "NetworkManager не запущен — модуль net покажет offline (sudo systemctl enable --now NetworkManager)"
+if pacman -Qq bluez &>/dev/null && ! systemctl is-enabled --quiet bluetooth 2>/dev/null; then
+    sudo systemctl enable --now bluetooth && ok "bluetooth включён — устройства в меню home (Mod+A)"
+fi
 
 if [ -n "${NIRI_SOCKET:-}" ] && pgrep -x niri >/dev/null; then
     if ask "Вы сейчас в niri — перезапустить shell?" y; then
@@ -801,7 +807,8 @@ cat <<EOF
   ${A}Mod+Return${N}   $TERMINAL$(printf '%*s' $((17 - ${#TERMINAL})) '')${A}Mod+Shift+W${N}   обои
   ${A}Mod+Space${N}    программы        ${A}Super+Alt+L${N}   блокировка$([ "$FILES" != none ] && printf '\n  %sMod+E%s        %s' "$A" "$N" "$FILES")
   ${A}Mod+Tab${N}      обзор            ${A}Mod+Shift+S${N}   скриншот с разметкой (и Print)$([ "$BROWSER" != none ] && printf '\n  %sMod+Shift+B%s  %s' "$A" "$N" "$BROWSER")
-  ${A}Mod+Shift+/${N}  все клавиши niri  ${A}Mod+Shift+V${N}   история буфера
+  ${A}Mod+A${N}        меню home        ${A}Mod+Shift+V${N}   история буфера
+  ${A}Mod+Shift+/${N}  все клавиши niri ${A}Mod+Alt+R${N}     запись экрана
 
   ${D}документация: https://nopoxxx.github.io/nopox-shell/${N}
 EOF
