@@ -28,6 +28,12 @@ PanelWindow {
         id: col
         spacing: 8
 
+        // ушедшая карточка — остальные съезжают на её место, а не прыгают
+        move: Transition {
+            enabled: Settings.get("shell.notify.anim") !== "none"
+            NumberAnimation { properties: "y"; duration: 160; easing.type: Easing.OutCubic }
+        }
+
         Repeater {
             model: Notifs.popups
             NotifCard {}

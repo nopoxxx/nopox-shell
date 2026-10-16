@@ -399,15 +399,18 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <div class="mock"><div class="win"><div class="ttl">~/settings/look/</div><span class="row"><span class="c-gray">── shell ─────────────────────────────────</span></span><span class="sel"><span class="c-acc">▌</span> акцентный цвет    <span class="c-gray">yellow →</span> <span class="c-acc b">‹ blue ›</span>  <span class="c-acc b">[↵]</span></span><span class="row">  размер шрифта            16</span><span class="row"><span class="c-gray">── приложения ────────────────────────────</span></span><span class="row">  темы Qt и GTK            <span class="c-green">[*]</span></span><span class="row">  шрифт shell в приложениях <span class="c-green">[*]</span></span><span class="row"><span class="c-gray">── обои ──────────────────────────────────</span></span><span class="row">  выбрать                  <span class="c-gray">…</span></span><span class="row">  заполнение               <span class="c-acc">‹ fill ›</span> <span class="c-acc">*</span></span><span class="row"> </span><span class="hints"><i>↵</i> применить  <i>esc</i> отмена  <i>←→</i> значение  <i>r</i> по умолчанию</span></div></div>
   <div class="tbl"><table>
     <tr><th>раздел</th><th>что внутри</th></tr>
-    <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота меню, индикатор громкости и яркости</td></tr>
-    <tr><td><code>windows/</code></td><td>отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, анимации</td></tr>
+    <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота и анимация меню, индикатор громкости и яркости</td></tr>
+    <tr><td><code>windows/</code></td><td>отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, анимации niri: <code>default</code>, <code>snappy</code>, <code>bouncy</code> (пружины) и <code>terminal</code> — окно выводится строками с курсором, закрытое гаснет, как кинескоп</td></tr>
     <tr><td><code>input/</code></td><td>клавиатура и раскладки, <a href="#binds">бинды</a>, мьют микрофона и звука, горячие углы, мышь и тачпад, курсор</td></tr>
     <tr><td><code>bar/</code></td><td>модули по зонам, положение и стиль панели, prompt, часы, график cpu, трей</td></tr>
-    <tr><td><code>home/</code></td><td>секции <a href="#home">меню home</a> и их порядок, край и ширина, погода, ночной режим, запись экрана</td></tr>
-    <tr><td><code>notify/</code></td><td>«не беспокоить», положение, время показа, максимум на экране, критичные</td></tr>
+    <tr><td><code>home/</code></td><td>секции <a href="#home">меню home</a> и их порядок, край, ширина и анимация, погода, ночной режим, запись экрана</td></tr>
+    <tr><td><code>notify/</code></td><td>«не беспокоить», положение, время показа, максимум на экране, критичные, анимация и тестовое уведомление</td></tr>
     <tr><td><code>lock/</code></td><td>блокировка по бездействию, эхо пароля, часы, обои, предпросмотр</td></tr>
     <tr><td><code>system/</code></td><td><a href="#monitors">мониторы</a>, сеть, звук, <a href="#apps">приложения</a>, конфиги, обновления shell</td></tr>
   </table></div>
+  <p>Анимация меню <kbd>Mod+D</kbd>, меню home и уведомлений выбирается отдельно: <code>slide</code> — выезжает,
+  <code>fade</code> — проявляется, <code>pop</code> — вырастает из центра, <code>unfold</code> — разворачивается сверху вниз,
+  <code>none</code> — без анимации. Закрытие играет ту же анимацию в обратную сторону.</p>
   <p class="c-gray">Окна, открытые из настроек (мониторы, бинды, обои), по <kbd>Esc</kbd> возвращают в них.</p>
 </section>
 

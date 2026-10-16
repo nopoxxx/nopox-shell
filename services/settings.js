@@ -17,6 +17,11 @@ const ACCENTS = {
 
 const WIDTHS = { "1/3": "0.33333", "1/2": "0.5", "2/3": "0.66667", "1": "1.0" };
 
+// анимации: окна shell (Reveal.qml) — меню Mod+D, меню home, уведомления; пресеты niri — animBlocks()
+var SHELL_ANIMS = ["slide", "fade", "pop", "unfold", "none"];
+const SHELL_ANIM_HINT = "slide — выезжает, fade — проявляется, pop — вырастает из центра, unfold — разворачивается сверху вниз";
+var NIRI_ANIMS = ["default", "snappy", "bouncy", "terminal"];
+
 // ── модули панели ──────────────────────────────────────────────────
 // file — bar/<file>.qml; inline — часть prompt: между двумя inline-модулями пробел, а не разделитель
 
@@ -199,6 +204,7 @@ function sections(outputs, layout, home) {
 
             { header: "меню" },
             { key: "shell.launcher.rows", label: "строк в меню", type: "int", min: 6, max: 24, step: 1, def: 12, hint: "высота меню Mod+D" },
+            { key: "shell.launcher.anim", label: "анимация меню", type: "enum", options: SHELL_ANIMS, def: "pop", hint: "меню Mod+D и Mod+Space; " + SHELL_ANIM_HINT },
 
             { header: "индикаторы" },
             { key: "shell.osd", label: "громкость и яркость", type: "bool", def: true, hint: "полоска на экране при изменении громкости или яркости — клавишами, колёсиком, из других программ" },
@@ -223,6 +229,8 @@ function sections(outputs, layout, home) {
 
             { header: "анимации" },
             { key: "niri.anim", label: "включены", type: "bool", def: true },
+            { key: "niri.anim.style", label: "стиль", type: "enum", options: NIRI_ANIMS, def: "default",
+              hint: "default — как в niri; snappy — коротко и резко; bouncy — пружины с отскоком; terminal — окно выводится строками с курсором, закрытое гаснет, как кинескоп" },
             { key: "niri.anim.slowdown", label: "замедление", type: "float", min: 0.25, max: 3, step: 0.25, def: 1 }
         ] },
 
@@ -293,6 +301,7 @@ function sections(outputs, layout, home) {
             act("home", "открыть", "клик по user@host на панели или Mod+A"),
             { key: "shell.home.side", label: "край экрана", type: "enum", options: ["left", "right"], def: "left" },
             { key: "shell.home.width", label: "ширина, символов", type: "int", min: 40, max: 80, step: 2, def: 52 },
+            { key: "shell.home.anim", label: "анимация", type: "enum", options: SHELL_ANIMS, def: "slide", hint: SHELL_ANIM_HINT },
 
             { header: "погода" },
             { key: "shell.weather.city", label: "город", type: "text", def: "", hint: "например Москва или Berlin; пусто — по IP (ipinfo.io). Данные — Open-Meteo, без ключа" },
@@ -320,7 +329,9 @@ function sections(outputs, layout, home) {
             { key: "shell.notify.max", label: "максимум на экране", type: "int", min: 1, max: 10, step: 1, def: 4 },
             { key: "shell.notify.criticalSticky", label: "критичные не исчезают", type: "bool", def: true, hint: "ERROR висит, пока не закроете" },
             { key: "shell.notify.mute", label: "мьют микрофона и звука", type: "bool", def: true, hint: "уведомление, когда микрофон или звук по умолчанию выключается и включается — биндом, клавишей, pavucontrol" },
-            { key: "shell.notify.typing", label: "эффект набора", type: "bool", def: true, hint: "заголовок уведомления печатается по символу" }
+            { key: "shell.notify.typing", label: "эффект набора", type: "bool", def: true, hint: "заголовок уведомления печатается по символу" },
+            { key: "shell.notify.anim", label: "анимация", type: "enum", options: SHELL_ANIMS, def: "slide", hint: "появление и исчезновение; slide — от края экрана. " + SHELL_ANIM_HINT },
+            act("notifyTest", "проверить", "прислать тестовое уведомление")
         ] },
 
         { id: "lock", title: "блокировка", rows: [
@@ -410,6 +421,78 @@ const f = x => Number(x).toFixed(2);
 // окружение программ при включённых темах (shell.theme.sync). niri получает его блоком environment в misc.kdl,
 // но выдаёт только тому, что запустит после этого; программам, которые запускает сам shell, — Settings.appEnv()
 var APP_ENV = { QT_QPA_PLATFORMTHEME: "qt6ct" };
+
+// ── анимации niri ──────────────────────────────────────────────────
+
+// terminal: окно выводится строками сверху вниз, курсор █ цвета акцента — в начале следующей строки
+const OPEN_SHADER = [
+    "vec4 open_color(vec3 coords_geo, vec3 size_geo) {",
+    "    if (coords_geo.x < 0.0 || coords_geo.x > 1.0 || coords_geo.y < 0.0 || coords_geo.y > 1.0)",
+    "        return vec4(0.0);",
+    "    float row = 24.0 / size_geo.y;",
+    "    float done = floor(niri_clamped_progress * ceil(1.0 / row)) * row;",
+    "    if (coords_geo.y < done)",
+    "        return texture2D(niri_tex, (niri_geo_to_tex * coords_geo).st);",
+    "    float px = coords_geo.x * size_geo.x;",
+    "    if (niri_clamped_progress < 1.0 && coords_geo.y < done + row && px >= 4.0 && px < 16.0)",
+    "        return ACCENT;",
+    "    return vec4(0.0);",
+    "}"
+];
+
+// terminal: закрытое окно сжимается в линию, линия — в точку и гаснет, как выключенный кинескоп
+const CLOSE_SHADER = [
+    "vec4 close_color(vec3 coords_geo, vec3 size_geo) {",
+    "    float p = niri_clamped_progress;",
+    "    float sy = max(1.0 - p / 0.6, 2.0 / size_geo.y);",
+    "    float sx = max(1.0 - max(p - 0.6, 0.0) / 0.4, 0.002);",
+    "    vec2 c = (coords_geo.xy - 0.5) / vec2(sx, sy) + 0.5;",
+    "    if (c.x < 0.0 || c.x > 1.0 || c.y < 0.0 || c.y > 1.0)",
+    "        return vec4(0.0);",
+    "    vec4 color = texture2D(niri_tex, (niri_geo_to_tex * vec3(c, 1.0)).st);",
+    "    color.rgb = mix(color.rgb, vec3(color.a), smoothstep(0.2, 0.6, p));",
+    "    return color * (1.0 - smoothstep(0.85, 1.0, p));",
+    "}"
+];
+
+// "#fabd2f" → "vec4(0.980, 0.741, 0.184, 1.0)"
+function glslColor(hex) {
+    const n = [1, 3, 5].map(i => (parseInt(hex.substr(i, 2), 16) / 255).toFixed(3));
+    return "vec4(" + n.join(", ") + ", 1.0)";
+}
+
+// строки внутрь animations { } для пресета
+function animBlocks(style, accent) {
+    const block = (name, body) => ["    " + name + " {", ...body.map(l => l === "" ? "" : "        " + l), "    }"];
+    const ease = (ms, curve) => ["duration-ms " + ms, "curve " + q(curve)];
+    const spring = (d, k, e) => ["spring damping-ratio=" + d + " stiffness=" + k + " epsilon=" + e];
+    // в сыром KDL-строке r"…" нет экранирования — в шейдерах не должно быть кавычек
+    const shader = lines => ["custom-shader r\"", ...lines.map(l => "    " + l.replace("ACCENT", glslColor(accent))), "\""];
+    switch (style) {
+    case "snappy": return [
+        ...block("workspace-switch", ease(150, "ease-out-cubic")),
+        ...block("horizontal-view-movement", ease(150, "ease-out-cubic")),
+        ...block("window-movement", ease(120, "ease-out-cubic")),
+        ...block("window-resize", ease(120, "ease-out-cubic")),
+        ...block("window-open", ease(100, "ease-out-expo")),
+        ...block("window-close", ease(80, "ease-out-quad")),
+        ...block("overview-open-close", ease(150, "ease-out-cubic"))
+    ];
+    case "bouncy": return [
+        ...block("workspace-switch", spring(0.7, 800, 0.0001)),
+        ...block("horizontal-view-movement", spring(0.7, 600, 0.0001)),
+        ...block("window-movement", spring(0.65, 600, 0.0001)),
+        ...block("window-resize", spring(0.75, 600, 0.0001)),
+        ...block("window-open", spring(0.6, 600, 0.001)),
+        ...block("overview-open-close", spring(0.75, 700, 0.0001))
+    ];
+    case "terminal": return [
+        ...block("window-open", [...ease(240, "linear"), ...shader(OPEN_SHADER)]),
+        ...block("window-close", [...ease(260, "linear"), ...shader(CLOSE_SHADER)])
+    ];
+    default: return [];
+    }
+}
 
 // горячие углы: ключ настройки → имя угла в niri (gestures { hot-corners { … } })
 var HOT_CORNERS = [["niri.hc.topLeft", "top-left"], ["niri.hc.topRight", "top-right"],
@@ -786,6 +869,7 @@ function niriFiles(get, outs) {
         "animations {",
         get("niri.anim") ? null : "    off",
         "    slowdown " + f(get("niri.anim.slowdown")),
+        ...animBlocks(get("niri.anim.style"), accent),
         "}"
     ]);
 

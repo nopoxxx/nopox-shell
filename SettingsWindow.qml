@@ -87,6 +87,7 @@ Scope {
                 case "lockPreview": ipc("lock", "preview"); break;
                 case "home": ipc("home", "open"); break;
                 case "record": ipc("record", "toggle"); break;
+                case "notifyTest": Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "Проверка уведомления", "так выглядит анимация " + Settings.get("shell.notify.anim")]); break;
                 case "wifi": Term.float(["nmtui"]); break;
                 case "audio": Quickshell.execDetached(["pavucontrol"]); break;
                 case "editNiri": Term.edit(Quickshell.env("HOME") + "/.config/niri/config.kdl"); break;

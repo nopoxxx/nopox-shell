@@ -29,6 +29,33 @@ Item {
 
     function c(color, s) { return `<font color="${color}">${s}</font>`; }
 
+    // появление и уход (Reveal.qml): закрытая карточка сначала доигрывает анимацию, потом afterLeave()
+    property bool leaving: false
+    property var afterLeave: null
+
+    function leave(fn) {
+        if (leaving || !entry) return;
+        afterLeave = fn;
+        leaving = true;
+    }
+
+    Reveal {
+        id: reveal
+        open: !card.leaving
+        style: Settings.get("shell.notify.anim")
+        duration: 200
+        edge: Settings.get("shell.notify.position").endsWith("right") ? "right" : "left"
+        distance: card.width * 0.4
+        onHidden: if (card.afterLeave) card.afterLeave()
+    }
+
+    opacity: reveal.alpha
+    scale: reveal.zoom
+    transform: [
+        Translate { x: reveal.dx },
+        Scale { yScale: reveal.ys }
+    ]
+
     width: cell.advanceWidth * 46 + Theme.pad * 2
     implicitHeight: frame.y + frame.height
 
@@ -53,7 +80,7 @@ Item {
         duration: card.timeout
         running: !card.sticky
         paused: running && hover.hovered
-        onFinished: if (card.entry) Notifs.hidePopup(card.entry)
+        onFinished: { const e = card.entry; card.leave(() => Notifs.hidePopup(e)); }
     }
 
     HoverHandler { id: hover }
@@ -73,9 +100,9 @@ Item {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             cursorShape: Qt.PointingHandCursor
             onClicked: mouse => {
-                if (!card.entry) return;
-                if (mouse.button === Qt.RightButton) Notifs.dismiss(card.entry);
-                else Notifs.invoke(card.entry);
+                const e = card.entry;
+                if (mouse.button === Qt.RightButton) card.leave(() => Notifs.dismiss(e));
+                else card.leave(() => Notifs.invoke(e));
             }
         }
 
@@ -123,7 +150,7 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: Notifs.invoke(card.entry, parent.modelData)
+                            onClicked: { const e = card.entry, a = parent.modelData; card.leave(() => Notifs.invoke(e, a)); }
                         }
                     }
                 }
@@ -137,7 +164,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Notifs.dismiss(card.entry)
+                        onClicked: { const e = card.entry; card.leave(() => Notifs.dismiss(e)); }
                     }
                 }
             }

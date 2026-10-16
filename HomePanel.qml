@@ -16,8 +16,17 @@ import "services/settings.js" as S
 Scope {
     id: root
 
+    // окно живёт, пока доигрывает закрытие (Reveal.qml); slide — на всю ширину колонки
+    Reveal {
+        id: reveal
+        open: Home.open
+        style: Settings.get("shell.home.anim")
+        duration: 180
+        edge: Settings.get("shell.home.side")
+    }
+
     LazyLoader {
-        active: Home.open
+        active: reveal.loaded
 
         PanelWindow {
             id: win
@@ -38,7 +47,7 @@ Scope {
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            WlrLayershell.keyboardFocus: Home.open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             WlrLayershell.namespace: "nopox-home"
 
             function close() { Home.open = false; }
@@ -141,14 +150,15 @@ Scope {
                 border.color: Theme.accent
                 border.width: 2
 
-                // выезжает от края
                 x: win.right ? parent.width - width : 0
-                NumberAnimation on x {
-                    from: win.right ? win.width : -box.width
-                    to: win.right ? win.width - box.width : 0
-                    duration: Settings.get("niri.anim") ? 160 : 0
-                    easing.type: Easing.OutCubic
-                }
+                opacity: reveal.alpha
+                scale: reveal.zoom
+                transform: [
+                    Translate { x: reveal.dx },
+                    Scale { yScale: reveal.ys }
+                ]
+
+                Binding { target: reveal; property: "distance"; value: box.width }
 
                 MouseArea { anchors.fill: parent }
 

@@ -21,6 +21,15 @@ Scope {
     property string startAt: ""
     readonly property int rows: Settings.get("shell.launcher.rows")
 
+    // окно живёт, пока доигрывает закрытие (Reveal.qml)
+    Reveal {
+        id: reveal
+        open: root.open
+        style: Settings.get("shell.launcher.anim")
+        duration: 150
+        distance: 30
+    }
+
     IpcHandler {
         target: "launcher"
         // не `show`: это имя занято подкомандой `qs ipc show`
@@ -176,7 +185,7 @@ Scope {
     // ── окно ───────────────────────────────────────────────────────
 
     LazyLoader {
-        active: root.open
+        active: reveal.loaded
 
         PanelWindow {
             id: win
@@ -186,7 +195,7 @@ Scope {
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             WlrLayershell.namespace: "nopox-launcher"
 
             property var stack: []
@@ -242,12 +251,21 @@ Scope {
                 return out.sort((a, b) => (b.score - a.score) || (a.item.label.length - b.item.label.length));
             }
 
-            Component.onCompleted: {
+            function reset() {
                 const s = [root.menu];
                 const start = root.menu.children.find(c => c.label === root.startAt);
                 if (start) s.push(start);
                 stack = s;
                 base = s.length;
+                input.text = "";
+            }
+
+            Component.onCompleted: reset()
+
+            // открыли снова, пока доигрывало закрытие: окно то же — начать с начала
+            Connections {
+                target: root
+                function onOpenChanged() { if (root.open) win.reset(); }
             }
 
             onNodeChanged: if (node?.provider) root.load(node.provider)
@@ -301,6 +319,12 @@ Scope {
                 color: Theme.bg
                 border.color: Theme.accent
                 border.width: 2
+                opacity: reveal.alpha
+                scale: reveal.zoom
+                transform: [
+                    Translate { y: reveal.dy },
+                    Scale { origin.y: -title.height / 2; yScale: reveal.ys }
+                ]
 
                 MouseArea { anchors.fill: parent }
 

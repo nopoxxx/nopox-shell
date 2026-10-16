@@ -62,6 +62,7 @@ LockScreen.qml       WlSessionLock + PAM (/etc/pam.d/login), предпросм�
 LoginPrompt.qml      общий экран getty (часы, login:, Password:) для блокировки и greeter
 BigClock.qml         часы из блоков 3×5 как tty-clock
 BlinkCursor.qml      мигающий █
+Reveal.qml           появление/исчезновение окна shell по стилю (slide fade pop unfold none): меню, home, уведомления
 EditField.qml        поле ввода в рамке с подписью (используется в BindsWindow)
 GreeterSync.qml      копирует настройки/обои в /var/lib/nopox-greeter/$USER для greeter
 greeter.qml          отдельная точка входа greeter для greetd (ShellRoot, Greetd)
@@ -153,12 +154,12 @@ docs/                документация — GitHub Pages из main /docs (
 
 | id | title | что внутри |
 |---|---|---|
-| `look` | вид | акцент, размер шрифта; темы Qt/GTK и шрифт в приложениях; обои (выбрать, wallhaven, заполнение); строк в меню; индикаторы (OSD) |
-| `windows` | окна | отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, CSD, анимации |
+| `look` | вид | акцент, размер шрифта; темы Qt/GTK и шрифт в приложениях; обои (выбрать, wallhaven, заполнение); строк и анимация меню; индикаторы (OSD) |
+| `windows` | окна | отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, CSD, анимации niri (вкл, стиль, замедление) |
 | `input` | ввод | клавиатура; клавиши (бинды, подсказка niri, мьют); горячие углы; мышь и тачпад; курсор |
 | `bar` | панель | модули по зонам; панель; prompt; вид модулей (часы, график cpu, трей) |
-| `home` | меню home | секции (показаны / скрыты, порядок); край и ширина; погода; ночной режим; запись экрана |
-| `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора |
+| `home` | меню home | секции (показаны / скрыты, порядок); край, ширина, анимация; погода; ночной режим; запись экрана |
+| `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора, анимация, проверить |
 | `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
 | `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; скриншоты; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
 
@@ -245,6 +246,9 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 (ghostty: `dev.nopox.term`) плавающими 960×600 и кладут слой `nopox-wallpaper` в backdrop обзора.
 В строках KDL нельзя `\.` — используется `[.]`. Вложенный блок KDL закрывать с переводом строки
 (`a { b { c } }` в одну строку niri не разберёт).
+Анимации — `animations.kdl`: `off`, `slowdown` и блоки пресета `niri.anim.style` (`NIRI_ANIMS`, `animBlocks()`):
+`snappy` — короткие easing, `bouncy` — пружины с damping < 1, `terminal` — свои шейдеры `window-open`/`window-close`
+(`OPEN_SHADER` — вывод строками с курсором цвета акцента, `CLOSE_SHADER` — «кинескоп»), в сыром KDL `r"…"`.
 Горячие углы — `niri.hc.*` → `gestures { hot-corners { … } }` в `misc.kdl` (`HOT_CORNERS`); ни одного — `off`,
 потому что пустой блок niri считает «по умолчанию» (левый верхний).
 
@@ -379,6 +383,12 @@ Scope {
 ```
 
 Флаг открытия хранится по-разному: `Settings.open`, `Wallpaper.pickerOpen`, `root.open` у остальных.
+
+**Анимация окна** (`Reveal.qml`, стили `S.SHELL_ANIMS`; сейчас — Launcher, HomePanel, NotifCard). `Reveal { open; style;
+duration; edge; distance }` живёт **снаружи** LazyLoader, `active: reveal.loaded` (`open || p > 0`) — так закрытие успевает
+доиграть. Окно привязывает `opacity: reveal.alpha`, `scale: reveal.zoom`, `transform: [Translate { reveal.dx/dy },
+Scale { yScale: reveal.ys }]`, а `keyboardFocus` — Exclusive только пока `open`. Открыли снова во время закрытия —
+окно то же, состояние сбрасывать самому (Launcher: `reset()`). Сигнал `hidden` — p дошло до 0.
 Навигация везде одинакова: ↑↓ / j k (в полях ввода — Ctrl+J/K), ←→ / h l, ↵, Esc/q, Tab — разделы.
 Выделение строки — `▌ ` акцентом и фон `Theme.bg1`; изменённое значение — ` *`.
 Наведение мыши выделяет строку только при реальном сдвиге курсора (`lastMouse`).
@@ -410,7 +420,9 @@ Esc/Backspace/← на нём закрывают окно, а не подним�
 `clean()`). Запись: `{key, time, app, summary, body, urgency, actions, notif}`; `history` (до 100),
 `entries[key]`, попапы — `ListModel` только с ключами (карточки не пересоздаются). Уровни:
 Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO (акцент). DND пропускает только critical.
-`centerOpen` скрывает попапы, пока открыта история. Уведомления с hint `transient` — только попап, без истории и `unread`
+`centerOpen` скрывает попапы, пока открыта история.
+Карточка закрывается через `card.leave(fn)`: доигрывает анимацию (`shell.notify.anim`), потом `fn` (hidePopup, dismiss,
+invoke); остальные съезжают на её место (`move` в Column NotifPopups). Закрытое приложением — без анимации. Уведомления с hint `transient` — только попап, без истории и `unread`
 (так шлёт `MuteNotify`: `notify-send -p … -h boolean:transient:true`, прошлое своё закрывает по id через `CloseNotification`;
 смена устройства по умолчанию мьютом не считается).
 
@@ -530,6 +542,9 @@ Critical → ERROR (красный), Low → DEBUG (серый), иначе INFO
   DejaVu) с более высокой строкой: `Text` вырастает с 16 до 19–22 px, а базовая линия опускается. В панели зоны
   центрируются по высоте — весь текст прыгал вверх. `bar/BarText.qml` держит высоту `FontMetrics.height` и поднимает
   текст на `ascent − baselineOffset`; `lineHeight` одной высоты не хватает — базовая линия всё равно съезжает.
+- `niri validate` шейдеры не компилирует: ошибку niri покажет только в журнале и молча вернёт анимацию по умолчанию.
+  Новый шейдер проверять `glslangValidator -S frag` с заголовком `#version 100`, `precision highp float;` и униформами
+  `niri_*` из примеров niri; в сыром KDL `r"…"` нельзя кавычек.
 - Глифы Nerd Font вне BMP — два UTF-16 знака: длину и срез для анимации печати считать через `Array.from`.
   В `Terminess Nerd Font Mono` значки ужаты в клетку и не читаются — Tray рисует их обычным `Terminess Nerd Font`.
   Новый глиф в `TRAY_ICONS` проверять по шрифту (fontTools, имена вида `md-discord`); в иконке элемента трея
