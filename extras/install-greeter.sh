@@ -14,7 +14,7 @@ conf=/etc/greetd/config.toml
 
 rm -rf "$dest"
 mkdir -p "$dest"
-(cd "$src" && tar --exclude=.git --exclude=extras --exclude=README.md -cf - .) | tar -xf - -C "$dest"
+(cd "$src" && tar --exclude=.git --exclude=extras --exclude=README.md --exclude=AGENTS.md --exclude=CLAUDE.md -cf - .) | tar -xf - -C "$dest"
 chmod -R a+rX "$dest"
 
 install -Dm644 "$src/extras/greeter/niri.kdl" /etc/greetd/nopox-niri.kdl
