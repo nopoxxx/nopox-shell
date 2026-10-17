@@ -128,6 +128,9 @@ README.md            коротко: что это, установка, глав
 docs/                документация — GitHub Pages из main /docs (https://nopoxxx.github.io/ochre/)
   index.html         одна страница без сборки: стили и JS внутри, макеты экранов shell нарисованы текстом
   brand/             знак, лок-ап (шапка README) и favicon — копии из проекта бренда (vectorcraft-project/ochre)
+  shots/             скриншоты 1920×1080 (WebP без потерь): <имя>.webp — окно, обрезанное из кадра, <имя>-full.webp —
+                     весь экран (по клику); рабочие столы и lock — только целиком. Снимались через IPC (settings set,
+                     notify hide, окна по toggle) и niri screenshot-screen на втором мониторе — без синтетического ввода
   fonts/             Terminess (Regular/Bold), урезанный pyftsubset до латиницы, кириллицы, псевдографики и пары
                      значков трея (~12 КБ), + LICENSE.txt (OFL); новый символ вне набора — пересобрать подмножество
 ```
