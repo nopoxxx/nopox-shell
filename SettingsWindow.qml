@@ -10,6 +10,9 @@ import "services/settings.js" as S
 //   ↑↓ выбор, ←→ изменить, ↵ переключить/открыть, r сброс, / поиск, tab раздел, esc выход
 //   qs ipc call settings toggle
 //   qs ipc call settings open <раздел>   — look, windows, input, bar, notify, lock, system; "" — последний
+//   qs ipc call settings set <ключ> <значение> — для скриптов: shell.accent blue, shell.fontSize 18, niri.shadow true;
+//                                              значение — JSON, иначе строка; "" — вернуть по умолчанию
+//   qs ipc call settings get <ключ>      — значение в JSON
 Scope {
     id: root
 
@@ -17,6 +20,18 @@ Scope {
         target: "settings"
         function toggle(): void { Settings.open = !Settings.open; }
         function open(section: string): void { Settings.show(section); }
+        function set(key: string, value: string): string {
+            // только ключи из схемы — опечатка не должна оседать в settings.json мусором
+            if (S.defaultOf(key, Settings.outputs) === undefined) return "неизвестный ключ: " + key;
+            if (value === "") { Settings.reset(key); return "по умолчанию: " + JSON.stringify(Settings.get(key)); }
+            let v = value;
+            try { v = JSON.parse(value); } catch (e) {}
+            const row = S.find(key, Settings.outputs);
+            if (row?.options && !row.options.includes(v)) return "допустимо: " + row.options.join(", ");
+            Settings.set(key, v);
+            return JSON.stringify(Settings.get(key));
+        }
+        function get(key: string): string { return JSON.stringify(Settings.get(key)) ?? "неизвестный ключ: " + key; }
     }
 
     LazyLoader {

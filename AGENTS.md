@@ -512,7 +512,8 @@ invoke); остальные съезжают на её место (`move` в Col
 | `~/Pictures/Wallpapers/` | коллекция, загрузки wallhaven как `wallhaven-<id>.<ext>` | Wallpaper |
 | `/var/lib/ochre-greeter/<user>/` | копия для greeter | GreeterSync |
 | `/var/lib/ochre-greeter/.greeter/last` | последний пользователь и сессия | greeter.qml |
-| `/usr/share/ochre/` | копия shell для greeter | install-greeter.sh |
+| `/usr/share/ochre/` | shell из пакета ochre-git (он же greeter) | pacman |
+| `/usr/local/share/ochre/` | копия shell для greeter git-установки, root | install-greeter.sh |
 | `~/.cache/cliphist/db` | история буфера | cliphist (через Clipboard) |
 | `~/Videos/Screencasts/` (`shell.rec.dir`) | записи экрана `rec_<дата>.mp4` | Recorder |
 | `$XDG_RUNTIME_DIR/ochre-clip/` | картинки из истории для предпросмотра | ClipboardWindow |
@@ -523,11 +524,11 @@ invoke); остальные съезжают на её место (`move` в Col
 |---|---|---|
 | `launcher` | `toggle`, `apps`, `open`, `close` (не `show` — занято `qs ipc show`) | Launcher.qml |
 | `wallpaper` | `picker`, `set <path>`, `fill <fill\|fit\|stretch>` | WallPicker.qml |
-| `settings` | `toggle`, `open <раздел>` (`""` — последний открытый) | SettingsWindow.qml |
+| `settings` | `toggle`, `open <раздел>` (`""` — последний открытый), `set <ключ> <значение>` (JSON или строка; `""` — по умолчанию; только ключи схемы, enum — из `options`), `get <ключ>` | SettingsWindow.qml |
 | `displays` | `toggle` | DisplaysWindow.qml |
 | `binds` | `toggle` | BindsWindow.qml |
 | `lock` | `lock`, `locked`, `preview` | LockScreen.qml |
-| `notify` | `dnd`, `clear` | services/Notifs.qml |
+| `notify` | `dnd`, `clear`, `hide` (убрать всплывающие, история остаётся) | services/Notifs.qml |
 | `shot` | `region`, `window`, `edit <путь>` | ShotWindow.qml |
 | `clipboard` | `toggle` | ClipboardWindow.qml |
 | `home` | `toggle`, `open`, `close` | services/Home.qml |

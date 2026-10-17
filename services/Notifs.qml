@@ -7,6 +7,7 @@ import QtQuick
 // Сервер уведомлений: история, всплывающие карточки, «не беспокоить».
 //   qs ipc call notify dnd    — переключить «не беспокоить»
 //   qs ipc call notify clear  — очистить историю
+//   qs ipc call notify hide   — убрать всплывающие с экрана, история остаётся
 Singleton {
     id: root
 
@@ -121,5 +122,6 @@ Singleton {
         target: "notify"
         function dnd(): void { root.toggleDnd(); }
         function clear(): void { root.clear(); }
+        function hide(): void { popupModel.clear(); }
     }
 }
