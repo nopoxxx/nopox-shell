@@ -18,7 +18,7 @@ Scope {
     property int duration: 160
     property string edge: "top"       // откуда выезжает slide: left, right, top, bottom
     property real distance: 40        // на сколько px
-    property real typeScale: 1.5      // печать (type) дольше остальных стилей: окно набирается по символу
+    property real typeScale: 0.75     // множитель длительности для печати (type)
     // общая скорость анимаций shell (look/ → анимации)
     readonly property real speed: Settings.get("shell.anim.speed")
 
@@ -52,7 +52,7 @@ Scope {
         anim.from = p;
         anim.to = to;
         // прерванная на середине анимация доигрывает только остаток пути;
-        // печать — ровным темпом и дольше: окно набирается по символу
+        // печать — ровным темпом, со своим множителем длительности
         const type = style === "type";
         anim.duration = duration * (type ? typeScale : 1) * Math.abs(to - p) / Math.max(0.25, speed);
         anim.easing.type = type ? Easing.Linear : open ? Easing.OutCubic : Easing.InCubic;
