@@ -1,0 +1,53 @@
+# Maintainer: nopox <dmitriy.nopox@gmail.com>
+# Пакет ochre из свежего main. Пока его нет в AUR: cd extras/aur/ochre-git && makepkg -si
+pkgname=ochre-git
+_name=ochre
+pkgver=r0
+pkgrel=1
+pkgdesc="Warm terminal-style Quickshell shell for niri (prompt bar, fzf menu, menuconfig settings)"
+arch=(any)
+url="https://github.com/nopoxxx/ochre"
+license=(GPL-3.0-or-later)
+depends=(
+    quickshell niri xwayland-satellite bash git curl xdg-utils
+    ttf-terminus-nerd noto-fonts noto-fonts-emoji
+    networkmanager pipewire pipewire-pulse wireplumber upower libnotify pacman-contrib
+    wl-clipboard cliphist brightnessctl playerctl fastfetch
+    polkit-gnome gnome-keyring xdg-desktop-portal-gnome xdg-desktop-portal-gtk
+)
+optdepends=(
+    'qt6ct: Qt-приложения в цветах shell'
+    'adw-gtk-theme: GTK-приложения в цветах shell'
+    'gruvbox-plus-icon-theme: иконки Gruvbox Plus'
+    'gammastep: ночной режим'
+    'wf-recorder: запись экрана'
+    'slurp: запись выделенной области'
+    'pavucontrol: микшер в настройках'
+    'paru: обновления AUR на панели и меню packages/'
+    'greetd: экран входа ochre (ochre greeter)'
+    'kitty: терминал (или alacritty, ghostty, foot)'
+)
+provides=(ochre)
+conflicts=(ochre)
+source=("$_name::git+$url.git")
+sha256sums=(SKIP)
+install=ochre-git.install
+
+pkgver() {
+    cd "$_name"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+    cd "$_name"
+    local dest="$pkgdir/usr/share/$_name"
+    install -d "$dest"
+    # сам shell и всё, что он берёт из extras/ (конфиги терминалов и оболочек, fastfetch, greeter, установщик)
+    tar --exclude=.git --exclude=docs --exclude=extras/aur --exclude=AGENTS.md --exclude=CLAUDE.md \
+        --exclude=README.md --exclude=LICENSE -cf - . | tar -xf - -C "$dest"
+    # по VERSION работающий shell замечает обновление пакета и предлагает перезапуск
+    printf '%s\n' "$pkgver" > "$dest/VERSION"
+    install -Dm755 extras/bin/ochre "$pkgdir/usr/bin/ochre"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

@@ -97,7 +97,7 @@ Scope {
             { label: "apps", icon: icons.apps, desc: "запуск программ (Mod+Space)", provider: "apps" },
             { label: "wallpaper", icon: icons.wallpaper, desc: "обои; Tab — wallhaven (Mod+Shift+W)", alias: ["обои"], run: () => openPicker("local") },
             // пауза — чтобы закрывающееся меню не попало в замороженный кадр
-            { label: "screenshot", icon: icons.shot, desc: "снимок с разметкой (Mod+Shift+S); w — окно", alias: ["скриншот", "снимок"], run: () => spawn(["sh", "-c", "sleep 0.3; qs ipc call shot region"]) },
+            { label: "screenshot", icon: icons.shot, desc: "снимок с разметкой (Mod+Shift+S); w — окно", alias: ["скриншот", "снимок"], run: () => spawn(["sh", "-c", 'sleep 0.3; exec "$@"', "sh", ...Ochre.ipcArgv(["shot", "region"])]) },
             { label: "setup", icon: icons.setup, desc: "все настройки, мониторы, сеть, звук (Mod+S)", alias: ["settings", "настройки"], run: () => Settings.show("") },
             { label: "packages", icon: icons.packages, desc: "установить, удалить, обновить", children: [
                 { label: "install", desc: "из репозиториев pacman", provider: "repo" },
@@ -106,8 +106,8 @@ Scope {
                 { label: "update", desc: "обновить систему: paru -Syu" + (Updates.count > 0 ? " — доступно " + Updates.count : ""), alias: ["upgrade", "обновить"], run: () => Updates.run() }
             ] },
             { label: "system", icon: icons.system, desc: "питание и сессия", children: [
-                { label: "lock", desc: "заблокировать экран (Super+Alt+L)", alias: ["блокировка"], run: () => spawn(["qs", "ipc", "call", "lock", "lock"]) },
-                { label: "suspend", desc: "заблокировать и уснуть", alias: ["sleep", "сон"], run: () => spawn(["sh", "-c", "qs ipc call lock lock; sleep 0.5; systemctl suspend"]) },
+                { label: "lock", desc: "заблокировать экран (Super+Alt+L)", alias: ["блокировка"], run: () => Ochre.ipc("lock", "lock") },
+                { label: "suspend", desc: "заблокировать и уснуть", alias: ["sleep", "сон"], run: () => spawn(["sh", "-c", '"$@"; sleep 0.5; systemctl suspend', "sh", ...Ochre.ipcArgv(["lock", "lock"])]) },
                 { label: "logout", desc: "выйти из niri", alias: ["выход"], confirm: true, run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) },
                 { label: "reboot", desc: "перезагрузка", alias: ["restart"], confirm: true, run: () => spawn(["systemctl", "reboot"]) },
                 { label: "poweroff", desc: "выключение", alias: ["shutdown", "выключить"], confirm: true, run: () => spawn(["systemctl", "poweroff"]) }

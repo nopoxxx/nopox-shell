@@ -5,7 +5,8 @@ import Quickshell.Services.Greetd
 import QtQuick
 import qs.services
 
-// Точка входа greeter: qs -p /usr/share/ochre/greeter.qml (с OCHRE_GREETER=1).
+// Точка входа greeter: qs -p <shell>/greeter.qml (с OCHRE_GREETER=1); <shell> — /usr/share/ochre у пакета,
+// /usr/local/share/ochre — копия git-установки (extras/install-greeter.sh).
 // Работает внутри отдельного niri под пользователем greeter — см. extras/greeter/.
 // Вид берётся из настроек пользователя, которые синхронизирует GreeterSync из его сессии.
 ShellRoot {
@@ -13,6 +14,9 @@ ShellRoot {
 
     readonly property string libDir: "/var/lib/ochre-greeter"
     readonly property string stateDir: libDir + "/.greeter"
+
+    // файлы greeter меняет pacman или install-greeter.sh — без перезагрузки посреди замены
+    Component.onCompleted: Quickshell.watchFiles = false
 
     property string user: ""
     property string password: ""

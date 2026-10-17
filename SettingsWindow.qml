@@ -76,7 +76,7 @@ Scope {
                 Settings.open = false;
                 // из этих окон Esc возвращает сюда же
                 Settings.returnHere = ["picker", "wallhaven", "binds", "displays", "lockPreview"].includes(name);
-                const ipc = (...args) => Quickshell.execDetached(["qs", "ipc", "call", ...args]);
+                const ipc = (...args) => Ochre.ipc(...args);
                 switch (name) {
                 case "picker": Wallpaper.pickerSource = "local"; Wallpaper.pickerOpen = true; break;
                 case "wallhaven": Wallpaper.pickerSource = "wallhaven"; Wallpaper.pickerOpen = true; break;
@@ -93,7 +93,13 @@ Scope {
                 case "editNiri": Term.edit(Quickshell.env("HOME") + "/.config/niri/config.kdl"); break;
                 case "editShell": Term.edit(Quickshell.shellDir); break;
                 case "editTerminal": Term.edit(Term.configPath); break;
-                case "shellUpdate": if (ShellUpdate.behind > 0) ShellUpdate.update(); else ShellUpdate.check(true); break;
+                case "shellUpdate":
+                    if (Ochre.system)
+                        Quickshell.execDetached(["notify-send", "-a", "ochre", "ochre поставлен пакетом",
+                            "Обновляется вместе с системой; после обновления придёт уведомление с перезапуском shell."]);
+                    else if (ShellUpdate.behind > 0) ShellUpdate.update();
+                    else ShellUpdate.check(true);
+                    break;
                 case "restartShell": ShellUpdate.restartShell(); break;
                 case "greeterUpdate": ShellUpdate.updateGreeter(); break;
                 default: console.warn("settings: неизвестное действие", name);

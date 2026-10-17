@@ -1,0 +1,7 @@
+post_install() {
+    echo "ochre: настройте niri и программы — ochre setup (без sudo), экран входа — ochre greeter"
+}
+
+post_upgrade() {
+    echo "ochre: работающий shell предложит перезапуск уведомлением (или: ochre restart)"
+}

@@ -19,13 +19,16 @@
 - Язык интерфейса, комментариев, README и документации — **русский**. Сообщения коммитов — **английский**,
   формат `Area: what changed` (например `Binds window: …`, `install.sh: …`).
 - Репозиторий: `https://github.com/nopoxxx/ochre`, ветка `main`.
-- Установлен у пользователя как git-клон в `~/.config/quickshell` (Quickshell грузит `shell.qml` оттуда).
+- Ставится двумя способами: git-клон в `~/.config/quickshell` (конфиг Quickshell по умолчанию, `install.sh`, обновляется
+  сам через git) или пакет `ochre-git` (`extras/aur/ochre-git/`, файлы в `/usr/share/ochre`, `Ochre.system`) — там
+  экземпляр выбирается `qs -p /usr/share/ochre`, обновляет pacman. Лицензия — GPL-3.0-or-later (`LICENSE`).
 - Сборки, тестов и линтера нет. Проверка — запуск в живой сессии niri.
 
 ## 2. Запуск и проверка
 
 ```sh
-pkill -x qs; niri msg action spawn -- qs   # перезапустить shell (так же делает Mod+S → system/ → перезапустить shell)
+qs kill; niri msg action spawn -- qs      # перезапустить shell (так же делает Mod+S → system/ → перезапустить shell)
+ochre restart; ochre ipc call …             # то же для пакета (qs kill / qs ipc -p /usr/share/ochre)
 qs ipc call <target> <function>             # дёрнуть IPC (таблица в §6)
 niri validate -c ~/.config/niri/config.kdl  # проверить сгенерированный конфиг niri
 OCHRE_GREETER=1 qs -p /usr/share/ochre/greeter.qml   # greeter (обычно запускает greetd)
@@ -33,7 +36,8 @@ OCHRE_GREETER=1 qs -p /usr/share/ochre/greeter.qml   # greeter (обычно з�
 
 Из SSH (вне сессии) `qs ipc`/`qs list` экземпляр не видят — ищут на своём Wayland-дисплее:
 нужен `WAYLAND_DISPLAY=wayland-1` (или `qs ipc --pid $(pgrep -x qs) call …`).
-Quickshell перезагружает конфиг при изменении `.qml`-файлов сам, а при изменении только `.js`
+Quickshell перезагружает конфиг при изменении `.qml`-файлов сам (у пакета выключено: `Quickshell.watchFiles = false`
+в shell.qml и greeter.qml — pacman меняет файлы под работающим shell), а при изменении только `.js`
 (например `services/settings.js`) — нет: нужен перезапуск `qs`. Ошибки QML и `console.warn` видны в выводе `qs`.
 Модули импортируются как `qs` (корень), `qs.services`, `qs.bar` — это имена каталогов.
 
@@ -80,6 +84,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   ShellUpdate.qml    git fetch/pull самого shell, список новых коммитов, перезапуск, обновление greeter
   Updates.qml        число обновлений (checkupdates + paru -Qua) раз в час, запуск paru -Syu
   Term.qml           выбранный терминал: Term.open(argv), Term.float(argv, {hold}), Term.edit(path), Term.cmd(), configPath
+  Ochre.qml          как вызвать этот экземпляр: Ochre.qs, Ochre.sel, Ochre.ipc(t, f), ipcArgv, restartScript; Ochre.system — пакет
   AppTheme.qml       темы GTK и Qt вслед за shell: пишет S.themeFiles() в ~/.config и S.themeGsettings() в gsettings
   MuteNotify.qml     уведомление при мьюте микрофона/звука по умолчанию (PipeWire, любым способом), shell.notify.mute
   Clipboard.qml      cliphist: один `wl-paste --watch cliphist store` пока жив shell (прежние гасит pkill); entries, copy, remove, wipe
@@ -109,11 +114,14 @@ extras/              не грузится shell'ом; эталонные кон
   niri/ochre/*.kdl   стартовые заглушки ~/.config/niri/ochre/ (shell перезапишет при запуске)
   niri.kdl           инструкция по ручному подключению к своему config.kdl
   greeter/niri.kdl   конфиг niri для greeter (/etc/greetd/ochre-niri.kdl)
-  install-greeter.sh sudo: копия shell в /usr/share/ochre, каталоги синхронизации, greetd
+  install-greeter.sh sudo: greeter (пакет — его файлы, git — копия в /usr/local/share/ochre), каталоги синхронизации, greetd
+  bin/ochre          команда пакета: ochre (запуск), ochre ipc …, ochre restart, ochre setup (install.sh --system), ochre greeter
+  aur/ochre-git/     PKGBUILD и .install пакета ochre-git (пока не в AUR: makepkg -si); в пакет не попадает
   kitty/ alacritty/ ghostty/ foot/   конфиги терминалов в Gruvbox + Terminess
   fastfetch/config.jsonc  fastfetch в стиле панели; его же берёт about в меню (с акцентом shell)
   shell/             zshrc, fish_prompt.fish, ochre.fish, bashrc — приглашение как у панели
 install.sh           установщик для Arch (вопросы → итог → установка), см. §10
+LICENSE              GPL-3.0-or-later
 README.md            коротко: что это, установка, главные клавиши, ссылка на документацию
 docs/                документация — GitHub Pages из main /docs (https://nopoxxx.github.io/ochre/)
   index.html         одна страница без сборки: стили и JS внутри, макеты экранов shell нарисованы текстом
@@ -456,18 +464,23 @@ invoke); остальные съезжают на её место (`move` в Col
   сессия остаётся заблокированной — это поведение протокола. `IdleMonitor` по `shell.lock.idle` (мин).
 - `LoginPrompt` ничего не проверяет: отдаёт сигналы `submit(password)`, `userChosen`, `power`, `cancel`.
   `askUser: true` — greeter (сначала имя, Tab — сессия, F11/F12 — reboot/poweroff).
-- Greeter: `extras/install-greeter.sh` копирует shell (без `.git`, `extras`, `docs`, `README.md`, `AGENTS.md`,
-  `CLAUDE.md`) в `/usr/share/ochre`; greetd запускает `niri -c /etc/greetd/ochre-niri.kdl`, тот — `qs -p …/greeter.qml`.
+- Greeter: у пакета — его же файлы в `/usr/share/ochre`; git-установку `extras/install-greeter.sh` копирует (без `.git`,
+  `extras`, `docs`, `README.md`, `AGENTS.md`, `CLAUDE.md`) в `/usr/local/share/ochre` — не в `/usr/share`, там были бы
+  файлы пакета. Путь подставляется в `/etc/greetd/ochre-niri.kdl` (из `extras/greeter/niri.kdl`); greetd запускает
+  `niri -c` с ним, тот — `qs -p …/greeter.qml`. Признак «greeter настроен» — этот файл (`ShellUpdate.greeterInstalled`).
   Greeter работает под пользователем `greeter`, домашние папки не видит — поэтому `GreeterSync`
   из сессии пользователя копирует `settings.json`, обои и `wallpaper-fill` в `/var/lib/ochre-greeter/$USER/`.
   Последний пользователь и сессия — `/var/lib/ochre-greeter/.greeter/last`.
-  **После изменений в QML greeter надо переустановить** (`Mod+S → system/ → обновить greeter` или `sudo extras/install-greeter.sh`).
+  **После изменений в QML greeter git-установки надо переустановить** (`Mod+S → system/ → обновить greeter` или
+  `sudo bash extras/install-greeter.sh`); у пакета greeter обновляется вместе с ним (`greeterSeparate`).
 
 ### 4.8 Обновления
 
 - `ShellUpdate`: через минуту после старта и раз в `shell.update.hours` — `git fetch` в
   `Quickshell.shellDir`, список `HEAD..@{u}`; `update()` — `git pull --ff-only` и перезапуск через
-  отвязанный `sh` (`pkill -x qs; niri msg action spawn -- qs`), уведомление шлёт уже новый shell.
+  отвязанный `sh` (`Ochre.restartScript`: `qs kill` до ошибки, потом `niri msg action spawn -- qs …`), уведомление шлёт уже новый shell.
+- Пакет (`Ochre.system`): не git — `ochre ↑` скрыт, «обновить» в настройках только объясняет. PKGBUILD пишет `VERSION`;
+  раз в минуту `ShellUpdate` перечитывает его и при смене шлёт уведомление с кнопкой «перезапустить».
 - `Updates`: `checkupdates` + `paru -Qua` раз в час; `run()` — `paru -Syu` в окне `ochre-term`.
 
 ## 5. Хранение данных
@@ -506,6 +519,7 @@ invoke); остальные съезжают на её место (`move` в Col
 | `record` | `toggle`, `region`, `screen`, `stop` | services/Recorder.qml |
 
 Новые IPC-функции нужно объявлять с типами (`function x(): void`, аргументы `name: string`).
+У пакета вместо `qs ipc` — `ochre ipc` (= `qs ipc -p /usr/share/ochre`); сам shell вызывает себя через `Ochre.ipc()`.
 
 ## 7. Рецепты
 
@@ -546,6 +560,8 @@ invoke); остальные съезжают на её место (`move` в Col
 - Текст — только через `T`; цвета — только `Theme.*` (акцент — `Theme.accent`); моноширинная сетка:
   ширины в символах через `TextMetrics { text: "M" }` → `cell.advanceWidth * N`.
 - Разметка цветом — `textFormat: Text.StyledText` и хелпер `c(color, s)`; пользовательский текст экранировать.
+- **Вызов самого shell** (`qs ipc`, перезапуск, бинды в `binds.kdl`) — только через `Ochre` (`Ochre.ipc`, `ipcArgv`, `qs`, `sel`,
+  `restartScript`), не голым `"qs"`: у пакета без `-p <каталог>` команда уйдёт в конфиг по умолчанию. `niriFiles(get, outs, sel)`.
 - Внешние команды: `Quickshell.execDetached([...])` или `Process`; для shell —
   `["sh", "-c", 'скрипт с "$1"', "sh", arg1, …]` — **никогда не подставлять данные в текст скрипта**.
   В Launcher для строк — `shq()`.
@@ -578,6 +594,9 @@ invoke); остальные съезжают на её место (`move` в Col
 - Долгий `Process` нельзя перезапустить в том же такте (`running = false; running = true` — Quickshell может
   пропустить): остановить и запустить таймером (NightLight). Короткие запросы, ответ которых может опоздать, — свой
   процесс на запрос (`Component.createObject`, ClipboardWindow).
+- Quickshell различает экземпляры по пути конфига: `qs ipc call` без `-p` попадает только в `~/.config/quickshell`
+  («Target not found» для пакета). `qs kill` гасит один экземпляр за вызов (без экземпляров — код 255): перезапуск — циклом.
+  `pkill -x qs` не использовать — убьёт и чужие конфиги quickshell.
 - Дети `qs` при его выходе по сигналу не умирают: долгоживущие процессы (wl-paste, gammastep) при старте сначала гасят
   прежние (`pkill -u … -x(f)`), иначе каждый перезапуск shell их удваивает.
 - sysfs (`/sys/class/backlight/*/brightness`) не шлёт inotify — яркость опрашивается (Brightness, 400 мс).
@@ -629,3 +648,5 @@ nvidia (он отключает nouveau), иначе `vulkan-nouveau`; ни од
 (правка JSON через `bun -e`, битый файл не трогается) → greeter → итог.
 Всё заменяемое уходит в `*.bak-<дата>`. С `--yes` вопросов нет и pacman/paru получают `--noconfirm`.
 Флаги описаны в шапке файла и в документации (`docs/index.html`, раздел install) — менять синхронно.
+`--system <каталог>` (так зовёт `ochre setup`): shell уже поставлен пакетом — без git-клона, заготовка `binds.kdl` и
+перезапуск — с `qs -p <каталог>`.

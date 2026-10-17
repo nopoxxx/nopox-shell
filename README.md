@@ -22,6 +22,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/ochre/main/install.s
 Установщик спросит терминал, оболочку, браузер, файловый менеджер и программы, покажет итог и только потом поставит.
 Флаги и ручная установка — в [документации](https://nopoxxx.github.io/ochre/#install).
 
+Пакетом (в AUR пока нет — собирается из репозитория, обновляется вместе с системой):
+
+```sh
+git clone https://github.com/nopoxxx/ochre && cd ochre/extras/aur/ochre-git && makepkg -si
+ochre setup
+```
+
 ## Клавиши
 
 | | |
@@ -40,3 +47,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/ochre/main/install.s
 ## Разработка
 
 Карта проекта, соглашения и подводные камни — [`AGENTS.md`](AGENTS.md). Исходник документации — [`docs/index.html`](docs/index.html).
+
+## Лицензия
+
+[GPL-3.0-or-later](LICENSE). Скриншот с разметкой сделан по мотивам [rishot](https://github.com/ryoku-dev/ryoshot) (MIT).

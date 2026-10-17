@@ -112,7 +112,7 @@ Singleton {
             outs[m[1]][m[2]] = values[k];
         }
         // пишем только изменившиеся файлы: niri перечитывает конфиг при каждой записи
-        const files = S.niriFiles(get, outs);
+        const files = S.niriFiles(get, outs, Ochre.sel);
         const args = [];
         for (const name in files)
             if (_written[name] !== files[name]) args.push(name, files[name]);
@@ -175,7 +175,7 @@ Singleton {
                 git -C "$1" remote set-url origin "$(printf '%s' "$u" | sed 's#nopoxxx/nopox-shell#nopoxxx/ochre#')"
             fi
             # greeter ставится через sudo — только напомнить, и один раз, вместе с переездом
-            [ -n "$did" ] && [ -d /usr/share/nopox-shell ] && [ ! -d /usr/share/ochre ] && did="$did greeter"
+            [ -n "$did" ] && [ -d /usr/share/nopox-shell ] && [ ! -f /etc/greetd/ochre-niri.kdl ] && did="$did greeter"
             mkdir -p "$h/.config/ochre" "$n/ochre"
             [ -n "$did" ] && echo "DID$did"
             exit 0`, "sh", Quickshell.shellDir]

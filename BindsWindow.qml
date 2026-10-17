@@ -26,18 +26,14 @@ Scope {
 
     // готовые действия ochre — в подсказках первыми
     readonly property var presets: [
-        { name: 'spawn "qs" "ipc" "call" "launcher" "toggle"', desc: "ochre: меню" },
-        { name: 'spawn "qs" "ipc" "call" "launcher" "apps"', desc: "ochre: программы" },
-        { name: 'spawn "qs" "ipc" "call" "settings" "toggle"', desc: "ochre: настройки" },
-        { name: 'spawn "qs" "ipc" "call" "wallpaper" "picker"', desc: "ochre: обои" },
-        { name: 'spawn "qs" "ipc" "call" "clipboard" "toggle"', desc: "ochre: история буфера обмена" },
-        { name: 'spawn "qs" "ipc" "call" "home" "toggle"', desc: "ochre: меню home" },
-        { name: 'spawn "qs" "ipc" "call" "record" "toggle"', desc: "ochre: запись экрана — начать / остановить" },
-        { name: 'spawn "qs" "ipc" "call" "lock" "lock"', desc: "ochre: блокировка" },
-        { name: 'spawn "qs" "ipc" "call" "notify" "dnd"', desc: "ochre: не беспокоить" },
-        { name: 'spawn "qs" "ipc" "call" "displays" "toggle"', desc: "ochre: мониторы" },
-        { name: 'spawn "qs" "ipc" "call" "shot" "region"', desc: "ochre: скриншот с разметкой" },
-        { name: 'spawn "qs" "ipc" "call" "shot" "window"', desc: "ochre: скриншот окна" },
+        // qs ipc этому экземпляру: у пакета — с -p <каталог> (Ochre.qml)
+        ...[
+            ["launcher", "toggle", "меню"], ["launcher", "apps", "программы"], ["settings", "toggle", "настройки"],
+            ["wallpaper", "picker", "обои"], ["clipboard", "toggle", "история буфера обмена"], ["home", "toggle", "меню home"],
+            ["record", "toggle", "запись экрана — начать / остановить"], ["lock", "lock", "блокировка"],
+            ["notify", "dnd", "не беспокоить"], ["displays", "toggle", "мониторы"],
+            ["shot", "region", "скриншот с разметкой"], ["shot", "window", "скриншот окна"]
+        ].map(([t, f, d]) => ({ name: "spawn " + Ochre.ipcArgv([t, f]).map(a => JSON.stringify(a)).join(" "), desc: "ochre: " + d })),
         { name: "spawn kitty", desc: "запустить программу: spawn <команда> [аргументы]" },
         { name: "off", desc: "отключить сочетание" }
     ]

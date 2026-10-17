@@ -18,9 +18,9 @@ Section {
         { icon: G.g(Recorder.recording ? "stop" : "rec"), text: Recorder.recording ? "стоп" : "запись", ok: Recorder.available,
           run: () => { sec.panel.close(); Recorder.toggle(); } },
         { icon: G.g("cog"), text: "настройки", ok: true, run: () => { sec.panel.close(); Settings.show(""); } },
-        { icon: G.g("lock"), text: "lock", ok: true, run: () => { sec.panel.close(); spawn(["qs", "ipc", "call", "lock", "lock"]); } },
+        { icon: G.g("lock"), text: "lock", ok: true, run: () => { sec.panel.close(); Ochre.ipc("lock", "lock"); } },
         { icon: G.g("sleep"), text: "сон", ok: true,
-          run: () => { sec.panel.close(); spawn(["sh", "-c", "qs ipc call lock lock; sleep 0.5; systemctl suspend"]); } },
+          run: () => { sec.panel.close(); spawn(["sh", "-c", '"$@"; sleep 0.5; systemctl suspend', "sh", ...Ochre.ipcArgv(["lock", "lock"])]); } },
         { icon: G.g("logout"), text: "выход", ok: true, ask: true, run: () => spawn(["niri", "msg", "action", "quit", "--skip-confirmation"]) },
         { icon: G.g("restart"), text: "перезагрузка", ok: true, ask: true, run: () => spawn(["systemctl", "reboot"]) },
         { icon: G.g("power"), text: "выключить", ok: true, ask: true, run: () => spawn(["systemctl", "poweroff"]) }

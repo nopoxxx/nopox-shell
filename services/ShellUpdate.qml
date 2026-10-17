@@ -5,6 +5,7 @@ import QtQuick
 
 // Обновления самого ochre: если папка конфига — git-клон, периодически делает
 // `git fetch` и сравнивает с upstream; update() — `git pull --ff-only` и перезапуск shell.
+// Поставлен пакетом (Ochre.system) — обновляет pacman: раз в минуту сверяем VERSION и предлагаем перезапуск.
 // Для приватного репозитория git должен уметь авторизоваться (например, `gh auth setup-git`).
 Singleton {
     id: root
@@ -19,8 +20,10 @@ Singleton {
     readonly property int behind: commits.length
     property string error: ""
     property bool updated: false        // уже обновились в этом запуске — напомнить про greeter
-    // в том числе под старым именем (nopox-shell): его тоже обновляет install-greeter.sh
+    // greeter настроен (его конфиг niri для greetd) — в том числе под старым именем nopox-shell
     readonly property bool greeterInstalled: greeterCheck.text().length > 0 || legacyGreeter.text().length > 0
+    // копию greeter обновлять отдельно нужно только git-установке: у пакета greeter — те же файлы
+    readonly property bool greeterSeparate: greeterInstalled && !Ochre.system
 
     // force — проверить, даже если автопроверка выключена в настройках
     function check(force) {
@@ -37,22 +40,22 @@ Singleton {
         updater.running = true;
     }
 
-    // перезапуск через отвязанный процесс: он переживёт выход самого quickshell.
+    // перезапуск через отвязанный процесс (Ochre.restartScript): он переживёт выход самого quickshell.
     // Уведомление — уже новому shell: старый вместе с историей уведомлений закрывается.
     function restartShell(title, body) {
         Quickshell.execDetached(["sh", "-c",
-            'sleep 0.5; pkill -x qs; sleep 0.5; niri msg action spawn -- qs; sleep 3; [ -n "$1" ] && notify-send -a ochre "$1" "$2"',
-            "sh", title ?? "", body ?? ""]);
+            't=$1 b=$2; shift 2; sleep 0.5; ' + Ochre.restartScript + '; sleep 3; [ -n "$t" ] && notify-send -a ochre "$t" "$b"',
+            "sh", title ?? "", body ?? ""].concat(Ochre.sel));
     }
 
     function updateGreeter() {
-        Term.float(["sudo", dir + "/extras/install-greeter.sh"], { hold: true });
+        Term.float(["sudo", "bash", dir + "/extras/install-greeter.sh"], { hold: true });
     }
 
     // файл-маркер: greeter установлен из этого shell
     FileView {
         id: greeterCheck
-        path: "/usr/share/ochre/greeter.qml"
+        path: "/etc/greetd/ochre-niri.kdl"
         printErrors: false
     }
 
@@ -113,8 +116,34 @@ Singleton {
             root.commits = [];
             root.updated = true;
             root.restartShell("ochre обновлён",
-                root.greeterInstalled ? "Greeter обновляется отдельно: Mod+S → system/ → обновить greeter" : "");
+                root.greeterSeparate ? "Greeter обновляется отдельно: Mod+S → system/ → обновить greeter" : "");
         }
+    }
+
+    // ── пакет: pacman заменил файлы под работающим shell (автоперезагрузка выключена, см. shell.qml) ──
+
+    property string version: ""
+
+    FileView {
+        id: versionFile
+        path: Ochre.system ? root.dir + "/VERSION" : ""
+        printErrors: false
+        onLoaded: {
+            const v = text().trim();
+            if (root.version && v && v !== root.version)
+                Quickshell.execDetached(["sh", "-c",
+                    'v=$1; shift; a=$(notify-send -a ochre -A restart=перезапустить "ochre обновлён до $v" "Перезапустите shell, чтобы взять новую версию"); '
+                    + '[ "$a" = restart ] || exit 0; ' + Ochre.restartScript,
+                    "sh", v].concat(Ochre.sel));
+            if (v) root.version = v;
+        }
+    }
+
+    Timer {
+        interval: 60 * 1000
+        running: Ochre.system
+        repeat: true
+        onTriggered: versionFile.reload()
     }
 
     // первая проверка — через минуту после запуска, дальше по расписанию

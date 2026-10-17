@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
 # Ставит ochre как greeter для greetd.
 #   sudo ./extras/install-greeter.sh
-# Копирует shell в /usr/share/ochre, кладёт конфиг niri для greeter,
-# создаёт каталоги синхронизации и переключает [default_session] в greetd.
+# Greeter — тот же shell: у пакета это его файлы в /usr/share/ochre, git-установку копирует в /usr/local/share/ochre
+# (не в /usr/share: там файлы пакета). Кладёт конфиг niri для greeter, создаёт каталоги синхронизации
+# и переключает [default_session] в greetd.
 # [initial_session] (автовход), если он есть, не трогает.
 set -euo pipefail
 
 [ "$(id -u)" -eq 0 ] || { echo "запустите через sudo" >&2; exit 1; }
 
 src=$(cd "$(dirname "$0")/.." && pwd)
-dest=/usr/share/ochre
 conf=/etc/greetd/config.toml
 
-rm -rf "$dest"
-mkdir -p "$dest"
-(cd "$src" && tar --exclude=.git --exclude=extras --exclude=docs --exclude=README.md --exclude=AGENTS.md --exclude=CLAUDE.md -cf - .) | tar -xf - -C "$dest"
-chmod -R a+rX "$dest"
+if [ "$src" = /usr/share/ochre ]; then
+    dest=$src
+else
+    dest=/usr/local/share/ochre
+    rm -rf "$dest"
+    mkdir -p "$dest"
+    (cd "$src" && tar --exclude=.git --exclude=extras --exclude=docs --exclude=README.md --exclude=AGENTS.md --exclude=CLAUDE.md -cf - .) | tar -xf - -C "$dest"
+    chmod -R a+rX "$dest"
+    # копия greeter из git-установки, которую ставила прошлая версия этого скрипта, — если это не файлы пакета
+    if [ -d /usr/share/ochre ] && ! pacman -Qqo /usr/share/ochre >/dev/null 2>&1; then rm -rf /usr/share/ochre; fi
+fi
 
-install -Dm644 "$src/extras/greeter/niri.kdl" /etc/greetd/ochre-niri.kdl
+sed "s#/usr/share/ochre/greeter.qml#$dest/greeter.qml#" "$src/extras/greeter/niri.kdl" > /etc/greetd/.ochre-niri.kdl.tmp
+install -Dm644 /etc/greetd/.ochre-niri.kdl.tmp /etc/greetd/ochre-niri.kdl
+rm -f /etc/greetd/.ochre-niri.kdl.tmp
 
 # общий каталог: настройки и обои пользователей (пишут их сессии) и состояние greeter
 install -d -m755 /var/lib/ochre-greeter

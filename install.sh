@@ -16,6 +16,7 @@
 #   --no-chaotic             не подключать chaotic-aur: AUR-программы собирать makepkg (дольше)
 #   --keep-niri-config       не заменять config.kdl niri, только дописать include
 #   --branch <ветка>         ветка репозитория (по умолчанию main)
+#   --system <каталог>       shell уже поставлен пакетом в <каталог> (так зовёт `ochre setup`): без git-клона
 #
 # Ничего не удаляет: всё, что заменяется, переезжает в *.bak-<дата>.
 set -euo pipefail
@@ -29,6 +30,7 @@ CHAOTIC=ask
 KEEP_NIRI=0
 TERMINAL="" SHELL_CHOICE="" BROWSER="" FILES="" APPS="" DISCORD_MOD=""
 DEST="$HOME/.config/quickshell"
+SYSTEM=""
 NIRI_DIR="$HOME/.config/niri"
 STAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -46,7 +48,8 @@ while [ $# -gt 0 ]; do
         --no-chaotic) CHAOTIC=no ;;
         --keep-niri-config) KEEP_NIRI=1 ;;
         --branch) BRANCH=${2:?нужно имя ветки}; shift ;;
-        -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --system) SYSTEM=${2:?нужен каталог}; DEST=$SYSTEM; shift ;;
+        -h|--help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "неизвестный флаг: $1" >&2; exit 1 ;;
     esac
     shift
@@ -480,7 +483,9 @@ fi
 
 # ── сам shell ────────────────────────────────────────────────────────
 step "ochre → $DEST"
-if [ -d "$DEST/.git" ] && git -C "$DEST" remote get-url origin 2>/dev/null | grep -qE "nopoxxx/(ochre|nopox-shell)"; then
+if [ -n "$SYSTEM" ]; then
+    ok "поставлен пакетом — обновляется вместе с системой"
+elif [ -d "$DEST/.git" ] && git -C "$DEST" remote get-url origin 2>/dev/null | grep -qE "nopoxxx/(ochre|nopox-shell)"; then
     # клон ещё под старым именем репозитория (nopox-shell) — GitHub перенаправляет, но адрес лучше сменить
     git -C "$DEST" remote set-url origin "$REPO"
     git -C "$DEST" fetch --quiet origin "$BRANCH" || die "не удалось скачать ветку $BRANCH"
@@ -525,7 +530,15 @@ conf="$NIRI_DIR/config.kdl"
 # Shell перегенерирует их при запуске; стартовые нужны, чтобы niri загрузил конфиг ещё до shell.
 mkdir -p "$NIRI_DIR/ochre"
 for f in "$DEST"/extras/niri/ochre/*.kdl; do
-    [ -f "$NIRI_DIR/ochre/$(basename "$f")" ] || cp "$f" "$NIRI_DIR/ochre/"
+    t="$NIRI_DIR/ochre/$(basename "$f")"
+    [ -f "$t" ] && continue
+    cp "$f" "$t"
+    # у пакета shell — не конфиг quickshell по умолчанию: и запуск, и qs ipc — с -p <каталог>
+    # (дальше binds.kdl перепишет сам shell, но до его первого запуска niri берёт эту заготовку)
+    if [ -n "$SYSTEM" ] && [ "$(basename "$f")" = binds.kdl ]; then
+        sed -i -e "s#^spawn-at-startup \"qs\"\$#spawn-at-startup \"qs\" \"-p\" \"$DEST\"#" \
+               -e "s#spawn \"qs\" \"ipc\" \"call\"#spawn \"qs\" \"ipc\" \"-p\" \"$DEST\" \"call\"#" "$t"
+    fi
 done
 
 if [ -f "$conf" ] && grep -q '^include "ochre/main.kdl"' "$conf"; then
@@ -806,8 +819,10 @@ fi
 
 if [ -n "${NIRI_SOCKET:-}" ] && pgrep -x niri >/dev/null; then
     if ask "Вы сейчас в niri — перезапустить shell?" y; then
-        pkill -x qs || true
-        niri msg action spawn -- qs
+        QS=(qs); [ -n "$SYSTEM" ] && QS=(qs -p "$DEST")
+        # qs kill гасит по одному экземпляру этого конфига, другие конфиги quickshell не трогает
+        for _ in 1 2 3 4 5; do qs kill "${QS[@]:1}" &>/dev/null || break; done
+        niri msg action spawn -- "${QS[@]}"
         ok "shell перезапущен"
     fi
 else

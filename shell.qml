@@ -15,6 +15,10 @@ ShellRoot {
     readonly property var _night: NightLight      // ночной режим держится с запуска shell
     readonly property var _recorder: Recorder     // IPC record (Mod+Alt+R)
 
+    // поставлен пакетом: pacman меняет файлы под работающим shell, и перезагрузка посреди обновления
+    // ломает его — перезапуск только по уведомлению после обновления (ShellUpdate)
+    Component.onCompleted: if (Ochre.system) Quickshell.watchFiles = false
+
     Variants {
         model: Quickshell.screens
         Background {

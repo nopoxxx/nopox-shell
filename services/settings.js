@@ -735,7 +735,10 @@ function text(lines) {
 // get(key) — значение с учётом умолчаний;
 // outs — { имя: { enabled, mode, scale, transform, x, y, vrr, primary } }, только то, что задано вручную.
 // Возвращает { "input.kdl": текст, … } — все файлы папки ochre/, кроме keys.kdl (его пишет Binds).
-function niriFiles(get, outs) {
+// sel — как выбрать этот экземпляр shell в qs (Ochre.sel): [] для конфига по умолчанию, ["-p", каталог] для пакета
+function niriFiles(get, outs, sel) {
+    const qsRun = ["qs"].concat(sel ?? []).map(q).join(" ");
+    const ipc = (t, f) => " { spawn " + ["qs", "ipc"].concat(sel ?? [], ["call", t, f]).map(q).join(" ") + "; }";
     const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
     const ring = get("niri.ring");
     const border = get("niri.border");
@@ -898,7 +901,7 @@ function niriFiles(get, outs) {
 
     files["binds.kdl"] = text([
         ...head("клавиши ochre и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl"),
-        'spawn-at-startup "qs"',
+        "spawn-at-startup " + qsRun,
         "",
         "binds {",
         "    Mod+Return hotkey-overlay-title=" + q("Open a Terminal: " + get("shell.terminal")) + " { spawn " + termCmd(get("shell.terminal")).map(q).join(" ") + "; }",
@@ -910,16 +913,16 @@ function niriFiles(get, outs) {
             : []),
         ...Object.keys(MUTE_BINDS).filter(k => COMBO_RE.test(get(k) ?? "")).map(k =>
             "    " + get(k) + " allow-when-locked=true hotkey-overlay-title=" + q(MUTE_BINDS[k].title) + " { " + MUTE_BINDS[k].action + "; }"),
-        '    Mod+D hotkey-overlay-title="Menu" { spawn "qs" "ipc" "call" "launcher" "toggle"; }',
-        '    Mod+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "apps"; }',
-        '    Mod+Shift+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "picker"; }',
-        '    Mod+Shift+V hotkey-overlay-title="Clipboard History" { spawn "qs" "ipc" "call" "clipboard" "toggle"; }',
-        '    Mod+A hotkey-overlay-title="Home Menu" { spawn "qs" "ipc" "call" "home" "toggle"; }',
-        '    Mod+Alt+R hotkey-overlay-title="Record the Screen" { spawn "qs" "ipc" "call" "record" "toggle"; }',
-        '    Mod+Shift+S hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
-        '    Print hotkey-overlay-title="Screenshot" { spawn "qs" "ipc" "call" "shot" "region"; }',
-        '    Mod+S hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }',
-        '    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "qs" "ipc" "call" "lock" "lock"; }',
+        '    Mod+D hotkey-overlay-title="Menu"' + ipc("launcher", "toggle"),
+        '    Mod+Space hotkey-overlay-title="Run an Application"' + ipc("launcher", "apps"),
+        '    Mod+Shift+W hotkey-overlay-title="Wallpapers"' + ipc("wallpaper", "picker"),
+        '    Mod+Shift+V hotkey-overlay-title="Clipboard History"' + ipc("clipboard", "toggle"),
+        '    Mod+A hotkey-overlay-title="Home Menu"' + ipc("home", "toggle"),
+        '    Mod+Alt+R hotkey-overlay-title="Record the Screen"' + ipc("record", "toggle"),
+        '    Mod+Shift+S hotkey-overlay-title="Screenshot"' + ipc("shot", "region"),
+        '    Print hotkey-overlay-title="Screenshot"' + ipc("shot", "region"),
+        '    Mod+S hotkey-overlay-title="Settings"' + ipc("settings", "toggle"),
+        '    Super+Alt+L hotkey-overlay-title="Lock the Screen"' + ipc("lock", "lock"),
         "}"
     ]);
 

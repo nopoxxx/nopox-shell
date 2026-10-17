@@ -80,7 +80,7 @@ TuiPopup {
         }
 
         T {
-            visible: ShellUpdate.greeterInstalled
+            visible: ShellUpdate.greeterSeparate
             text: "[обновить greeter]"
             color: Theme.gray
 

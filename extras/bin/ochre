@@ -1,0 +1,26 @@
+#!/bin/sh
+# ochre — запуск и управление shell, поставленным пакетом (файлы в /usr/share/ochre).
+# Quickshell различает экземпляры по пути конфига, поэтому всё идёт через qs -p <каталог>.
+#   ochre             запустить shell (в niri это делает spawn-at-startup из ~/.config/niri/ochre/binds.kdl)
+#   ochre ipc …       qs ipc этому shell: ochre ipc call launcher toggle, ochre ipc show
+#   ochre restart     перезапустить shell
+#   ochre setup …     установщик: программы, конфиг niri, терминал, оболочка, greeter (флаги — ochre setup --help)
+#   ochre greeter     поставить greeter для greetd (sudo)
+set -eu
+dir=${OCHRE_DIR:-/usr/share/ochre}
+
+case "${1:-}" in
+    "") exec qs -p "$dir" ;;
+    ipc) shift; exec qs ipc -p "$dir" "$@" ;;
+    restart)
+        # qs kill гасит по одному экземпляру — до ошибки «нет экземпляров»
+        n=0
+        while [ $n -lt 10 ] && qs kill -p "$dir" >/dev/null 2>&1; do n=$((n + 1)); done
+        if [ -n "${NIRI_SOCKET:-}" ]; then exec niri msg action spawn -- qs -p "$dir"; fi
+        exec qs -p "$dir" -d
+        ;;
+    setup) shift; exec bash "$dir/install.sh" --system "$dir" "$@" ;;
+    greeter) exec sudo bash "$dir/extras/install-greeter.sh" ;;
+    -h|--help|help) sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) echo "ochre: неизвестная команда «$1» (ochre --help)" >&2; exit 1 ;;
+esac

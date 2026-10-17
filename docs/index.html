@@ -260,6 +260,15 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <span class="p">❯ </span>git clone https://github.com/nopoxxx/ochre ~/.config/quickshell</code></pre>
     <p>Затем подключите shell к niri — см. <a href="https://github.com/nopoxxx/ochre/blob/main/extras/niri.kdl"><code>extras/niri.kdl</code></a>.</p>
   </details>
+
+  <h3>пакетом</h3>
+  <p>Вместо git-клона shell можно поставить пакетом <code>ochre-git</code>: файлы — в <code>/usr/share/ochre</code>,
+  обновления — вместе с системой. В AUR его пока нет, собирается из репозитория:</p>
+<pre class="cmd"><code><span class="p">❯ </span>git clone https://github.com/nopoxxx/ochre &amp;&amp; cd ochre/extras/aur/ochre-git &amp;&amp; makepkg -si
+<span class="p">❯ </span>ochre setup      <span class="cm"># то же, что установщик: программы, конфиг niri, терминал, оболочка, greeter</span></code></pre>
+  <p>Команда <code>ochre</code>: без аргументов — запустить shell, <code>ochre ipc …</code> — IPC, <code>ochre restart</code> — перезапуск,
+  <code>ochre greeter</code> — экран входа. Обновлённый пакет shell подхватывает не на лету, а после перезапуска — о нём придёт уведомление
+  с кнопкой. Индикатора <code>ochre ↑</code> у пакета нет: обновления ставит пакетный менеджер.</p>
 </section>
 
 <!-- ─────────────────────────── keys ─────────────────────────── -->
@@ -596,7 +605,8 @@ Password: <span class="blink">█</span></div>
 <section class="win" id="ipc">
   <div class="ttl">~/docs/ipc</div>
   <h2>IPC</h2>
-  <p>Всё, что открывается клавишами, можно вызвать командой — для своих биндов и скриптов:</p>
+  <p>Всё, что открывается клавишами, можно вызвать командой — для своих биндов и скриптов.
+  У пакета вместо <code>qs ipc</code> — <code>ochre ipc</code> (то же, что <code>qs ipc -p /usr/share/ochre</code>):</p>
 <pre class="cmd"><code><span class="p">❯ </span>qs ipc call launcher toggle     <span class="cm"># меню; launcher apps — сразу программы</span>
 <span class="p">❯ </span>qs ipc call settings toggle     <span class="cm"># настройки; settings open &lt;раздел&gt; — look, input, system…</span>
 <span class="p">❯ </span>qs ipc call wallpaper picker    <span class="cm"># обои; wallpaper set &lt;путь&gt;, wallpaper fill &lt;fill|fit|stretch&gt;</span>
@@ -644,6 +654,7 @@ Password: <span class="blink">█</span></div>
 
 <footer>
   <span class="c-acc">❯</span> <a href="https://github.com/nopoxxx/ochre">github.com/nopoxxx/ochre</a>
+  <span class="c-gray">·</span> <a href="https://github.com/nopoxxx/ochre/blob/main/LICENSE">GPL-3.0-or-later</a>
   <span class="c-gray">·</span> шрифт Terminess (Terminus, <a href="fonts/LICENSE.txt">OFL</a>)
 </footer>
 
