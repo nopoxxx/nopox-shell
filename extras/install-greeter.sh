@@ -18,8 +18,12 @@ else
     dest=/usr/local/share/ochre
     rm -rf "$dest"
     mkdir -p "$dest"
-    (cd "$src" && tar --exclude=.git --exclude=extras --exclude=docs --exclude=README.md --exclude=AGENTS.md --exclude=CLAUDE.md -cf - .) | tar -xf - -C "$dest"
-    chmod -R a+rX "$dest"
+    # --no-same-owner: файлы — root'у. Иначе tar оставит владельцем пользователя из клона, и он (или любая его
+    # программа) сможет подменить код greeter, который на экране входа принимает пароли всех пользователей
+    (cd "$src" && tar --exclude=.git --exclude=extras --exclude=docs --exclude=README.md --exclude=AGENTS.md --exclude=CLAUDE.md -cf - .) \
+        | tar -xf - --no-same-owner -C "$dest"
+    chown -R root:root "$dest"
+    chmod -R u=rwX,go=rX "$dest"
     # копия greeter из git-установки, которую ставила прошлая версия этого скрипта, — если это не файлы пакета
     if [ -d /usr/share/ochre ] && ! pacman -Qqo /usr/share/ochre >/dev/null 2>&1; then rm -rf /usr/share/ochre; fi
 fi

@@ -613,6 +613,8 @@ invoke); остальные съезжают на её место (`move` в Col
 - Нативное меню трея (`display()`) не используется: нужен QApplication и оно не в стиле — свой `TrayMenu`.
 - ghostty принимает класс окна только с точкой: `ochre-term` → `dev.ochre.term` (`S.termClass`).
 - В greeter нет `$HOME` пользователя: всё, что нужно greeter'у, должно идти через GreeterSync.
+- Копия greeter (git-установка) должна принадлежать root: `tar -x` от root сохраняет владельцев из клона, и пользователь
+  смог бы подменить код экрана входа, который принимает чужие пароли. В install-greeter.sh — `--no-same-owner` и `chown -R root:root`.
 - Бинды из `config.kdl` парсятся построчно: многострочные бинды в окне биндов не видны.
 - `paru-bin` из AUR — готовый бинарник под конкретную `libalpm.so.N`; после обновления pacman он перестаёт
   запускаться (так было с pacman 7.1 / libalpm.so.16). Проверять `paru --version`, а не `command -v paru`;
