@@ -55,8 +55,8 @@ Scope {
         const c = Theme.accent;
         const ansi = "38;2;" + [c.r, c.g, c.b].map(x => Math.round(x * 255)).join(";");
         Term.float(["bash", "-c",
-            'printf "\\e[?25l"; fastfetch -c "$1" --logo-color-1 "$2" --logo-color-2 "$2"; printf "\\n  \\e[90m↵ — закрыть\\e[0m"; read -rs',
-            "bash", Quickshell.shellDir + "/extras/fastfetch/config.jsonc", ansi]);
+            'printf "\\e[?25l"; fastfetch -c "$1" --logo-type file --logo "$3" --logo-color-1 "$2" --logo-color-2 "$2"; printf "\\n  \\e[90m↵ — закрыть\\e[0m"; read -rs',
+            "bash", Quickshell.shellDir + "/extras/fastfetch/config.jsonc", ansi, Quickshell.shellDir + "/extras/fastfetch/ochre-large.txt"]);
     }
 
     function openPicker(source) {

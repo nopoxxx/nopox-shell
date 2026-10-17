@@ -13,6 +13,7 @@ Singleton {
     readonly property color red: "#fb4934"
     readonly property color green: "#b8bb26"
     readonly property color yellow: "#fabd2f"
+    readonly property color ochre: "#d79921"     // цвет бренда — gruvbox neutral yellow
     readonly property color blue: "#83a598"
     readonly property color purple: "#d3869b"
     readonly property color aqua: "#8ec07c"
@@ -20,9 +21,9 @@ Singleton {
 
     // акцент из настроек: рамки, prompt (и рамка фокуса niri — см. services/settings.js)
     readonly property color accent: ({
-        yellow: yellow, orange: orange, green: green, aqua: aqua,
+        ochre: ochre, yellow: yellow, orange: orange, green: green, aqua: aqua,
         blue: blue, purple: purple, red: red
-    })[Settings.get("shell.accent")] ?? yellow
+    })[Settings.get("shell.accent")] ?? ochre
 
     readonly property string font: "Terminess Nerd Font Mono"
     // значки Nerd Font: в Mono-версии они ужаты в клетку и не читаются (см. services/glyphs.js)

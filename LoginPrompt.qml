@@ -10,6 +10,7 @@ import qs.services
 //               пятница, 16 октября 2026
 //
 //     ochre 7.2.9-arch1-1 (tty1)
+//     идёт закат…                           (motd — слоган ochre, shell.lock.motd)
 //     ochre login: user
 //     Password: ****█
 //     session: Niri
@@ -59,6 +60,13 @@ Item {
     Component.onCompleted: restart()
 
     function c(color, s) { return `<font color="${color}">${s}</font>`; }
+
+    // слоганы ochre для входа и блокировки (BRAND.md) — каждый раз другой, как motd
+    readonly property var motds: [
+        "с возвращением.", "чайник уже поставлен.", "идёт закат…", "сессия восстановлена. тепло: 100%",
+        "последний вход: как раз к закату", "сохраняй тепло.", "солнце садится. курсор остаётся."
+    ]
+    readonly property string motd: motds[Math.floor(Math.random() * motds.length)]
 
     SystemClock {
         id: clock
@@ -148,6 +156,12 @@ Item {
             T {
                 text: root.host + " " + Sys.kernel + " (tty1)"
                 color: Theme.gray
+            }
+
+            T {
+                visible: Settings.get("shell.lock.motd")
+                text: root.motd
+                color: Theme.accent
             }
 
             Item { implicitHeight: Theme.pad }

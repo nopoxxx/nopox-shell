@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// Текущие обои, локальная коллекция и загрузка с wallhaven.cc
+// Текущие обои, локальная коллекция, фирменные обои ochre и загрузка с wallhaven.cc
 Singleton {
     id: root
 
@@ -19,6 +19,38 @@ Singleton {
     // окно выбора
     property bool pickerOpen: false
     property string pickerSource: "local"  // local | wallhaven
+
+    // Фирменные обои (extras/wallpapers): sundown, horizon и field нарисованы под каждый акцент
+    // (accents/<акцент>-<имя>.png, у акцента ochre — ochre-<имя>.png), tty — один. Стоят фирменные — при смене
+    // акцента меняются на его вариант; обоев ещё нет совсем (первый запуск) — ставится horizon.
+    readonly property string brandDir: Quickshell.shellDir + "/extras/wallpapers"
+    readonly property var brandNames: ["horizon", "sundown", "field", "tty"]
+    readonly property string accent: Settings.get("shell.accent")
+    readonly property var brand: brandNames.map(n => brandPath(n, accent))
+
+    function brandPath(name, acc) {
+        return name === "tty" || acc === "ochre" ? brandDir + "/ochre-" + name + ".png"
+            : brandDir + "/accents/" + acc + "-" + name + ".png";
+    }
+
+    // имя фирменных обоев по пути, "" — свои
+    function brandNameOf(path) {
+        if (!path.startsWith(brandDir + "/")) return "";
+        const m = path.match(/[-/](horizon|sundown|field|tty)\.png$/);
+        return m ? m[1] : "";
+    }
+
+    // до чтения настроек акцент — по умолчанию: не дёргать обои туда-обратно
+    onAccentChanged: {
+        if (!Settings.writable) return;
+        const n = brandNameOf(current);
+        if (n && brandPath(n, accent) !== current) set(brandPath(n, accent));
+    }
+
+    // файла состояния нет — обои ни разу не выбирали; ставим фирменные, когда настройки (акцент) уже прочитаны
+    property bool _noState: false
+    readonly property bool _wantDefault: _noState && Settings.writable && current === ""
+    on_WantDefaultChanged: if (_wantDefault) set(brandPath("horizon", accent))
 
     function set(path) {
         current = path;
@@ -86,6 +118,7 @@ Singleton {
         // после переезда с nopox-shell: ~/.local/state/nopox → ochre (Settings.renamed)
         path: Settings.renamed ? root.stateFile : ""
         onLoaded: root.current = text().trim()
+        onLoadFailed: error => { if (error === FileViewError.FileNotFound) root._noState = true; }
     }
 
     FileView {

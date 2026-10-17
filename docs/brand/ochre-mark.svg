@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="320" height="320" viewBox="0 0 320 320">
+  <title>ochre-brand</title>
+  <g id="Selection">
+    <path id="mark" d="M100 0 L220 0 L220 20 L100 20 Z M60 20 L260 20 L260 40 L60 40 Z M40 40 L280 40 L280 60 L40 60 Z M20 60 L300 60 L300 80 L20 80 Z M20 80 L300 80 L300 100 L20 100 Z M0 100 L320 100 L320 120 L0 120 Z M0 120 L320 120 L320 140 L0 140 Z M0 160 L260 160 L260 180 L0 180 Z M20 200 L200 200 L200 220 L20 220 Z M40 240 L160 240 L160 260 L40 260 Z M180 240 L220 240 L220 260 L180 260 Z M60 280 L100 280 L100 300 L60 300 Z M60 300 L100 300 L100 320 L60 320 Z" fill="#d79921"/>
+  </g>
+</svg>

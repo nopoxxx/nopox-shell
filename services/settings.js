@@ -5,7 +5,9 @@
 //   shell.*     — читает quickshell
 //   wallpaper.* — хранится в сервисе Wallpaper
 
+// ochre — цвет бренда (gruvbox neutral yellow), он же по умолчанию; остальные — bright-цвета палитры
 const ACCENTS = {
+    ochre: "#d79921",
     yellow: "#fabd2f",
     orange: "#fe8019",
     green: "#b8bb26",
@@ -188,7 +190,7 @@ function sections(outputs, layout, home) {
     return [
         { id: "look", title: "вид", rows: [
             { header: "цвет и шрифт" },
-            { key: "shell.accent", label: "акцентный цвет", type: "enum", options: Object.keys(ACCENTS), def: "yellow", hint: "рамки окон shell, prompt, рамка фокуса niri и акцент в приложениях" },
+            { key: "shell.accent", label: "акцентный цвет", type: "enum", options: Object.keys(ACCENTS), def: "ochre", hint: "рамки окон shell, prompt, рамка фокуса niri и акцент в приложениях" },
             { key: "shell.fontSize", label: "размер шрифта", type: "int", min: 10, max: 28, step: 1, def: 16 },
 
             { header: "приложения" },
@@ -343,6 +345,7 @@ function sections(outputs, layout, home) {
             { key: "shell.lock.idle", label: "блокировать через, мин", type: "int", min: 0, max: 60, step: 1, def: 10, hint: "после бездействия; 0 — не блокировать; видеоплееры могут запретить" },
             { key: "shell.lock.echo", label: "эхо пароля", type: "enum", options: ["*", "●", "none"], def: "*", hint: "none — как в консоли: ничего не видно при вводе" },
             { key: "shell.lock.clock", label: "часы", type: "bool", def: true, hint: "крупные часы как tty-clock" },
+            { key: "shell.lock.motd", label: "фраза под приглашением", type: "bool", def: true, hint: "как motd в консоли: «с возвращением.», «идёт закат…» — каждый раз другая; и в greeter" },
             { key: "shell.lock.wallpaper", label: "обои на фоне", type: "bool", def: true, hint: "приглушённые текущие обои под приглашением" },
             act("lockPreview", "предпросмотр", "экран блокировки без проверки пароля; Esc — закрыть"),
             act("lock", "заблокировать сейчас", "Super+Alt+L")
@@ -739,7 +742,7 @@ function text(lines) {
 function niriFiles(get, outs, sel) {
     const qsRun = ["qs"].concat(sel ?? []).map(q).join(" ");
     const ipc = (t, f) => " { spawn " + ["qs", "ipc"].concat(sel ?? [], ["call", t, f]).map(q).join(" ") + "; }";
-    const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
+    const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.ochre;
     const ring = get("niri.ring");
     const border = get("niri.border");
     const radius = get("niri.rules.radius");
@@ -945,7 +948,7 @@ const FONT = "Terminess Nerd Font Mono";
 const ICONS = "Gruvbox-Plus-Dark";
 
 // accent-color в GNOME — фиксированный набор; точный цвет задаёт ochre.css
-const GNOME_ACCENTS = { yellow: "yellow", orange: "orange", green: "green", aqua: "teal", blue: "blue", purple: "purple", red: "red" };
+const GNOME_ACCENTS = { ochre: "yellow", yellow: "yellow", orange: "orange", green: "green", aqua: "teal", blue: "blue", purple: "purple", red: "red" };
 
 // пиксели shell → пункты GTK/Qt (96 dpi)
 function fontPt(get) {
@@ -1018,7 +1021,7 @@ function themeFiles(get, home) {
         const off = "/* ochre: синхронизация тем выключена (Mod+S → look/ → темы Qt и GTK) */\n";
         return { "gtk-3.0/ochre.css": off, "gtk-4.0/ochre.css": off };
     }
-    const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
+    const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.ochre;
     const colors = gtkColors(accent);
     const pt = fontPt(get);
     return {

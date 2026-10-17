@@ -58,8 +58,11 @@ Scope {
             readonly property var items: {
                 const q = input.text.trim();
                 if (source === "local")
-                    return Wallpaper.local
-                        .map(p => ({ path: p, thumb: "file://" + encodeURI(p), name: p.slice(p.lastIndexOf("/") + 1), info: "" }))
+                    // фирменные — первыми, в варианте текущего акцента
+                    return Wallpaper.brand
+                        .map((p, i) => ({ path: p, thumb: "file://" + encodeURI(p), name: "ochre/" + Wallpaper.brandNames[i], info: "" }))
+                        .concat(Wallpaper.local
+                        .map(p => ({ path: p, thumb: "file://" + encodeURI(p), name: p.slice(p.lastIndexOf("/") + 1), info: "" })))
                         .filter(it => !q || Fuzzy.match(q, it.name));
                 return remote.map(w => ({ w, path: Wallpaper.localPathFor(w), thumb: w.thumbs.small, name: w.id, info: w.resolution }));
             }

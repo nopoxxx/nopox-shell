@@ -627,6 +627,8 @@ fi
 ff="$HOME/.config/fastfetch/config.jsonc"
 if [ ! -f "$ff" ]; then
     install -Dm644 "$DEST/extras/fastfetch/config.jsonc" "$ff"
+    # логотип — из каталога shell (в конфиге — путь git-установки)
+    sed -i "s#~/.config/quickshell/extras/fastfetch/#$DEST/extras/fastfetch/#" "$ff"
     ok "fastfetch: конфиг ochre"
 fi
 

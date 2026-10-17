@@ -45,7 +45,7 @@ Quickshell перезагружает конфиг при изменении `.q
 
 ```
 shell.qml            корень ShellRoot: Background и Bar на каждый экран, остальные окна по одному
-Theme.qml            синглтон: палитра, accent (из shell.accent), шрифт, fontSize, barHeight, pad
+Theme.qml            синглтон: палитра (+ ochre #d79921 — цвет бренда), accent (из shell.accent, по умолчанию ochre), шрифт, fontSize, barHeight, pad
 T.qml                базовый Text (шрифт/цвет темы, NativeRendering) — использовать вместо Text
 Bar.qml              PanelWindow панели: три BarZone, автоскрытие, floating-стиль, openPopups
 BarZone.qml          Row модулей по списку id; Loader по bar/<file>.qml; разделители между видимыми
@@ -79,7 +79,7 @@ services/            синглтоны (pragma Singleton) и JS-библиот�
   Niri.qml           состояние niri из `niri msg --json event-stream`; action(), focusWorkspace()
   Sys.qml            cpu/mem/net/gpu/temp из /proc и /sys раз в 2 с; user, host, kernel
   Binds.qml          объединённые бинды (config.kdl + ochre/binds.kdl + свои), keys.kdl, validate и откат
-  Wallpaper.qml      текущие обои, режим заполнения, локальная коллекция, wallhaven API, загрузка
+  Wallpaper.qml      текущие обои, режим заполнения, локальная коллекция, фирменные обои (brand, brandPath — вслед за акцентом), wallhaven API, загрузка
   Notifs.qml         NotificationServer: история (до 100), попапы (ListModel ключей), DND, IPC notify
   ShellUpdate.qml    git fetch/pull самого shell, список новых коммитов, перезапуск, обновление greeter
   Updates.qml        число обновлений (checkupdates + paru -Qua) раз в час, запуск paru -Syu
@@ -118,13 +118,16 @@ extras/              не грузится shell'ом; эталонные кон
   bin/ochre          команда пакета: ochre (запуск), ochre ipc …, ochre restart, ochre setup (install.sh --system), ochre greeter
   aur/ochre-git/     PKGBUILD и .install пакета ochre-git (пока не в AUR: makepkg -si); в пакет не попадает
   kitty/ alacritty/ ghostty/ foot/   конфиги терминалов в Gruvbox + Terminess
-  fastfetch/config.jsonc  fastfetch в стиле панели; его же берёт about в меню (с акцентом shell)
+  fastfetch/config.jsonc  fastfetch в стиле панели; его же берёт about в меню (с акцентом shell и логотипом из shell)
+  fastfetch/ochre*.txt    знак ochre для fastfetch: -large (16 строк, по умолчанию), обычный (8), -small; $1 — цвет
+  wallpapers/        фирменные обои 3840×2160: ochre-{horizon,sundown,field,tty}.png, accents/<акцент>-{horizon,sundown,field}.png
   shell/             zshrc, fish_prompt.fish, ochre.fish, bashrc — приглашение как у панели
 install.sh           установщик для Arch (вопросы → итог → установка), см. §10
 LICENSE              GPL-3.0-or-later
 README.md            коротко: что это, установка, главные клавиши, ссылка на документацию
 docs/                документация — GitHub Pages из main /docs (https://nopoxxx.github.io/ochre/)
   index.html         одна страница без сборки: стили и JS внутри, макеты экранов shell нарисованы текстом
+  brand/             знак, лок-ап (шапка README) и favicon — копии из проекта бренда (vectorcraft-project/ochre)
   fonts/             Terminess (Regular/Bold), урезанный pyftsubset до латиницы, кириллицы, псевдографики и пары
                      значков трея (~12 КБ), + LICENSE.txt (OFL); новый символ вне набора — пересобрать подмножество
 ```
@@ -178,7 +181,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `bar` | панель | модули по зонам; панель; prompt; вид модулей (часы, график cpu, трей) |
 | `home` | меню home | секции (показаны / скрыты, порядок); край, ширина, анимация; погода; ночной режим; запись экрана |
 | `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора, анимация, проверить |
-| `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
+| `lock` | блокировка | idle, эхо пароля, часы, фраза под приглашением (motd), обои, предпросмотр, заблокировать |
 | `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; скриншоты; конфиги; ochre (обновить, проверка, перезапуск, greeter) |
 
 Новую настройку кладите туда, где её будут искать; раздел и группу (`header`) поиск тоже учитывает.
@@ -473,6 +476,18 @@ invoke); остальные съезжают на её место (`move` в Col
   Последний пользователь и сессия — `/var/lib/ochre-greeter/.greeter/last`.
   **После изменений в QML greeter git-установки надо переустановить** (`Mod+S → system/ → обновить greeter` или
   `sudo bash extras/install-greeter.sh`); у пакета greeter обновляется вместе с ним (`greeterSeparate`).
+
+### 4.7a Бренд
+
+- Акцент `ochre` (`#d79921`) — первый в `ACCENTS` и по умолчанию; в GNOME — `yellow` (`GNOME_ACCENTS`).
+- Фирменные обои — `extras/wallpapers` (`Wallpaper.brandDir`). sundown/horizon/field — под каждый акцент, у `ochre` —
+  файлы `ochre-*.png` в корне, tty — один. В окне обоев идут первыми (`Wallpaper.brand`, вариант текущего акцента).
+  Стоят фирменные (`brandNameOf(current)`) — смена акцента ставит его вариант (`onAccentChanged`, только когда настройки
+  прочитаны). Файла состояния нет вовсе — первый запуск — ставится horizon. Новые обои бренда класть сюда же
+  с тем же именованием; исходники — в проекте бренда.
+- Слоганы на входе и блокировке — `LoginPrompt.motds` (из BRAND.md), строка под `host kernel (tty1)`, `shell.lock.motd`.
+- fastfetch: логотип `extras/fastfetch/ochre-large.txt`; `about` передаёт его путь явно, install.sh подставляет каталог
+  shell в копию конфига.
 
 ### 4.8 Обновления
 

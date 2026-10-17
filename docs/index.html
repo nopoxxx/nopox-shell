@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ochre — документация</title>
+<link rel="icon" type="image/svg+xml" href="brand/ochre-favicon-32.svg">
 <meta name="description" content="ochre: оболочка рабочего стола для niri на Quickshell в стиле терминала — панель как строка shell, меню как fzf, настройки как menuconfig.">
 <meta name="theme-color" content="#1d2021">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231d2021'/%3E%3Ctext x='2' y='13' font-family='monospace' font-size='13' fill='%23fabd2f'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
@@ -16,12 +17,13 @@
   --bg: #1d2021; --bg0: #282828; --bg1: #3c3836; --bg2: #504945;
   --fg: #ebdbb2; --gray: #928374;
   --red: #fb4934; --green: #b8bb26; --yellow: #fabd2f; --blue: #83a598;
-  --purple: #d3869b; --aqua: #8ec07c; --orange: #fe8019;
-  --accent: var(--yellow);
+  --purple: #d3869b; --aqua: #8ec07c; --orange: #fe8019; --ochre: #d79921;
+  --accent: var(--ochre);
   --font: "Terminess", "Terminess Nerd Font Mono", "Terminus", ui-monospace, "DejaVu Sans Mono", monospace;
   --bar: 2.1rem;
   color-scheme: dark;
 }
+:root[data-accent="yellow"] { --accent: var(--yellow); }
 :root[data-accent="orange"] { --accent: var(--orange); }
 :root[data-accent="green"]  { --accent: var(--green); }
 :root[data-accent="aqua"]   { --accent: var(--aqua); }
@@ -188,7 +190,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <li><a href="#ipc"><span class="mk">▌</span><span class="br">├─ </span><span class="nm">ipc</span></a></li>
     <li><a href="#faq"><span class="mk">▌</span><span class="br">└─ </span><span class="nm">faq</span></a></li>
   </ol>
-  <div class="accent-ctl">акцент: <button id="accentBtn" title="Сменить акцент — как в Mod+S → look/">‹ yellow ›</button></div>
+  <div class="accent-ctl">акцент: <button id="accentBtn" title="Сменить акцент — как в Mod+S → look/">‹ ochre ›</button></div>
 </nav>
 
 <main>
@@ -196,7 +198,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <!-- ─────────────────────────── about ─────────────────────────── -->
 <section class="win" id="about">
   <div class="ttl">~/docs/about</div>
-  <h1>ochre</h1>
+  <h1><img src="brand/ochre-mark.svg" alt="" width="40" height="40" style="vertical-align: -0.35em; margin-right: 1ch"> ochre</h1>
   <p>Оболочка рабочего стола для композитора <a href="https://github.com/YaLTeR/niri">niri</a> на
   <a href="https://quickshell.org">Quickshell</a>, целиком в стиле терминала: панель — строка shell-приглашения,
   меню — <code>fzf</code>, настройки — <code>menuconfig</code>, уведомления — строки лога, блокировка — <code>getty</code>.
@@ -411,13 +413,13 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <div class="mock"><div class="win"><div class="ttl">~/settings/look/</div><span class="row"><span class="c-gray">── shell ─────────────────────────────────</span></span><span class="sel"><span class="c-acc">▌</span> акцентный цвет    <span class="c-gray">yellow →</span> <span class="c-acc b">‹ blue ›</span>  <span class="c-acc b">[↵]</span></span><span class="row">  размер шрифта            16</span><span class="row"><span class="c-gray">── приложения ────────────────────────────</span></span><span class="row">  темы Qt и GTK            <span class="c-green">[*]</span></span><span class="row">  шрифт shell в приложениях <span class="c-green">[*]</span></span><span class="row"><span class="c-gray">── обои ──────────────────────────────────</span></span><span class="row">  выбрать                  <span class="c-gray">…</span></span><span class="row">  заполнение               <span class="c-acc">‹ fill ›</span> <span class="c-acc">*</span></span><span class="row"> </span><span class="hints"><i>↵</i> применить  <i>esc</i> отмена  <i>←→</i> значение  <i>r</i> по умолчанию</span></div></div>
   <div class="tbl"><table>
     <tr><th>раздел</th><th>что внутри</th></tr>
-    <tr><td><code>look/</code></td><td>акцент, размер шрифта, темы Qt и GTK, обои, высота и анимация меню, индикатор громкости и яркости, скорость анимаций</td></tr>
+    <tr><td><code>look/</code></td><td>акцент (<code>ochre</code> — цвет бренда — и 7 цветов Gruvbox), размер шрифта, темы Qt и GTK, обои, высота и анимация меню, индикатор громкости и яркости, скорость анимаций</td></tr>
     <tr><td><code>windows/</code></td><td>отступы, колонки, рамка фокуса, обводка, тени, скругление, прозрачность неактивных, анимации niri: <code>default</code>, <code>snappy</code>, <code>bouncy</code> (пружины) и <code>terminal</code> — окно выводится строками с курсором, закрытое гаснет, как кинескоп</td></tr>
     <tr><td><code>input/</code></td><td>клавиатура и раскладки, <a href="#binds">бинды</a>, мьют микрофона и звука, горячие углы, мышь и тачпад, курсор</td></tr>
     <tr><td><code>bar/</code></td><td>модули по зонам, положение и стиль панели, prompt, часы, график cpu, трей</td></tr>
     <tr><td><code>home/</code></td><td>секции <a href="#home">меню home</a> и их порядок, край, ширина и анимация, погода, ночной режим, запись экрана</td></tr>
     <tr><td><code>notify/</code></td><td>«не беспокоить», положение, время показа, максимум на экране, критичные, анимация и тестовое уведомление</td></tr>
-    <tr><td><code>lock/</code></td><td>блокировка по бездействию, эхо пароля, часы, обои, предпросмотр</td></tr>
+    <tr><td><code>lock/</code></td><td>блокировка по бездействию, эхо пароля, часы, фраза под приглашением, обои, предпросмотр</td></tr>
     <tr><td><code>system/</code></td><td><a href="#monitors">мониторы</a>, сеть, звук, <a href="#apps">приложения</a>, конфиги, обновления shell</td></tr>
   </table></div>
   <p>Анимация меню <kbd>Mod+D</kbd>, меню home и уведомлений выбирается отдельно: <code>slide</code> — выезжает,
@@ -463,6 +465,9 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   <p><kbd>Mod+Shift+W</kbd>: сетка превью локальной коллекции <code>~/Pictures/Wallpapers/</code>, <kbd>Tab</kbd> — поиск на
   <a href="https://wallhaven.cc">wallhaven.cc</a> с бесконечной прокруткой; выбранное скачивается в коллекцию.
   Режимы заполнения fill / fit / stretch, смена — плавная.</p>
+  <p>Первыми в сетке — фирменные обои ochre: <code>horizon</code>, <code>sundown</code>, <code>field</code>, <code>tty</code>.
+  Первые три нарисованы под каждый акцент: пока они стоят, смена акцента в <code>look/</code> меняет и их. При первом запуске
+  стоит <code>horizon</code>.</p>
 </section>
 
 <section class="win" id="apps">
@@ -529,16 +534,20 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   в духе getty. Блокировка проверяет пароль через PAM, greeter — через greetd.</p>
 <div class="mock screen"><span class="clock" id="bigClock"></span>
 
-<span class="c-gray">Arch Linux 6.x (tty1)</span>
+<span class="c-gray">ochre 7.x-arch1-1 (tty1)</span>
+<span class="c-acc">идёт закат…</span>
 
 ochre login: <span class="c-acc">user</span>
 Password: <span class="blink">█</span></div>
-  <p>В greeter сначала вводится имя (подставлено последнее), <kbd>Tab</kbd> — сессия, <kbd>F11</kbd> / <kbd>F12</kbd> — перезагрузка / выключение.</p>
-<pre class="cmd"><code><span class="p">❯ </span>sudo ./extras/install-greeter.sh   <span class="cm"># shell → /usr/share/ochre, niri для greeter, greetd</span>
+  <p>Под приглашением — фраза, как motd в консоли: «с возвращением.», «чайник уже поставлен.», «идёт закат…» — каждый раз другая
+  (выключается в <code>lock/</code>). В greeter сначала вводится имя (подставлено последнее), <kbd>Tab</kbd> — сессия,
+  <kbd>F11</kbd> / <kbd>F12</kbd> — перезагрузка / выключение.</p>
+<pre class="cmd"><code><span class="p">❯ </span>sudo bash extras/install-greeter.sh   <span class="cm"># greeter (git-установка → /usr/local/share/ochre), niri для него, greetd; у пакета — ochre greeter</span>
 <span class="p">❯ </span>sudo systemctl restart greetd</code></pre>
   <p>Greeter работает под пользователем <code>greeter</code> и не видит вашу домашнюю папку — поэтому сессия копирует настройки
   и обои в <code>/var/lib/ochre-greeter/&lt;user&gt;/</code>, и greeter выглядит как shell последнего вошедшего.
-  После обновления shell greeter переустанавливается отдельно: <code>system/</code> → <code>обновить greeter</code>.</p>
+  После обновления git-установки greeter переустанавливается отдельно: <code>system/</code> → <code>обновить greeter</code>;
+  у пакета он обновляется вместе с ним.</p>
 </section>
 
 <!-- ─────────────────────────── notify ─────────────────────────── -->
@@ -663,11 +672,11 @@ Password: <span class="blink">█</span></div>
   const root = document.documentElement;
 
   // ── акцент: как в Mod+S → look/, запоминается в браузере ──
-  const ACCENTS = ["yellow", "orange", "green", "aqua", "blue", "purple", "red"];
+  const ACCENTS = ["ochre", "yellow", "orange", "green", "aqua", "blue", "purple", "red"];
   const btn = document.getElementById("accentBtn");
-  let accent = "yellow";
-  try { accent = localStorage.getItem("ochre-docs-accent") || "yellow"; } catch (e) {}
-  if (!ACCENTS.includes(accent)) accent = "yellow";
+  let accent = "ochre";
+  try { accent = localStorage.getItem("ochre-docs-accent") || "ochre"; } catch (e) {}
+  if (!ACCENTS.includes(accent)) accent = "ochre";
   const applyAccent = () => {
     root.dataset.accent = accent;
     btn.textContent = "‹ " + accent + " ›";

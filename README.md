@@ -1,4 +1,8 @@
+<p align="center"><img src="docs/brand/ochre-lockup-horizontal.svg" alt="ochre" width="520"></p>
+
 # ochre
+
+*тёплая терминальная оболочка для niri*
 
 Оболочка рабочего стола для [niri](https://github.com/YaLTeR/niri) на [Quickshell](https://quickshell.org) в стиле терминала:
 панель — строка shell, меню — fzf, настройки — menuconfig. Палитра Gruvbox, шрифт Terminess.
