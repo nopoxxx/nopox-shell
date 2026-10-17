@@ -24,20 +24,20 @@ Scope {
     }
 
 
-    // готовые действия nopox — в подсказках первыми
+    // готовые действия ochre — в подсказках первыми
     readonly property var presets: [
-        { name: 'spawn "qs" "ipc" "call" "launcher" "toggle"', desc: "nopox: меню" },
-        { name: 'spawn "qs" "ipc" "call" "launcher" "apps"', desc: "nopox: программы" },
-        { name: 'spawn "qs" "ipc" "call" "settings" "toggle"', desc: "nopox: настройки" },
-        { name: 'spawn "qs" "ipc" "call" "wallpaper" "picker"', desc: "nopox: обои" },
-        { name: 'spawn "qs" "ipc" "call" "clipboard" "toggle"', desc: "nopox: история буфера обмена" },
-        { name: 'spawn "qs" "ipc" "call" "home" "toggle"', desc: "nopox: меню home" },
-        { name: 'spawn "qs" "ipc" "call" "record" "toggle"', desc: "nopox: запись экрана — начать / остановить" },
-        { name: 'spawn "qs" "ipc" "call" "lock" "lock"', desc: "nopox: блокировка" },
-        { name: 'spawn "qs" "ipc" "call" "notify" "dnd"', desc: "nopox: не беспокоить" },
-        { name: 'spawn "qs" "ipc" "call" "displays" "toggle"', desc: "nopox: мониторы" },
-        { name: 'spawn "qs" "ipc" "call" "shot" "region"', desc: "nopox: скриншот с разметкой" },
-        { name: 'spawn "qs" "ipc" "call" "shot" "window"', desc: "nopox: скриншот окна" },
+        { name: 'spawn "qs" "ipc" "call" "launcher" "toggle"', desc: "ochre: меню" },
+        { name: 'spawn "qs" "ipc" "call" "launcher" "apps"', desc: "ochre: программы" },
+        { name: 'spawn "qs" "ipc" "call" "settings" "toggle"', desc: "ochre: настройки" },
+        { name: 'spawn "qs" "ipc" "call" "wallpaper" "picker"', desc: "ochre: обои" },
+        { name: 'spawn "qs" "ipc" "call" "clipboard" "toggle"', desc: "ochre: история буфера обмена" },
+        { name: 'spawn "qs" "ipc" "call" "home" "toggle"', desc: "ochre: меню home" },
+        { name: 'spawn "qs" "ipc" "call" "record" "toggle"', desc: "ochre: запись экрана — начать / остановить" },
+        { name: 'spawn "qs" "ipc" "call" "lock" "lock"', desc: "ochre: блокировка" },
+        { name: 'spawn "qs" "ipc" "call" "notify" "dnd"', desc: "ochre: не беспокоить" },
+        { name: 'spawn "qs" "ipc" "call" "displays" "toggle"', desc: "ochre: мониторы" },
+        { name: 'spawn "qs" "ipc" "call" "shot" "region"', desc: "ochre: скриншот с разметкой" },
+        { name: 'spawn "qs" "ipc" "call" "shot" "window"', desc: "ochre: скриншот окна" },
         { name: "spawn kitty", desc: "запустить программу: spawn <команда> [аргументы]" },
         { name: "off", desc: "отключить сочетание" }
     ]
@@ -54,7 +54,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-binds"
+            WlrLayershell.namespace: "ochre-binds"
 
             readonly property int rows: 14
 
@@ -222,7 +222,7 @@ Scope {
                         visible: !Binds.included
                         wrapMode: Text.Wrap
                         textFormat: Text.StyledText
-                        text: `<font color="${Theme.yellow}">! в config.kdl нет include "nopox/keys.kdl" — свои бинды не применятся.</font> `
+                        text: `<font color="${Theme.yellow}">! в config.kdl нет include "ochre/keys.kdl" — свои бинды не применятся.</font> `
                             + `<font color="${Theme.accent}">[подключить]</font>`
 
                         MouseArea {
@@ -267,7 +267,7 @@ Scope {
                                     text: Fuzzy.highlight(line.b.combo, line.modelData.pos, Theme.orange)
                                     color: line.b.off ? Theme.gray : Theme.blue
                                     font.bold: line.current
-                                    font.strikeout: line.b.off === true   // у биндов config и nopox поля off нет
+                                    font.strikeout: line.b.off === true   // у биндов config и ochre поля off нет
                                 }
                                 T {
                                     Layout.fillWidth: true
@@ -277,7 +277,7 @@ Scope {
                                     color: line.b.off ? Theme.gray : line.current ? Theme.fg : Qt.darker(Theme.fg, 1.15)
                                 }
                                 T {
-                                    text: "  " + ({ config: "config", nopox: "nopox", own: "своё", changed: "изменено" })[line.b.source]
+                                    text: "  " + ({ config: "config", ochre: "ochre", own: "своё", changed: "изменено" })[line.b.source]
                                     color: line.b.source === "changed" || line.b.source === "own" ? Theme.accent : Theme.gray
                                 }
                             }

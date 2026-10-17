@@ -15,7 +15,7 @@ TuiPopup {
 
     T {
         visible: ShellUpdate.behind === 0 && !ShellUpdate.error
-        text: ShellUpdate.checking ? "проверка…" : "nopox-shell актуален"
+        text: ShellUpdate.checking ? "проверка…" : "ochre актуален"
         color: Theme.gray
     }
 

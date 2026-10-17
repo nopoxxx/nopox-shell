@@ -112,7 +112,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-lock-preview"
+            WlrLayershell.namespace: "ochre-lock-preview"
             color: Theme.bg
 
             Image {

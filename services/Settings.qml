@@ -4,26 +4,28 @@ import Quickshell.Io
 import QtQuick
 import "settings.js" as S
 
-// Настройки nopox: ~/.config/nopox/settings.json (только отличия от умолчаний)
-// и сгенерированные из них файлы ~/.config/niri/nopox/*.kdl — по файлу на раздел.
-// В greeter (NOPOX_GREETER=1) — только чтение копии настроек пользователя profile
-// из /var/lib/nopox-greeter/<user>/, её туда кладёт GreeterSync из сессии пользователя.
+// Настройки ochre: ~/.config/ochre/settings.json (только отличия от умолчаний)
+// и сгенерированные из них файлы ~/.config/niri/ochre/*.kdl — по файлу на раздел.
+// В greeter (OCHRE_GREETER=1) — только чтение копии настроек пользователя profile
+// из /var/lib/ochre-greeter/<user>/, её туда кладёт GreeterSync из сессии пользователя.
 Singleton {
     id: root
 
-    readonly property bool greeterMode: Quickshell.env("NOPOX_GREETER") === "1"
+    readonly property bool greeterMode: Quickshell.env("OCHRE_GREETER") === "1"
     property string profile: ""
     readonly property string file: greeterMode
-        ? (profile ? "/var/lib/nopox-greeter/" + profile + "/settings.json" : "")
-        : Quickshell.env("HOME") + "/.config/nopox/settings.json"
-    readonly property string niriDir: Quickshell.env("HOME") + "/.config/niri/nopox"
+        ? (profile ? "/var/lib/ochre-greeter/" + profile + "/settings.json" : "")
+        : Quickshell.env("HOME") + "/.config/ochre/settings.json"
+    readonly property string niriDir: Quickshell.env("HOME") + "/.config/niri/ochre"
+    // переезд с nopox-shell на ochre (rename) закончен — до этого файлы по новым путям не читаем и не пишем
+    property bool renamed: greeterMode
 
     property var values: ({})
     property bool loaded: false
     // settings.json есть, но не читается (битый, пустой, нет прав): работаем на умолчаниях и ничего
     // не пишем — иначе первое же сохранение затрёт все настройки, вместе со своими биндами
     property bool broken: false
-    // можно писать файлы по настройкам (settings.json, nopox/*.kdl, темы) — проверять перед любой записью
+    // можно писать файлы по настройкам (settings.json, ochre/*.kdl, темы) — проверять перед любой записью
     readonly property bool writable: loaded && !greeterMode && !broken
     property int _retries: 0
     property var outputs: []
@@ -133,7 +135,66 @@ Singleton {
         writer.running = true;
     }
 
-    Component.onCompleted: if (!greeterMode) Quickshell.execDetached(["mkdir", "-p", file.slice(0, file.lastIndexOf("/")), niriDir])
+    Component.onCompleted: if (!greeterMode) rename.running = true
+
+    // Переезд nopox-shell → ochre (один раз, у тех, кто ставил shell под старым именем):
+    // ~/.config/nopox → ochre, ~/.local/state/nopox → ochre, ~/.config/niri/nopox → ochre и include в config.kdl
+    // (не прошёл niri validate, хотя до замены проходил, — config.kdl как был), старые файлы тем GTK/Qt/btop,
+    // conf.d/nopox.fish и адрес репозитория в git-клоне shell. Новое не затирается: cp -n.
+    Process {
+        id: rename
+        command: ["sh", "-c", `
+            h=$HOME; n=$h/.config/niri; did=""
+            movedir() { [ -d "$1" ] || return 1; mkdir -p "$2" && cp -an "$1"/. "$2"/ && rm -rf "$1"; }
+            movedir "$h/.config/nopox" "$h/.config/ochre" && did="$did settings"
+            movedir "$h/.local/state/nopox" "$h/.local/state/ochre"
+            if [ -d "$n/nopox" ]; then
+                mkdir -p "$n/ochre" && cp -an "$n/nopox"/. "$n/ochre"/
+                ok=1
+                if [ -f "$n/config.kdl" ] && grep -qE '^include "nopox/(main|keys)\.kdl"' "$n/config.kdl"; then
+                    niri validate -c "$n/config.kdl" >/dev/null 2>&1 && was=1 || was=0
+                    cp "$n/config.kdl" "$n/config.kdl.bak-ochre"
+                    sed -i -e 's#^include "nopox/main\.kdl"#include "ochre/main.kdl"#' \
+                           -e 's#^include "nopox/keys\.kdl"#include "ochre/keys.kdl"#' \
+                           -e 's#^// >>> nopox-shell >>>#// >>> ochre >>>#' -e 's#^// <<< nopox-shell <<<#// <<< ochre <<<#' "$n/config.kdl"
+                    if [ $was = 1 ] && ! niri validate -c "$n/config.kdl" >/dev/null 2>&1; then
+                        mv -f "$n/config.kdl.bak-ochre" "$n/config.kdl"; ok=0
+                    fi
+                fi
+                if [ $ok = 1 ]; then rm -rf "$n/nopox"; did="$did niri"; else echo NIRIFAIL; fi
+            fi
+            for v in gtk-3.0 gtk-4.0; do
+                f=$h/.config/$v/gtk.css
+                [ -f "$f" ] && grep -q '^@import "nopox.css";$' "$f" && sed -i '/^@import "nopox.css";$/d' "$f"
+                rm -f "$h/.config/$v/nopox.css"
+            done
+            rm -f "$h/.config/qt6ct/colors/nopox.conf" "$h/.config/btop/themes/nopox.theme"
+            fd=$h/.config/fish/conf.d
+            if [ -f "$fd/nopox.fish" ]; then [ -e "$fd/ochre.fish" ] || cp "$fd/nopox.fish" "$fd/ochre.fish"; rm -f "$fd/nopox.fish"; fi
+            if u=$(git -C "$1" remote get-url origin 2>/dev/null) && [ "$u" != "\${u#*nopoxxx/nopox-shell}" ]; then
+                git -C "$1" remote set-url origin "$(printf '%s' "$u" | sed 's#nopoxxx/nopox-shell#nopoxxx/ochre#')"
+            fi
+            # greeter ставится через sudo — только напомнить, и один раз, вместе с переездом
+            [ -n "$did" ] && [ -d /usr/share/nopox-shell ] && [ ! -d /usr/share/ochre ] && did="$did greeter"
+            mkdir -p "$h/.config/ochre" "$n/ochre"
+            [ -n "$did" ] && echo "DID$did"
+            exit 0`, "sh", Quickshell.shellDir]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const out = this.text;
+                if (out.includes("NIRIFAIL"))
+                    Quickshell.execDetached(["notify-send", "-a", "ochre", "-u", "critical", "ochre: config.kdl не переведён",
+                        "После замены include \"nopox/…\" на \"ochre/…\" niri validate не проходит — config.kdl оставлен как был. "
+                        + "Поправьте include в ~/.config/niri/config.kdl вручную (Mod+S → system/ → niri)."]);
+                const did = (out.match(/^DID(.*)$/m) ?? ["", ""])[1].trim().split(" ").filter(x => x);
+                if (did.length)
+                    Quickshell.execDetached(["notify-send", "-a", "ochre", "nopox-shell теперь ochre",
+                        "Настройки — ~/.config/ochre, конфиг niri — ~/.config/niri/ochre."
+                        + (did.includes("greeter") ? " Greeter стоит под старым именем — обновите его: Mod+S → system/ → обновить greeter." : "")]);
+            }
+        }
+        onExited: root.renamed = true
+    }
 
     // небольшая задержка: стрелкой можно пролистать несколько значений подряд, а niri перечитает конфиг один раз
     Timer {
@@ -148,7 +209,7 @@ Singleton {
 
     FileView {
         id: json
-        path: root.file
+        path: root.renamed ? root.file : ""
         atomicWrites: true   // через временный файл: при падении или перезапуске qs файл не останется наполовину
         onLoaded: {
             let v = null;
@@ -194,7 +255,7 @@ Singleton {
         loaded = true;
         console.warn("settings.json не прочитан (" + why + ") — работаю на умолчаниях, сохранение выключено");
         if (!greeterMode)
-            Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "-u", "critical", "Настройки не прочитаны",
+            Quickshell.execDetached(["notify-send", "-a", "ochre", "-u", "critical", "Настройки не прочитаны",
                 file + ": " + why + ". Shell работает на умолчаниях и ничего не сохраняет, чтобы не затереть файл. "
                 + "Исправьте или удалите его и перезапустите shell."]);
     }
@@ -212,25 +273,25 @@ Singleton {
         }
     }
 
-    // Старая схема (до разбиения): nopox.kdl, nopox-binds.kdl, nopox-keys.kdl рядом с config.kdl.
-    // Переводим include на nopox/…, проверяем niri validate и только тогда удаляем старые файлы;
+    // Самая старая схема (до разбиения, ещё под именем nopox): nopox.kdl, nopox-binds.kdl, nopox-keys.kdl рядом
+    // с config.kdl. Переводим include на ochre/…, проверяем niri validate и только тогда удаляем старые файлы;
     // если не прошло — возвращаем config.kdl как был.
     Process {
         id: migrate
         command: ["sh", "-c", `
             cd "$1/.." || exit 0
             [ -f config.kdl ] && grep -qE '^include "nopox(-binds|-keys)?\.kdl"' config.kdl || exit 0
-            cp config.kdl config.kdl.bak-nopox-split
-            sed -i -e 's#^include "nopox\.kdl"#include "nopox/main.kdl"#' \
+            cp config.kdl config.kdl.bak-ochre-split
+            sed -i -e 's#^include "nopox\.kdl"#include "ochre/main.kdl"#' \
                    -e '/^include "nopox-binds\.kdl"/d' \
-                   -e 's#^include "nopox-keys\.kdl"#include "nopox/keys.kdl"#' config.kdl
+                   -e 's#^include "nopox-keys\.kdl"#include "ochre/keys.kdl"#' config.kdl
             # main.kdl уже подключает binds.kdl; keys.kdl мог ещё не успеть записаться — пустой на время проверки
             [ -f "$1/keys.kdl" ] || printf 'binds {\\n}\\n' > "$1/keys.kdl"
             if niri validate -c config.kdl >/dev/null 2>&1; then
                 rm -f nopox.kdl nopox-binds.kdl nopox-keys.kdl
-                notify-send -a nopox-shell "Настройки niri разложены по файлам" "~/.config/niri/nopox/ — input, displays, layout, window-rules, …"
+                notify-send -a ochre "Настройки niri разложены по файлам" "~/.config/niri/ochre/ — input, displays, layout, window-rules, …"
             else
-                mv -f config.kdl.bak-nopox-split config.kdl
+                mv -f config.kdl.bak-ochre-split config.kdl
             fi`, "sh", root.niriDir]
     }
 

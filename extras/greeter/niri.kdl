@@ -1,5 +1,5 @@
-// niri для greeter nopox-shell — только окно входа.
-// greetd: [default_session] command = "niri -c /etc/greetd/nopox-niri.kdl", user = "greeter"
+// niri для greeter ochre — только окно входа.
+// greetd: [default_session] command = "niri -c /etc/greetd/ochre-niri.kdl", user = "greeter"
 
 hotkey-overlay {
     skip-at-startup
@@ -23,7 +23,7 @@ layout {
 
 // когда greeter передал управление сессии, quickshell выходит — закрываем niri,
 // и greetd запускает выбранную сессию
-spawn-at-startup "sh" "-c" "NOPOX_GREETER=1 qs -p /usr/share/nopox-shell/greeter.qml; niri msg action quit --skip-confirmation"
+spawn-at-startup "sh" "-c" "OCHRE_GREETER=1 qs -p /usr/share/ochre/greeter.qml; niri msg action quit --skip-confirmation"
 
 binds {
 }

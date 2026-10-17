@@ -8,7 +8,7 @@ Singleton {
     id: root
 
     readonly property string dir: Quickshell.env("HOME") + "/Pictures/Wallpapers"
-    readonly property string stateFile: Quickshell.env("HOME") + "/.local/state/nopox/wallpaper"
+    readonly property string stateFile: Quickshell.env("HOME") + "/.local/state/ochre/wallpaper"
 
     property string current: ""
     property string fill: "fill"           // fill | fit | stretch
@@ -83,13 +83,14 @@ Singleton {
 
     FileView {
         id: state
-        path: root.stateFile
+        // после переезда с nopox-shell: ~/.local/state/nopox → ochre (Settings.renamed)
+        path: Settings.renamed ? root.stateFile : ""
         onLoaded: root.current = text().trim()
     }
 
     FileView {
         id: fillState
-        path: root.stateFile + "-fill"
+        path: Settings.renamed ? root.stateFile + "-fill" : ""
         onLoaded: {
             const m = text().trim();
             if (root.fillModes.includes(m)) root.fill = m;

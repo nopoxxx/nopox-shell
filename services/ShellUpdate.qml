@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// Обновления самого nopox-shell: если папка конфига — git-клон, периодически делает
+// Обновления самого ochre: если папка конфига — git-клон, периодически делает
 // `git fetch` и сравнивает с upstream; update() — `git pull --ff-only` и перезапуск shell.
 // Для приватного репозитория git должен уметь авторизоваться (например, `gh auth setup-git`).
 Singleton {
@@ -19,7 +19,8 @@ Singleton {
     readonly property int behind: commits.length
     property string error: ""
     property bool updated: false        // уже обновились в этом запуске — напомнить про greeter
-    readonly property bool greeterInstalled: greeterCheck.text().length > 0
+    // в том числе под старым именем (nopox-shell): его тоже обновляет install-greeter.sh
+    readonly property bool greeterInstalled: greeterCheck.text().length > 0 || legacyGreeter.text().length > 0
 
     // force — проверить, даже если автопроверка выключена в настройках
     function check(force) {
@@ -40,7 +41,7 @@ Singleton {
     // Уведомление — уже новому shell: старый вместе с историей уведомлений закрывается.
     function restartShell(title, body) {
         Quickshell.execDetached(["sh", "-c",
-            'sleep 0.5; pkill -x qs; sleep 0.5; niri msg action spawn -- qs; sleep 3; [ -n "$1" ] && notify-send -a nopox-shell "$1" "$2"',
+            'sleep 0.5; pkill -x qs; sleep 0.5; niri msg action spawn -- qs; sleep 3; [ -n "$1" ] && notify-send -a ochre "$1" "$2"',
             "sh", title ?? "", body ?? ""]);
     }
 
@@ -51,6 +52,12 @@ Singleton {
     // файл-маркер: greeter установлен из этого shell
     FileView {
         id: greeterCheck
+        path: "/usr/share/ochre/greeter.qml"
+        printErrors: false
+    }
+
+    FileView {
+        id: legacyGreeter
         path: "/usr/share/nopox-shell/greeter.qml"
         printErrors: false
     }
@@ -60,8 +67,8 @@ Singleton {
         command: ["sh", "-c", `
             cd "$1" 2>/dev/null && git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo NOREPO; exit 0; }
             up=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null) || { echo NOUPSTREAM; exit 0; }
-            GIT_TERMINAL_PROMPT=0 git fetch --quiet 2>/tmp/nopox-shell-fetch.$$ || { echo "FETCHFAIL $(tail -1 /tmp/nopox-shell-fetch.$$)"; rm -f /tmp/nopox-shell-fetch.$$; exit 0; }
-            rm -f /tmp/nopox-shell-fetch.$$
+            GIT_TERMINAL_PROMPT=0 git fetch --quiet 2>/tmp/ochre-fetch.$$ || { echo "FETCHFAIL $(tail -1 /tmp/ochre-fetch.$$)"; rm -f /tmp/ochre-fetch.$$; exit 0; }
+            rm -f /tmp/ochre-fetch.$$
             echo "UP $up"
             [ -n "$(git status --porcelain --untracked-files=no)" ] && echo DIRTY
             git log --format='C %h%x09%s' "HEAD..$up"`,
@@ -87,8 +94,8 @@ Singleton {
                 root.commits = commits;
                 root.checking = false;
                 if (prev === 0 && commits.length > 0 && Settings.get("shell.update.notify"))
-                    Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "Доступно обновление nopox-shell",
-                        commits.length + " новых коммитов в " + root.upstream + " — клик по nopox ↑ на панели"]);
+                    Quickshell.execDetached(["notify-send", "-a", "ochre", "Доступно обновление ochre",
+                        commits.length + " новых коммитов в " + root.upstream + " — клик по ochre ↑ на панели"]);
             }
         }
     }
@@ -105,7 +112,7 @@ Singleton {
             }
             root.commits = [];
             root.updated = true;
-            root.restartShell("nopox-shell обновлён",
+            root.restartShell("ochre обновлён",
                 root.greeterInstalled ? "Greeter обновляется отдельно: Mod+S → system/ → обновить greeter" : "");
         }
     }

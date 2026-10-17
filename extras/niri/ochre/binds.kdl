@@ -1,5 +1,5 @@
-// nopox: клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl
-// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.
+// ochre: клавиши ochre и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl
+// Сгенерировано ochre (Mod+S) из ~/.config/ochre/settings.json — ручные правки перезапишутся.
 // Свои настройки пишите в ~/.config/niri/config.kdl.
 
 spawn-at-startup "qs"

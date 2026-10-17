@@ -9,8 +9,8 @@ import qs.services
 //          ...                                    (tty-clock)
 //               пятница, 16 октября 2026
 //
-//     nopox-os 7.2.9-arch1-1 (tty1)
-//     nopox-os login: nopox
+//     ochre 7.2.9-arch1-1 (tty1)
+//     ochre login: user
 //     Password: ****█
 //     session: Niri
 //     Login incorrect

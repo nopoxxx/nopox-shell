@@ -1,0 +1,7 @@
+// ochre: курсор
+// Сгенерировано ochre (Mod+S) из ~/.config/ochre/settings.json — ручные правки перезапишутся.
+// Свои настройки пишите в ~/.config/niri/config.kdl.
+
+cursor {
+    xcursor-size 24
+}

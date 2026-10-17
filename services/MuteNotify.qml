@@ -59,7 +59,7 @@ Singleton {
             [ -n "$1" ] && gdbus call --session --dest org.freedesktop.Notifications \\
                 --object-path /org/freedesktop/Notifications \\
                 --method org.freedesktop.Notifications.CloseNotification "$1" >/dev/null 2>&1
-            notify-send -p -a nopox-shell -t 2000 -i "$4" -h boolean:transient:true -- "$2" "$3"`,
+            notify-send -p -a ochre -t 2000 -i "$4" -h boolean:transient:true -- "$2" "$3"`,
             "sh", lastId].concat(queued);   // id — на момент отправки: прошлый send мог только что закончиться
         queued = null;
         sender.running = true;

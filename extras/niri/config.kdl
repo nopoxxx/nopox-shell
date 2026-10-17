@@ -6,10 +6,10 @@
 // Input device configuration.
 // Find the full list of options on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Input
-// Настройки nopox живут в ~/.config/niri/nopox/ — по файлу на раздел: input, displays, layout,
-// window-rules, cursor, animations, misc, binds. Их генерирует shell из ~/.config/nopox/settings.json
+// Настройки ochre живут в ~/.config/niri/ochre/ — по файлу на раздел: input, displays, layout,
+// window-rules, cursor, animations, misc, binds. Их генерирует shell из ~/.config/ochre/settings.json
 // (окно настроек Mod+S), поэтому этих секций здесь нет. Свои настройки пишите в этот файл.
-include "nopox/main.kdl"
+include "ochre/main.kdl"
 
 // You can configure outputs by their name, which you can find
 // by running `niri msg outputs` while inside a niri instance.
@@ -259,7 +259,7 @@ binds {
     // To avoid scrolling through workspaces really fast, you can use
     // the cooldown-ms property. The bind will be rate-limited to this value.
     // You can set a cooldown on any bind, but it's most useful for the wheel.
-    // nopox: колёсико с Mod листает окна (вниз — следующее), с Mod+Shift — рабочие столы
+    // ochre: колёсико с Mod листает окна (вниз — следующее), с Mod+Shift — рабочие столы
     Mod+WheelScrollDown      { focus-column-right; }
     Mod+WheelScrollUp        { focus-column-left; }
     Mod+Ctrl+WheelScrollDown { move-column-right; }
@@ -371,7 +371,7 @@ binds {
 
     // Move the focused window between the floating and the tiling layout.
     Mod+V       { toggle-window-floating; }
-    Mod+Ctrl+V  { switch-focus-between-floating-and-tiling; }   // Mod+Shift+V — история буфера nopox
+    Mod+Ctrl+V  { switch-focus-between-floating-and-tiling; }   // Mod+Shift+V — история буфера ochre
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,
@@ -386,7 +386,7 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    // Mod+Shift+S и Print — скриншот nopox с разметкой (nopox/binds.kdl); здесь — встроенные niri
+    // Mod+Shift+S и Print — скриншот ochre с разметкой (ochre/binds.kdl); здесь — встроенные niri
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 
@@ -409,5 +409,5 @@ binds {
     Mod+Shift+P { power-off-monitors; }
 }
 
-// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные
-include "nopox/keys.kdl"
+// свои бинды из окна биндов ochre — последними, чтобы перекрывать остальные
+include "ochre/keys.kdl"

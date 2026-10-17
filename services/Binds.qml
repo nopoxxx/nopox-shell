@@ -4,8 +4,8 @@ import Quickshell.Io
 import QtQuick
 import "settings.js" as S
 
-// Бинды niri: что действует сейчас (config.kdl + nopox/binds.kdl + свои) и свои изменения.
-// Свои хранятся в настройке niri.keys и генерируются в ~/.config/niri/nopox/keys.kdl,
+// Бинды niri: что действует сейчас (config.kdl + ochre/binds.kdl + свои) и свои изменения.
+// Свои хранятся в настройке niri.keys и генерируются в ~/.config/niri/ochre/keys.kdl,
 // который подключается в config.kdl последним — поэтому перекрывает одноимённые бинды.
 // После записи — niri validate; если конфиг не прошёл, изменение откатывается.
 Singleton {
@@ -16,18 +16,18 @@ Singleton {
 
     property string configText: ""
     property var configBinds: []
-    property var nopoxBinds: []
+    property var ochreBinds: []
     property var actions: []          // [{ name, desc }] из niri msg action --help
     property string error: ""
     property var _prevKeys: null      // до последнего изменения — для отката
 
-    readonly property bool included: /^\s*include\s+"nopox\/keys\.kdl"/m.test(configText)
+    readonly property bool included: /^\s*include\s+"ochre\/keys\.kdl"/m.test(configText)
 
-    // действующие бинды: config.kdl, поверх — nopox/binds.kdl, поверх — свои
+    // действующие бинды: config.kdl, поверх — ochre/binds.kdl, поверх — свои
     readonly property var all: {
         const map = {};
         for (const b of configBinds) map[S.comboKey(b.combo)] = Object.assign({}, b);
-        for (const b of nopoxBinds) map[S.comboKey(b.combo)] = Object.assign({}, b);
+        for (const b of ochreBinds) map[S.comboKey(b.combo)] = Object.assign({}, b);
         for (const k in keys) {
             const own = keys[k];
             const base = map[k] ?? null;
@@ -108,7 +108,7 @@ Singleton {
         const k = Object.assign({}, keys);
         const oldK = S.comboKey(oldCombo);
         if (oldCombo && oldK !== S.comboKey(combo)) {
-            const fromConfig = [...configBinds, ...nopoxBinds].some(b => S.comboKey(b.combo) === oldK);
+            const fromConfig = [...configBinds, ...ochreBinds].some(b => S.comboKey(b.combo) === oldK);
             if (fromConfig) k[oldK] = { combo: oldCombo, action: "off", title: "" };
             else delete k[oldK];
         }
@@ -124,7 +124,7 @@ Singleton {
         set(k);
     }
 
-    // для старых установок: в config.kdl ещё нет include "nopox/keys.kdl"
+    // для старых установок: в config.kdl ещё нет include "ochre/keys.kdl"
     function ensureIncluded() {
         includer.running = true;
     }
@@ -159,16 +159,16 @@ Singleton {
     }
 
     FileView {
-        id: nopoxFile
-        path: Settings.greeterMode ? "" : root.dir + "/nopox/binds.kdl"
+        id: ochreFile
+        path: Settings.greeterMode || !Settings.renamed ? "" : root.dir + "/ochre/binds.kdl"
         watchChanges: true
         onFileChanged: reload()
-        onLoaded: root.nopoxBinds = S.parseBinds(text(), "nopox")
+        onLoaded: root.ochreBinds = S.parseBinds(text(), "ochre")
     }
 
     FileView {
         id: keysFile
-        path: Settings.greeterMode ? "" : root.dir + "/nopox/keys.kdl"
+        path: Settings.greeterMode || !Settings.renamed ? "" : root.dir + "/ochre/keys.kdl"
     }
 
     // niri перечитывает конфиг сам; проверяем, что новый вариант корректен
@@ -202,7 +202,7 @@ Singleton {
 
     Process {
         id: includer
-        command: ["sh", "-c", 'grep -q "^include \\"nopox/keys.kdl\\"" "$1/config.kdl" || printf "\\n// свои бинды из окна биндов nopox — последними, чтобы перекрывать остальные\\ninclude \\"nopox/keys.kdl\\"\\n" >> "$1/config.kdl"', "sh", root.dir]
+        command: ["sh", "-c", 'grep -q "^include \\"ochre/keys.kdl\\"" "$1/config.kdl" || printf "\\n// свои бинды из окна биндов ochre — последними, чтобы перекрывать остальные\\ninclude \\"ochre/keys.kdl\\"\\n" >> "$1/config.kdl"', "sh", root.dir]
     }
 
     Process {

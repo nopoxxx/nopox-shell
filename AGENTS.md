@@ -1,4 +1,4 @@
-# nopox-shell — описание проекта для агентов
+# ochre — описание проекта для агентов
 
 > **Правило для любого агента и человека, меняющего проект:**
 > этот файл — карта проекта. **Любое изменение кода, которое делает описание здесь неверным или неполным,
@@ -10,14 +10,15 @@
 
 ## 1. Что это
 
-Оболочка рабочего стола для композитора **niri** (Wayland), написанная на **Quickshell** (QML + JS).
+**ochre** (раньше — nopox-shell) — оболочка рабочего стола для композитора **niri** (Wayland), написанная на **Quickshell** (QML + JS).
+Имя пишется строчными; брендинг (знак, цвета, слоганы) — отдельно, в проекте `vectorcraft-project/ochre` (`BRAND.md`).
 Весь интерфейс стилизован под терминал: панель — строка shell-приглашения, меню — fzf,
 настройки — menuconfig, уведомления — строки лога, блокировка — getty. Палитра Gruvbox dark hard,
 шрифт `Terminess Nerd Font Mono`. Целевая система — Arch Linux и производные (pacman, paru).
 
 - Язык интерфейса, комментариев, README и документации — **русский**. Сообщения коммитов — **английский**,
   формат `Area: what changed` (например `Binds window: …`, `install.sh: …`).
-- Репозиторий: `https://github.com/nopoxxx/nopox-shell`, ветка `main`.
+- Репозиторий: `https://github.com/nopoxxx/ochre`, ветка `main`.
 - Установлен у пользователя как git-клон в `~/.config/quickshell` (Quickshell грузит `shell.qml` оттуда).
 - Сборки, тестов и линтера нет. Проверка — запуск в живой сессии niri.
 
@@ -27,7 +28,7 @@
 pkill -x qs; niri msg action spawn -- qs   # перезапустить shell (так же делает Mod+S → system/ → перезапустить shell)
 qs ipc call <target> <function>             # дёрнуть IPC (таблица в §6)
 niri validate -c ~/.config/niri/config.kdl  # проверить сгенерированный конфиг niri
-NOPOX_GREETER=1 qs -p /usr/share/nopox-shell/greeter.qml   # greeter (обычно запускает greetd)
+OCHRE_GREETER=1 qs -p /usr/share/ochre/greeter.qml   # greeter (обычно запускает greetd)
 ```
 
 Из SSH (вне сессии) `qs ipc`/`qs list` экземпляр не видят — ищут на своём Wayland-дисплее:
@@ -45,18 +46,18 @@ T.qml                базовый Text (шрифт/цвет темы, NativeRe
 Bar.qml              PanelWindow панели: три BarZone, автоскрытие, floating-стиль, openPopups
 BarZone.qml          Row модулей по списку id; Loader по bar/<file>.qml; разделители между видимыми
 TuiPopup.qml         PopupWindow в TUI-рамке с заголовком [ title ] — база всех попапов панели
-Background.qml       обои на слое Background (namespace nopox-wallpaper), плавная смена, fill/fit/stretch
+Background.qml       обои на слое Background (namespace ochre-wallpaper), плавная смена, fill/fit/stretch
 Launcher.qml         меню Mod+D — только действия: apps/ wallpaper setup packages/ system/ about; провайдеры, нечёткий поиск, поиск по всему меню из корня, калькулятор `=`
 WallPicker.qml       выбор обоев: local и wallhaven, сетка превью, бесконечная прокрутка
 HomePanel.qml        меню home — панель во всю высоту у края: секции home/ по shell.home.layout, фокус с клавиатуры
-OsdWindow.qml        индикатор громкости и яркости при изменении (namespace nopox-osd, клики насквозь)
+OsdWindow.qml        индикатор громкости и яркости при изменении (namespace ochre-osd, клики насквозь)
 CalGrid.qml          месяц как `cal` — общий для CalPopup и секции календаря в home
 ClipboardWindow.qml  история буфера (cliphist): список с поиском слева, запись целиком справа (текст/картинка)
 ShotWindow.qml       скриншот с разметкой (по мотивам rishot, MIT): заморозка экранов, область/экран/окно, инструменты, экспорт
 SettingsWindow.qml   окно настроек в стиле menuconfig: строки из S.sections(), поиск (/), действия — runAction()
 DisplaysWindow.qml   мониторы: карта, режим/масштаб/поворот/расположение/VRR/основной, откат через 15 с
 BindsWindow.qml      бинды niri: список с поиском, редактор (сочетание/действие/подпись), конфликты
-NotifPopups.qml      стопка всплывающих уведомлений (namespace nopox-notify)
+NotifPopups.qml      стопка всплывающих уведомлений (namespace ochre-notify)
 NotifCard.qml        карточка уведомления: рамка цвета уровня, печать заголовка, полоска таймера
 LockScreen.qml       WlSessionLock + PAM (/etc/pam.d/login), предпросмотр, IdleMonitor
 LoginPrompt.qml      общий экран getty (часы, login:, Password:) для блокировки и greeter
@@ -65,15 +66,15 @@ BlinkCursor.qml      мигающий █
 Reveal.qml           появление/исчезновение окна shell по стилю (slide fade pop unfold type none): меню, home, уведомления
 TypeOn.qml           стиль type: окно печатается по символу из случайных знаков (копия через ShaderEffectSource)
 EditField.qml        поле ввода в рамке с подписью (используется в BindsWindow)
-GreeterSync.qml      копирует настройки/обои в /var/lib/nopox-greeter/$USER для greeter
+GreeterSync.qml      копирует настройки/обои в /var/lib/ochre-greeter/$USER для greeter
 greeter.qml          отдельная точка входа greeter для greetd (ShellRoot, Greetd)
 
 services/            синглтоны (pragma Singleton) и JS-библиотеки
-  Settings.qml       settings.json + генерация ~/.config/niri/nopox/*.kdl; outputs из niri; миграция
+  Settings.qml       settings.json + генерация ~/.config/niri/ochre/*.kdl; outputs из niri; миграция
   settings.js        СХЕМА НАСТРОЕК, умолчания, модули панели, генерация KDL, termCmd, бинды — центр проекта
   Niri.qml           состояние niri из `niri msg --json event-stream`; action(), focusWorkspace()
   Sys.qml            cpu/mem/net/gpu/temp из /proc и /sys раз в 2 с; user, host, kernel
-  Binds.qml          объединённые бинды (config.kdl + nopox/binds.kdl + свои), keys.kdl, validate и откат
+  Binds.qml          объединённые бинды (config.kdl + ochre/binds.kdl + свои), keys.kdl, validate и откат
   Wallpaper.qml      текущие обои, режим заполнения, локальная коллекция, wallhaven API, загрузка
   Notifs.qml         NotificationServer: история (до 100), попапы (ListModel ключей), DND, IPC notify
   ShellUpdate.qml    git fetch/pull самого shell, список новых коммитов, перезапуск, обновление greeter
@@ -104,17 +105,17 @@ home/                секции меню home (HomePanel): Section.qml — б�
   User Quick Levels Media Weather Calendar Notifs System Power Wifi Bluetooth Actions
 
 extras/              не грузится shell'ом; эталонные конфиги для install.sh и ручной установки
-  niri/config.kdl    полный config.kdl nopox (свои бинды niri; include nopox/main.kdl в начале, nopox/keys.kdl в конце)
-  niri/nopox/*.kdl   стартовые заглушки ~/.config/niri/nopox/ (shell перезапишет при запуске)
+  niri/config.kdl    полный config.kdl ochre (свои бинды niri; include ochre/main.kdl в начале, ochre/keys.kdl в конце)
+  niri/ochre/*.kdl   стартовые заглушки ~/.config/niri/ochre/ (shell перезапишет при запуске)
   niri.kdl           инструкция по ручному подключению к своему config.kdl
-  greeter/niri.kdl   конфиг niri для greeter (/etc/greetd/nopox-niri.kdl)
-  install-greeter.sh sudo: копия shell в /usr/share/nopox-shell, каталоги синхронизации, greetd
+  greeter/niri.kdl   конфиг niri для greeter (/etc/greetd/ochre-niri.kdl)
+  install-greeter.sh sudo: копия shell в /usr/share/ochre, каталоги синхронизации, greetd
   kitty/ alacritty/ ghostty/ foot/   конфиги терминалов в Gruvbox + Terminess
   fastfetch/config.jsonc  fastfetch в стиле панели; его же берёт about в меню (с акцентом shell)
-  shell/             zshrc, fish_prompt.fish, nopox.fish, bashrc — приглашение как у панели
+  shell/             zshrc, fish_prompt.fish, ochre.fish, bashrc — приглашение как у панели
 install.sh           установщик для Arch (вопросы → итог → установка), см. §10
 README.md            коротко: что это, установка, главные клавиши, ссылка на документацию
-docs/                документация — GitHub Pages из main /docs (https://nopoxxx.github.io/nopox-shell/)
+docs/                документация — GitHub Pages из main /docs (https://nopoxxx.github.io/ochre/)
   index.html         одна страница без сборки: стили и JS внутри, макеты экранов shell нарисованы текстом
   fonts/             Terminess (Regular/Bold), урезанный pyftsubset до латиницы, кириллицы, псевдографики и пары
                      значков трея (~12 КБ), + LICENSE.txt (OFL); новый символ вне набора — пересобрать подмножество
@@ -124,14 +125,14 @@ docs/                документация — GitHub Pages из main /docs (
 
 ### 4.1 Настройки (`services/Settings.qml` + `services/settings.js`)
 
-- Хранение: `~/.config/nopox/settings.json` — **только отличия от умолчаний**, плоские ключи.
+- Хранение: `~/.config/ochre/settings.json` — **только отличия от умолчаний**, плоские ключи.
   `Settings.get(key)` → значение или `S.defaultOf(key)`. `Settings.set(key, v)` — если `v` равно
   умолчанию, ключ удаляется. `reset(key)`, `isDefault(key)`, `replacePrefix(prefix, obj)`,
   `snapshotPrefix(prefix)` (для отката мониторов).
 - Сохранение — с задержкой 250 мс (таймер `save`): пишет JSON (`atomicWrites`) и вызывает `writeNiri()`.
 - Загрузка: файла нет — умолчания, первое сохранение его создаст. Файл есть, но не читается (битый/пустой JSON —
   после трёх перечитываний через 300 мс, нет прав) — `Settings.broken`: работаем на умолчаниях, ничего не пишем,
-  critical-уведомление. **Любая запись по настройкам** (settings.json, `nopox/*.kdl`, keys.kdl, темы, chsh)
+  critical-уведомление. **Любая запись по настройкам** (settings.json, `ochre/*.kdl`, keys.kdl, темы, chsh)
   проверяет `Settings.writable` (`loaded && !greeterMode && !broken`) — иначе пустые значения затрут файлы.
 - `writeNiri()` строит файлы через `S.niriFiles(get, outs)` и пишет **только изменившиеся**
   (кэш `_written`), через временный файл и `mv` (niri перечитывает конфиг на каждую запись).
@@ -145,10 +146,18 @@ docs/                документация — GitHub Pages из main /docs (
     (`place` — `auto` или `right|left|above|below:<output>`, из него пересчитываются x/y).
 - `Settings.outputs` — нормализованный `niri msg --json outputs` (name, modes, mode, preferred, scale,
   transform, x, y, w, h, enabled, vrrSupported, vrr…). Обновляется `refreshOutputs()`.
-- Greeter-режим (`NOPOX_GREETER=1`): файл — `/var/lib/nopox-greeter/<profile>/settings.json`,
+- Greeter-режим (`OCHRE_GREETER=1`): файл — `/var/lib/ochre-greeter/<profile>/settings.json`,
   только чтение, `writeNiri` ничего не делает.
-- Миграция старой схемы (`nopox.kdl`, `nopox-binds.kdl`, `nopox-keys.kdl` рядом с config.kdl) —
-  процесс `migrate` после первой записи; при неудачном `niri validate` возвращает config.kdl.
+- **Переезд nopox-shell → ochre** — процесс `rename` при старте, до чтения настроек: `Settings.renamed` (в greeter
+  сразу true) открывает `json.path`, пути состояния обоев (Wallpaper) и файлов биндов (Binds), а GreeterSync ждёт
+  `writable`. Переносит `~/.config/nopox` и `~/.local/state/nopox` (cp -n, новое не затирает), `~/.config/niri/nopox` и
+  include в config.kdl (если config.kdl был валиден, а после замены — нет, возвращает его и шлёт critical; старый
+  каталог остаётся, попытка — при каждом старте), удаляет старые `nopox.css` / `nopox.conf` / `nopox.theme` и
+  `@import "nopox.css"`, `conf.d/nopox.fish` → `ochre.fish`, адрес `origin` клона shell. Один раз — уведомление
+  (и напоминание переустановить greeter, если стоит под старым именем). Старые имена в коде остаются только тут,
+  в `migrate`, `install.sh`, `install-greeter.sh`, GreeterSync и ShellUpdate (`legacyGreeter`) — не «чинить» их.
+- Миграция самой старой схемы (`nopox.kdl`, `nopox-binds.kdl`, `nopox-keys.kdl` рядом с config.kdl) —
+  процесс `migrate` после первой записи; include сразу на `ochre/…`; при неудачном `niri validate` возвращает config.kdl.
 
 **Схема окна настроек** — `S.sections(outputs, layout, home)`: массив `{id, title, rows}`. Разделы — по тому,
 что ищет пользователь, а не по тому, кто читает настройку (niri или shell):
@@ -162,7 +171,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `home` | меню home | секции (показаны / скрыты, порядок); край, ширина, анимация; погода; ночной режим; запись экрана |
 | `notify` | уведомления | DND, положение, время, максимум, критичные, эффект набора, анимация, проверить |
 | `lock` | блокировка | idle, эхо пароля, часы, обои, предпросмотр, заблокировать |
-| `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; скриншоты; конфиги; nopox-shell (обновить, проверка, перезапуск, greeter) |
+| `system` | система | устройства (мониторы, сеть, звук); приложения: терминал, файловый менеджер, оболочка, браузер; скриншоты; конфиги; ochre (обновить, проверка, перезапуск, greeter) |
 
 Новую настройку кладите туда, где её будут искать; раздел и группу (`header`) поиск тоже учитывает.
 Строка — `{header}` или `{key, label, type, def, hint, …}`. Типы:
@@ -177,7 +186,7 @@ docs/                документация — GitHub Pages из main /docs (
 | `module` | `id, zone, zoneLabel, key` | элемент раскладки (`layoutRows(key)`: модули bar/, секции home/): ←→ — зона в черновик, ↵ — применить (`S.setZone`), r — зона по умолчанию; ⇧↑↓ / K/J — порядок, сразу; `key` — чья раскладка, черновик — по `key` и `id` |
 | `combo` | `def: "", action` | сочетание клавиш: ↵ — захват нажатия (`Binds.comboOf`), ⇥ — ввод текстом (занятое niri сочетание окну не нажать), ⌫ — убрать; `action` — строка KDL, по ней `Binds.conflict` ищет чужие бинды на том же сочетании |
 
-`S.niriFileOf(key)` — в каком файле `nopox/` живёт настройка (показывается в подсказке).
+`S.niriFileOf(key)` — в каком файле `ochre/` живёт настройка (показывается в подсказке).
 
 ### 4.1a Темы приложений (`services/AppTheme.qml`, генерация — в `settings.js`)
 
@@ -185,20 +194,20 @@ docs/                документация — GitHub Pages из main /docs (
 цвета — `GRUVBOX` + `ACCENTS[shell.accent]`, размер — `shell.fontSize` (px × 0.75 → pt), курсор — `niri.cursor.size`.
 
 - `S.themeFiles(get, home)` → `{ путь от ~/.config: текст }`:
-  `gtk-3.0/nopox.css` (`@define-color` именованных цветов libadwaita — их понимает тема adw-gtk3),
-  `gtk-4.0/nopox.css` (то же + CSS-переменные `--window-bg-color` в `:root`: libadwaita ≥ 1.6 читает их),
-  `qt6ct/colors/nopox.conf` (22 роли QPalette по порядку, от WindowText до Accent),
+  `gtk-3.0/ochre.css` (`@define-color` именованных цветов libadwaita — их понимает тема adw-gtk3),
+  `gtk-4.0/ochre.css` (то же + CSS-переменные `--window-bg-color` в `:root`: libadwaita ≥ 1.6 читает их),
+  `qt6ct/colors/ochre.conf` (22 роли QPalette по порядку, от WindowText до Accent),
   `qt6ct/qt6ct.conf` (Fusion, своя палитра, иконки `ICONS`, шрифты в формате `QFont::toString`),
-  `btop/themes/nopox.theme` (`btopTheme(accent)`: рамки и заголовки — акцент, разделители bg2, пустой `main_bg`).
-  Синхронизация выключена → `nopox.css` пустые, qt6ct и btop не трогаются.
-- btop.conf AppTheme правит построчно (есть тема nopox): `color_theme = "nopox"`, `theme_background = False`
+  `btop/themes/ochre.theme` (`btopTheme(accent)`: рамки и заголовки — акцент, разделители bg2, пустой `main_bg`).
+  Синхронизация выключена → `ochre.css` пустые, qt6ct и btop не трогаются.
+- btop.conf AppTheme правит построчно (есть тема ochre): `color_theme = "ochre"`, `theme_background = False`
   (фон терминала), `rounded_corners = False` (прямые углы, как рамки shell); нет файла — создаёт, btop допишет остальное.
   btop читает его при запуске и переписывает при выходе со своими значениями — эти три сохраняет.
 - `S.themeGsettings(get)` → `[[ключ org.gnome.desktop.interface, GVariant | "" — reset]]`:
   `color-scheme`, `gtk-theme adw-gtk3-dark`, `icon-theme` (`ICONS` = Gruvbox-Plus-Dark из AUR `gruvbox-plus-icon-theme`), `accent-color` (через `GNOME_ACCENTS`, aqua → teal),
   `cursor-size`, шрифты. Синхронизация выключена → пустой список: gsettings не трогаем вовсе.
 - `AppTheme` сериализует оба результата в `state` и пишет, только когда строка изменилась (задержка 500 мс);
-  `@import "nopox.css";` стоит **последним среди `@import`** в `gtk.css` (до остальных правил — иначе GTK проигнорирует
+  `@import "ochre.css";` стоит **последним среди `@import`** в `gtk.css` (до остальных правил — иначе GTK проигнорирует
   @import): из одинаковых `@define-color` побеждает последний, и остатки других тем (например `noctalia.css` от Noctalia)
   перебивали палитру. При каждой записи импорт переставляется, если после него появился чужой.
 - `S.APP_ENV` (`QT_QPA_PLATFORMTHEME=qt6ct`) — блок `environment` в `misc.kdl` при `shell.theme.sync`. niri выдаёт его только
@@ -227,7 +236,7 @@ wallhaven, lockPreview ставит `Settings.returnHere` — закрываяс
 оболочку из `getent passwd`, браузер — `xdg-settings get default-web-browser` (сопоставляется с `.desktop`
 установленных пакетов из `pacman -Qlq`) и пишет их в настройки (неизвестный браузер не трогает).
 Изменение настройки применяется через 1.5 с (таймер, чтобы ←→ не запускали chsh на каждом шаге) одним
-скриптом `applyScript` с данными в аргументах: оболочка — в терминале `nopox-term` (`pacman -S`, если нет; конфиг nopox
+скриптом `applyScript` с данными в аргументах: оболочка — в терминале `ochre-term` (`pacman -S`, если нет; конфиг ochre
 из `extras/shell`, если своего нет; `chsh -s`), браузер — `xdg-settings set` молча или через `paru -S` в терминале.
 Отменённый chsh / неудачная установка — следующий `probe` вернёт настройку к системе.
 `Mod+Shift+B` в `binds.kdl` запускает `BROWSERS[shell.browser].bin`.
@@ -235,16 +244,16 @@ wallhaven, lockPreview ставит `Settings.returnHere` — закрываяс
 ### 4.2 Конфиг niri (`~/.config/niri/`)
 
 ```
-config.kdl            пользовательский; include "nopox/main.kdl" и В САМОМ КОНЦЕ include "nopox/keys.kdl"
-nopox/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
-nopox/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
-nopox/binds.kdl       spawn-at-startup "qs" + бинды nopox (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+V, Mod+A, Mod+Alt+R, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
-nopox/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
+config.kdl            пользовательский; include "ochre/main.kdl" и В САМОМ КОНЦЕ include "ochre/keys.kdl"
+ochre/main.kdl        include остальных: input displays layout window-rules cursor animations misc binds
+ochre/input.kdl …     генерирует Settings из S.niriFiles() — вручную не править
+ochre/binds.kdl       spawn-at-startup "qs" + бинды ochre (Mod+Return, Mod+E, Mod+Shift+B, Mod+D, Mod+Space, Mod+Shift+W, Mod+Shift+V, Mod+A, Mod+Alt+R, Mod+Shift+S, Print, Mod+S, Super+Alt+L)
+ochre/keys.kdl        свои бинды из окна биндов — пишет Binds.qml (S.keysKdl), подключён последним → перекрывает
 ```
 
-В одном KDL-файле может быть только один блок `binds`, поэтому всё nopox — во включаемых файлах.
-`layout.kdl` ставит `background-color "transparent"`; window-rules делают окна `nopox-term`
-(ghostty: `dev.nopox.term`) плавающими 960×600 и кладут слой `nopox-wallpaper` в backdrop обзора.
+В одном KDL-файле может быть только один блок `binds`, поэтому всё ochre — во включаемых файлах.
+`layout.kdl` ставит `background-color "transparent"`; window-rules делают окна `ochre-term`
+(ghostty: `dev.ochre.term`) плавающими 960×600 и кладут слой `ochre-wallpaper` в backdrop обзора.
 В строках KDL нельзя `\.` — используется `[.]`. Вложенный блок KDL закрывать с переводом строки
 (`a { b { c } }` в одну строку niri не разберёт).
 Анимации — `animations.kdl`: `off`, `slowdown` и блоки пресета `niri.anim.style` (`NIRI_ANIMS`, `animBlocks()`):
@@ -256,14 +265,14 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 ### 4.3 Бинды (`services/Binds.qml`, `BindsWindow.qml`)
 
 - `Binds.all` — карта по `S.comboKey(combo)` (регистр и порядок модификаторов не важны,
-  Control=Ctrl): config.kdl → поверх nopox/binds.kdl → поверх свои. `source`: `config|nopox|own|changed`.
+  Control=Ctrl): config.kdl → поверх ochre/binds.kdl → поверх свои. `source`: `config|ochre|own|changed`.
 - `S.parseBinds(text)` понимает только однострочные бинды внутри `binds { }`.
 - `S.actionKdl()` переводит ввод человека в KDL: `spawn kitty` → `spawn "kitty"`,
   `spawn kitty -e btop` → `spawn-sh "kitty -e btop"`, числа без кавычек, с кавычками — как есть.
 - После записи keys.kdl (300 мс) — `niri validate`; при ошибке `Binds.error` и откат к `_prevKeys`.
 - `replaceKey(old, new, …)`: старое сочетание из конфига — отключается (`off`), своё — удаляется.
 - Отключение = `Combo hotkey-overlay-title=null { spawn "true"; }`.
-- Список действий niri — из `niri msg action --help`; пресеты nopox — `BindsWindow.presets`.
+- Список действий niri — из `niri msg action --help`; пресеты ochre — `BindsWindow.presets`.
 - `Binds.keyName(key, text)` (Qt-клавиша → keysym niri) и `Binds.comboOf(event)` — общие для окна биндов и строк `combo`.
 - Свои сочетания из настроек — `MUTE_BINDS` в settings.js (`niri.key.micMute`, `niri.key.audioMute` → `wpctl set-mute`
   источника/приёмника по умолчанию, `allow-when-locked`): пишутся в `binds.kdl`, только если значение проходит `COMBO_RE`.
@@ -300,7 +309,7 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
 | vol | Vol | Pipewire; колёсико ±5% (`scrollable`), клик — MixerPopup, правый — mute |
 | bat | Bat | UPower, только если есть батарея ноутбука |
 | updates | Upd | число обновлений; клик paru -Syu, правый — проверить |
-| shellupd | ShellUpd | `nopox ↑N` — новые коммиты shell; клик — ShellUpdPopup |
+| shellupd | ShellUpd | `ochre ↑N` — новые коммиты shell; клик — ShellUpdPopup |
 | notify | Notify | `log N` / `dnd`; клик — NotifyCenter, правый — DND |
 | kbd | Kbd | раскладка niri; клик/колёсико (`scrollable`) — переключить |
 | clock | Clock | `shell.bar.clock` по Qt.locale(); клик — CalPopup |
@@ -348,7 +357,7 @@ nopox/keys.kdl        свои бинды из окна биндов — пиш�
   Фигуры — один `Canvas` размером с область; шаги и текст — элементы; размытие (`MultiEffect`) и пиксели
   (`ShaderEffectSource` с крошечным `textureSize` и `smooth: false`) — по `base`, то есть по чистому кадру.
 - Экспорт — `crop.grabToImage(cb, sel × factor)` (factor — пикселей кадра на логический пиксель), файл в
-  `$XDG_RUNTIME_DIR/nopox-shot/shot.png` (папка создаётся при открытии: `saveToFile` в несуществующую молча падает),
+  `$XDG_RUNTIME_DIR/ochre-shot/shot.png` (папка создаётся при открытии: `saveToFile` в несуществующую молча падает),
   дальше `wl-copy` / копия в `shell.shot.dir` и уведомление — через `execDetached`, окно закрывается сразу.
 - Клавиши инструментов — по скан-коду (`letter()`): в ru-раскладке `event.key` для R — «К». Enter, закончивший ввод текста,
   экспорт не запускает (`textClosedAt`). `Mod+Shift+S`/`Print` — в `binds.kdl`; в эталонном `config.kdl` niri остались `Ctrl/Alt+Print`.
@@ -371,7 +380,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-<name>"
+            WlrLayershell.namespace: "ochre-<name>"
             MouseArea { anchors.fill: parent; onClicked: root.open = false }   // клик мимо — закрыть
             Rectangle { /* box: bg, border accent 2px, ширина в символах cell.advanceWidth * N */
                 MouseArea { anchors.fill: parent }                          // глотает клики внутри
@@ -448,10 +457,10 @@ invoke); остальные съезжают на её место (`move` в Col
 - `LoginPrompt` ничего не проверяет: отдаёт сигналы `submit(password)`, `userChosen`, `power`, `cancel`.
   `askUser: true` — greeter (сначала имя, Tab — сессия, F11/F12 — reboot/poweroff).
 - Greeter: `extras/install-greeter.sh` копирует shell (без `.git`, `extras`, `docs`, `README.md`, `AGENTS.md`,
-  `CLAUDE.md`) в `/usr/share/nopox-shell`; greetd запускает `niri -c /etc/greetd/nopox-niri.kdl`, тот — `qs -p …/greeter.qml`.
+  `CLAUDE.md`) в `/usr/share/ochre`; greetd запускает `niri -c /etc/greetd/ochre-niri.kdl`, тот — `qs -p …/greeter.qml`.
   Greeter работает под пользователем `greeter`, домашние папки не видит — поэтому `GreeterSync`
-  из сессии пользователя копирует `settings.json`, обои и `wallpaper-fill` в `/var/lib/nopox-greeter/$USER/`.
-  Последний пользователь и сессия — `/var/lib/nopox-greeter/.greeter/last`.
+  из сессии пользователя копирует `settings.json`, обои и `wallpaper-fill` в `/var/lib/ochre-greeter/$USER/`.
+  Последний пользователь и сессия — `/var/lib/ochre-greeter/.greeter/last`.
   **После изменений в QML greeter надо переустановить** (`Mod+S → system/ → обновить greeter` или `sudo extras/install-greeter.sh`).
 
 ### 4.8 Обновления
@@ -459,26 +468,26 @@ invoke); остальные съезжают на её место (`move` в Col
 - `ShellUpdate`: через минуту после старта и раз в `shell.update.hours` — `git fetch` в
   `Quickshell.shellDir`, список `HEAD..@{u}`; `update()` — `git pull --ff-only` и перезапуск через
   отвязанный `sh` (`pkill -x qs; niri msg action spawn -- qs`), уведомление шлёт уже новый shell.
-- `Updates`: `checkupdates` + `paru -Qua` раз в час; `run()` — `paru -Syu` в окне `nopox-term`.
+- `Updates`: `checkupdates` + `paru -Qua` раз в час; `run()` — `paru -Syu` в окне `ochre-term`.
 
 ## 5. Хранение данных
 
 | Путь | Что | Кто пишет |
 |---|---|---|
-| `~/.config/nopox/settings.json` | настройки, только отличия от умолчаний | Settings, install.sh (`set_setting`) |
-| `~/.config/niri/nopox/*.kdl` | сгенерированный конфиг niri | Settings, Binds (keys.kdl) |
-| `~/.config/gtk-{3,4}.0/nopox.css`, `@import` в `gtk.css` | палитра GTK | AppTheme |
-| `~/.config/qt6ct/qt6ct.conf`, `qt6ct/colors/nopox.conf` | палитра и шрифт Qt | AppTheme |
-| `~/.config/btop/themes/nopox.theme`, три строки `btop.conf` | btop в цветах shell | AppTheme |
+| `~/.config/ochre/settings.json` | настройки, только отличия от умолчаний | Settings, install.sh (`set_setting`) |
+| `~/.config/niri/ochre/*.kdl` | сгенерированный конфиг niri | Settings, Binds (keys.kdl) |
+| `~/.config/gtk-{3,4}.0/ochre.css`, `@import` в `gtk.css` | палитра GTK | AppTheme |
+| `~/.config/qt6ct/qt6ct.conf`, `qt6ct/colors/ochre.conf` | палитра и шрифт Qt | AppTheme |
+| `~/.config/btop/themes/ochre.theme`, три строки `btop.conf` | btop в цветах shell | AppTheme |
 | gsettings `org.gnome.desktop.interface` | тёмная схема, adw-gtk3-dark, иконки, акцент, шрифт, курсор | AppTheme |
-| `~/.local/state/nopox/wallpaper`, `wallpaper-fill` | текущие обои и режим | Wallpaper |
+| `~/.local/state/ochre/wallpaper`, `wallpaper-fill` | текущие обои и режим | Wallpaper |
 | `~/Pictures/Wallpapers/` | коллекция, загрузки wallhaven как `wallhaven-<id>.<ext>` | Wallpaper |
-| `/var/lib/nopox-greeter/<user>/` | копия для greeter | GreeterSync |
-| `/var/lib/nopox-greeter/.greeter/last` | последний пользователь и сессия | greeter.qml |
-| `/usr/share/nopox-shell/` | копия shell для greeter | install-greeter.sh |
+| `/var/lib/ochre-greeter/<user>/` | копия для greeter | GreeterSync |
+| `/var/lib/ochre-greeter/.greeter/last` | последний пользователь и сессия | greeter.qml |
+| `/usr/share/ochre/` | копия shell для greeter | install-greeter.sh |
 | `~/.cache/cliphist/db` | история буфера | cliphist (через Clipboard) |
 | `~/Videos/Screencasts/` (`shell.rec.dir`) | записи экрана `rec_<дата>.mp4` | Recorder |
-| `$XDG_RUNTIME_DIR/nopox-clip/` | картинки из истории для предпросмотра | ClipboardWindow |
+| `$XDG_RUNTIME_DIR/ochre-clip/` | картинки из истории для предпросмотра | ClipboardWindow |
 
 ## 6. IPC (`qs ipc call <target> <fn>`)
 
@@ -519,7 +528,7 @@ invoke); остальные съезжают на её место (`move` в Col
 `Repeater`; кликабельные элементы — `[текст]` с `MouseArea` и `Qt.PointingHandCursor`.
 
 **Пункт меню.** Только для действий (настройки — в окно настроек). Узел в `Launcher.menu`; для команды
-в терминале — `term("cmd", hold)` (плавающее окно `nopox-term`), для фоновой — `spawn([...])`.
+в терминале — `term("cmd", hold)` (плавающее окно `ochre-term`), для фоновой — `spawn([...])`.
 
 **Новое окно.** Шаблон из §4.5, экземпляр — в `shell.qml`, IPC-команда, пресет в `BindsWindow.presets`,
 при необходимости — бинд в `binds.kdl` внутри `niriFiles()`, строка-действие в настройках (с возвратом через
@@ -541,14 +550,14 @@ invoke); остальные съезжают на её место (`move` в Col
   `["sh", "-c", 'скрипт с "$1"', "sh", arg1, …]` — **никогда не подставлять данные в текст скрипта**.
   В Launcher для строк — `shq()`.
 - Терминальные окна — только через `Term` / `S.termCmd` (учитывает kitty/alacritty/ghostty/foot и класс окна).
-- Уведомления от shell — `notify-send -a nopox-shell "Заголовок" "Текст"`.
+- Уведомления от shell — `notify-send -a ochre "Заголовок" "Текст"`.
 - Стиль UI: рамка 2px акцентом, заголовок `[ ~/путь/ ]` на линии рамки, разделители `── текст ───`,
   каталоги синие со `/`, кнопки `[текст]`, курсор `█`, эффект «печати» по символу (интервал 14 мс).
 
 ## 9. Подводные камни
 
 - `Settings.set` сравнивает с умолчанием через `===` — для объектов (layout, keys) ключ всегда пишется.
-- Не писать файлы `nopox/*.kdl` часто: niri перечитывает конфиг на каждую запись (отсюда задержки и кэш `_written`).
+- Не писать файлы `ochre/*.kdl` часто: niri перечитывает конфиг на каждую запись (отсюда задержки и кэш `_written`).
 - Знаки, которых нет в Terminess (◑ ✳ в заголовке Claude Code, эмодзи), Qt рисует запасным шрифтом (Noto Sans Mono,
   DejaVu) с более высокой строкой: `Text` вырастает с 16 до 19–22 px, а базовая линия опускается. В панели зоны
   центрируются по высоте — весь текст прыгал вверх. `bar/BarText.qml` держит высоту `FontMetrics.height` и поднимает
@@ -563,8 +572,8 @@ invoke); остальные съезжают на её место (`move` в Col
 - Приложения, запущенные из shell, наследуют окружение процесса `qs`, а не текущий `environment` из niri. Для тем это
   закрыто `Settings.appEnv()` (меню, `Term`); новая переменная в `misc.kdl` — добавить в `S.APP_ENV`, иначе до программ
   из shell она дойдёт только после перезапуска shell. Уже запущенные программы окружение не меняют — их надо перезапустить.
-- Одинаковое сочетание в `nopox/binds.kdl` и в `config.kdl` niri принимает молча, побеждает подключённое позже —
-  `config.kdl`. Бинд nopox, занятый в старом эталоне (`Mod+Shift+V` был `switch-focus-between-floating-and-tiling`,
+- Одинаковое сочетание в `ochre/binds.kdl` и в `config.kdl` niri принимает молча, побеждает подключённое позже —
+  `config.kdl`. Бинд ochre, занятый в старом эталоне (`Mod+Shift+V` был `switch-focus-between-floating-and-tiling`,
   теперь `Mod+Ctrl+V`), у таких пользователей не сработает, пока строку не убрать из их `config.kdl` (install.sh предлагает перенести).
 - Долгий `Process` нельзя перезапустить в том же такте (`running = false; running = true` — Quickshell может
   пропустить): остановить и запустить таймером (NightLight). Короткие запросы, ответ которых может опоздать, — свой
@@ -583,7 +592,7 @@ invoke); остальные съезжают на её место (`move` в Col
 - Qt шлёт hover, когда список прокручивается под неподвижным курсором, — см. `lastMouse`.
 - `Qt.formatDate` игнорирует локаль — использовать `Qt.locale().toString(date, fmt)`.
 - Нативное меню трея (`display()`) не используется: нужен QApplication и оно не в стиле — свой `TrayMenu`.
-- ghostty принимает класс окна только с точкой: `nopox-term` → `dev.nopox.term` (`S.termClass`).
+- ghostty принимает класс окна только с точкой: `ochre-term` → `dev.ochre.term` (`S.termClass`).
 - В greeter нет `$HOME` пользователя: всё, что нужно greeter'у, должно идти через GreeterSync.
 - Бинды из `config.kdl` парсятся построчно: многострочные бинды в окне биндов не видны.
 - `paru-bin` из AUR — готовый бинарник под конкретную `libalpm.so.N`; после обновления pacman он перестаёт
@@ -595,7 +604,7 @@ invoke); остальные съезжают на её место (`move` в Col
 Bash, `set -euo pipefail`, запуск от обычного пользователя. Порядок: проверки → выбор (`choose`:
 терминал, оболочка, браузер, файловый менеджер, программы из `APP_CATALOG` `группа|id|описание|пакеты|умолч.`,
 мод Discord) → итог и подтверждение → пакеты pacman (`PKGS`; bluez — только если есть адаптер, в конце `systemctl enable --now bluetooth`) → **niri ≥ `NIRI_MIN` (25.11)**: настраиваемые горячие
-углы и `screenshot-window --path` появились в 25.11, старый niri конфиг nopox не примет, а `pacman -S --needed` его не
+углы и `screenshot-window --path` появились в 25.11, старый niri конфиг ochre не примет, а `pacman -S --needed` его не
 обновит — предлагает `pacman -Syu`, иначе выход → **chaotic-aur** (ключ `3056513887B78AEB`, keyring и mirrorlist с
 `cdn-mirror.chaotic.cx`, запись в `pacman.conf` с бэкапом; уже подключён — пропуск, `--no-chaotic` — без него) →
 программы и иконки `gruvbox-plus-icon-theme` через **`install_pkgs`**: что есть в репозиториях (официальные, chaotic-aur,
@@ -608,10 +617,10 @@ nvidia (он отключает nouveau), иначе `vulkan-nouveau`; ни од
 **paru только для shell** (обновления AUR, меню packages/): из репозитория или `paru-bin`
 через `makepkg`, не запустился — предупреждение; **сам установщик paru не пользуется** →
 клон/обновление в `~/.config/quickshell` → `set_setting shell.terminal/files/sh/browser` →
-конфиг niri (замена или дописать два include; если nopox уже подключён — предлагает закомментировать
-встроенный `Mod+Shift+S`/`Print { screenshot; }` старого эталона: он перекрыл бы скриншот nopox, и перенести
+конфиг niri (замена или дописать два include; если ochre уже подключён — предлагает закомментировать
+встроенный `Mod+Shift+S`/`Print { screenshot; }` старого эталона: он перекрыл бы скриншот ochre, и перенести
 `Mod+Shift+V { switch-focus-between-floating-and-tiling; }` на `Mod+Ctrl+V` — иначе не откроется история буфера; затем `niri validate`,
-при ошибке — откат; стартовые `nopox/*.kdl` — вывод генератора с настройками по умолчанию, пересобирать при его изменении) → конфиг
+при ошибке — откат; стартовые `ochre/*.kdl` — вывод генератора с настройками по умолчанию, пересобирать при его изменении) → конфиг
 терминала → конфиг fastfetch (если своего нет) → оболочка → приложения по умолчанию (`desktop_of <пакет> <mime>`: тот
 `.desktop`, у которого есть нужный MimeType, — у thunar первым по алфавиту идёт `thunar-bulk-rename.desktop`) → Discord →
 **Steam: уведомления** (если стоит steam, флаг `--no-steam-notify` пропускает): `install_pkgs millennium bun`, симлинки

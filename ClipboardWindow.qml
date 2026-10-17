@@ -40,7 +40,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-clipboard"
+            WlrLayershell.namespace: "ochre-clipboard"
 
             property bool confirmWipe: false
 

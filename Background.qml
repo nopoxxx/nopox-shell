@@ -10,7 +10,7 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Background
-    WlrLayershell.namespace: "nopox-wallpaper"
+    WlrLayershell.namespace: "ochre-wallpaper"
     color: "#282828"   // виден по краям в режиме fit
 
     readonly property string src: Wallpaper.current ? "file://" + encodeURI(Wallpaper.current) : ""

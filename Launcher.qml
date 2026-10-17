@@ -50,7 +50,7 @@ Scope {
 
     function spawn(argv) { Quickshell.execDetached(argv); }
 
-    // fastfetch с конфигом nopox и акцентом shell; окно закрывается по Enter
+    // fastfetch с конфигом ochre и акцентом shell; окно закрывается по Enter
     function about() {
         const c = Theme.accent;
         const ansi = "38;2;" + [c.r, c.g, c.b].map(x => Math.round(x * 255)).join(";");
@@ -196,7 +196,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-            WlrLayershell.namespace: "nopox-launcher"
+            WlrLayershell.namespace: "ochre-launcher"
 
             property var stack: []
             // глубина, с которой меню открыли: выше неё Esc не поднимается, а закрывает окно

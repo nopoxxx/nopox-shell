@@ -1,7 +1,0 @@
-// nopox: анимации
-// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.
-// Свои настройки пишите в ~/.config/niri/config.kdl.
-
-animations {
-    slowdown 1.00
-}

@@ -35,7 +35,7 @@ Scope {
     property string message: ""
     property double textClosedAt: 0     // Enter, закончивший ввод текста, не должен запускать экспорт
 
-    readonly property string tmp: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/nopox-shot"
+    readonly property string tmp: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/ochre-shot"
 
     // ── инструменты и палитра ──
     readonly property var tools: [
@@ -124,7 +124,7 @@ Scope {
         id: winShot
         onExited: code => {
             if (code !== 0) {
-                Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "Скриншот", "niri не отдал снимок окна"]);
+                Quickshell.execDetached(["notify-send", "-a", "ochre", "Скриншот", "niri не отдал снимок окна"]);
                 return;
             }
             root.openImage(root.tmp + "/window.png");
@@ -277,9 +277,9 @@ Scope {
                 case $act in save|both) mkdir -p "$3" && cp "$src" "$dest" || dest="" ;; esac
                 [ "$5" = true ] || exit 0
                 case $act in
-                    copy) notify-send -a nopox-shell -i "$src" "Скриншот скопирован" "$6" ;;
-                    *) [ -n "$dest" ] && notify-send -a nopox-shell -i "$dest" "Скриншот сохранён$([ $act = both ] && echo ' и скопирован')" "$dest ($6)" \\
-                           || notify-send -a nopox-shell -u critical "Скриншот не сохранён" "$3" ;;
+                    copy) notify-send -a ochre -i "$src" "Скриншот скопирован" "$6" ;;
+                    *) [ -n "$dest" ] && notify-send -a ochre -i "$dest" "Скриншот сохранён$([ $act = both ] && echo ' и скопирован')" "$dest ($6)" \\
+                           || notify-send -a ochre -u critical "Скриншот не сохранён" "$3" ;;
                 esac`, "sh", src, action, dir, name, String(Settings.get("shell.shot.notify")), label]);
             close();
         }, size);
@@ -355,7 +355,7 @@ Scope {
                 exclusionMode: ExclusionMode.Ignore
                 WlrLayershell.layer: WlrLayer.Overlay
                 WlrLayershell.keyboardFocus: isTarget ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-                WlrLayershell.namespace: "nopox-shot"
+                WlrLayershell.namespace: "ochre-shot"
 
                 readonly property bool isTarget: modelData.name === root.target
                 // экран: пока ScreencopyView не поймал кадр, не рисуем ничего своего — иначе попадёт в снимок

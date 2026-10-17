@@ -1,24 +1,26 @@
-# nopox-shell
+# ochre
 
 Оболочка рабочего стола для [niri](https://github.com/YaLTeR/niri) на [Quickshell](https://quickshell.org) в стиле терминала:
 панель — строка shell, меню — fzf, настройки — menuconfig. Палитра Gruvbox, шрифт Terminess.
 
 ```
-nopox@nopox-os ~/ws/{1,[2]} [1] ❯ kitty  # ~        [‹ 󰙯 󰓓] · cpu ▂▃▅▇ 4% · mem 1.7G · vol 40% · ru · 21:58
+user@ochre ~/ws/{1,[2]} [1] ❯ kitty  # ~        [‹ 󰙯 󰓓] · cpu ▂▃▅▇ 4% · mem 1.7G · vol 40% · ru · 21:58
 ```
 
-**Документация: [nopoxxx.github.io/nopox-shell](https://nopoxxx.github.io/nopox-shell/)**
+**Документация: [nopoxxx.github.io/ochre](https://nopoxxx.github.io/ochre/)**
+
+Раньше назывался nopox-shell: при обновлении настройки и конфиг niri переедут в `~/.config/ochre/` и `~/.config/niri/ochre/` сами.
 
 ## Установка
 
 Arch Linux и производные, от обычного пользователя:
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/ochre/main/install.sh)
 ```
 
 Установщик спросит терминал, оболочку, браузер, файловый менеджер и программы, покажет итог и только потом поставит.
-Флаги и ручная установка — в [документации](https://nopoxxx.github.io/nopox-shell/#install).
+Флаги и ручная установка — в [документации](https://nopoxxx.github.io/ochre/#install).
 
 ## Клавиши
 

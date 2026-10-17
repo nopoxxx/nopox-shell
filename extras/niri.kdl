@@ -1,21 +1,21 @@
-// Подключение nopox-shell к своему ~/.config/niri/config.kdl вручную (install.sh делает это сам).
+// Подключение ochre к своему ~/.config/niri/config.kdl вручную (install.sh делает это сам).
 //
 // 1. Скопируйте стартовые файлы — shell перезапишет их при запуске:
-//      mkdir -p ~/.config/niri/nopox && cp -n ~/.config/quickshell/extras/niri/nopox/*.kdl ~/.config/niri/nopox/
-// 2. Допишите в конец config.kdl две строки ниже — именно в конец, чтобы бинды nopox перекрывали ваши.
+//      mkdir -p ~/.config/niri/ochre && cp -n ~/.config/quickshell/extras/niri/ochre/*.kdl ~/.config/niri/ochre/
+// 2. Допишите в конец config.kdl две строки ниже — именно в конец, чтобы бинды ochre перекрывали ваши.
 //
-// ~/.config/niri/nopox/ — по файлу на раздел, все генерирует shell из настроек (Mod+S):
+// ~/.config/niri/ochre/ — по файлу на раздел, все генерирует shell из настроек (Mod+S):
 //   main.kdl          подключает остальные
 //   input.kdl         клавиатура, мышь, тачпад
 //   displays.kdl      мониторы
 //   layout.kdl        отступы, колонки, рамка фокуса, обводка, тени
-//   window-rules.kdl  скругление, прозрачность неактивных, правила окон nopox
+//   window-rules.kdl  скругление, прозрачность неактивных, правила окон ochre
 //   cursor.kdl, animations.kdl, misc.kdl
-//   binds.kdl         клавиши nopox (Mod+D, Mod+S, …) и автозапуск qs
+//   binds.kdl         клавиши ochre (Mod+D, Mod+S, …) и автозапуск qs
 //   keys.kdl          свои бинды из окна биндов — подключается отдельно, последним
 //
 // Если в config.kdl есть свои input / layout, флаги оттуда (tap и т.п.) настройки выключить не смогут —
 // такие секции лучше убрать.
 
-include "nopox/main.kdl"
-include "nopox/keys.kdl"
+include "ochre/main.kdl"
+include "ochre/keys.kdl"

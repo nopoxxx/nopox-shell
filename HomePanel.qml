@@ -48,7 +48,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: Home.open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-            WlrLayershell.namespace: "nopox-home"
+            WlrLayershell.namespace: "ochre-home"
 
             function close() { Home.open = false; }
 

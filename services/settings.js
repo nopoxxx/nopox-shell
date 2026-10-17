@@ -1,6 +1,6 @@
 .pragma library
 
-// Схема окна настроек и генерация ~/.config/niri/nopox/*.kdl.
+// Схема окна настроек и генерация ~/.config/niri/ochre/*.kdl.
 //   niri.*      — уходят в конфиг niri
 //   shell.*     — читает quickshell
 //   wallpaper.* — хранится в сервисе Wallpaper
@@ -41,7 +41,7 @@ const MODULES = [
     { id: "vol", file: "Vol", desc: "громкость: колёсико, клик — микшер, правый — mute" },
     { id: "bat", file: "Bat", desc: "батарея — видна только на ноутбуках" },
     { id: "updates", file: "Upd", desc: "обновления: клик — paru -Syu, правый — проверить" },
-    { id: "shellupd", file: "ShellUpd", desc: "nopox ↑3 — обновления nopox-shell с GitHub: клик — список и [обновить]" },
+    { id: "shellupd", file: "ShellUpd", desc: "ochre ↑3 — обновления ochre с GitHub: клик — список и [обновить]" },
     { id: "notify", file: "Notify", desc: "уведомления: клик — история, правый — «не беспокоить»" },
     { id: "kbd", file: "Kbd", desc: "раскладка, клик — переключить" },
     { id: "clock", file: "Clock", desc: "часы, клик — календарь" },
@@ -247,7 +247,7 @@ function sections(outputs, layout, home) {
             { key: "niri.kb.numlock", label: "numlock при входе", type: "bool", def: true },
 
             { header: "клавиши" },
-            act("binds", "бинды", "все сочетания niri и nopox: изменить, добавить, отключить"),
+            act("binds", "бинды", "все сочетания niri и ochre: изменить, добавить, отключить"),
             act("hotkeys", "подсказка клавиш", "окно niri со всеми сочетаниями (Mod+Shift+/)"),
             { key: "niri.key.micMute", label: "мьют микрофона", type: "combo", def: "", action: MUTE_BINDS["niri.key.micMute"].action, hint: "вкл/выкл микрофон по умолчанию (wpctl); работает и на экране блокировки" },
             { key: "niri.key.audioMute", label: "мьют звука", type: "combo", def: "", action: MUTE_BINDS["niri.key.audioMute"].action, hint: "вкл/выкл звук на устройстве вывода по умолчанию — наушники или колонки (wpctl)" },
@@ -369,12 +369,12 @@ function sections(outputs, layout, home) {
             { key: "shell.shot.width", label: "толщина", type: "int", min: 1, max: 12, step: 1, def: 3, hint: "линий, текста и шагов ([ ] или колёсико в редакторе)" },
 
             { header: "конфиги" },
-            act("editNiri", "niri", "~/.config/niri/config.kdl — свои настройки niri; nopox/ генерирует shell"),
-            act("editShell", "код shell", "~/.config/quickshell/ — QML и JS nopox-shell"),
+            act("editNiri", "niri", "~/.config/niri/config.kdl — свои настройки niri; ochre/ генерирует shell"),
+            act("editShell", "код shell", "~/.config/quickshell/ — QML и JS ochre"),
             act("editTerminal", "терминал", "конфиг выбранного терминала"),
 
-            { header: "nopox-shell" },
-            act("shellUpdate", "обновить", "git pull и перезапуск; если новых коммитов нет — проверить (nopox ↑ на панели)"),
+            { header: "ochre" },
+            act("shellUpdate", "обновить", "git pull и перезапуск; если новых коммитов нет — проверить (ochre ↑ на панели)"),
             { key: "shell.update.check", label: "проверять обновления", type: "bool", def: true, hint: "git fetch в папке shell; нужен git-клон и доступ к репозиторию" },
             { key: "shell.update.hours", label: "раз в, ч", type: "int", min: 1, max: 48, step: 1, def: 6 },
             { key: "shell.update.notify", label: "уведомлять", type: "bool", def: true, hint: "уведомление, когда появились новые коммиты" },
@@ -582,7 +582,7 @@ var BROWSERS = {
 
 // ghostty принимает только идентификатор приложения с точкой
 function termClass(term, c) {
-    return term === "ghostty" ? "dev.nopox." + c.replace(/^nopox-/, "") : c;
+    return term === "ghostty" ? "dev.ochre." + c.replace(/^ochre-/, "") : c;
 }
 
 // argv — команда; opts: { cls, hold }. Общая для Term.qml и binds.kdl
@@ -662,8 +662,8 @@ function actionKdl(a) {
 // keys: { comboKey: { combo, action, title } }; action "off" — сочетание отключено
 function keysKdl(keys) {
     const lines = [
-        "// nopox: свои бинды — окно биндов (Mod+S → input/ → бинды), из ~/.config/nopox/settings.json.",
-        "// Подключается в config.kdl последним (include \"nopox/keys.kdl\") и перекрывает одноимённые бинды.",
+        "// ochre: свои бинды — окно биндов (Mod+S → input/ → бинды), из ~/.config/ochre/settings.json.",
+        "// Подключается в config.kdl последним (include \"ochre/keys.kdl\") и перекрывает одноимённые бинды.",
         "// Ручные правки перезапишутся.",
         "",
         "binds {"
@@ -700,8 +700,8 @@ function logicalSize(mode, scale, transform) {
     return { w: Math.round(w), h: Math.round(h) };
 }
 
-// ── файлы ~/.config/niri/nopox/ ───────────────────────────────────
-// main.kdl подключает остальные; в config.kdl — include "nopox/main.kdl" и в самом конце include "nopox/keys.kdl"
+// ── файлы ~/.config/niri/ochre/ ───────────────────────────────────
+// main.kdl подключает остальные; в config.kdl — include "ochre/main.kdl" и в самом конце include "ochre/keys.kdl"
 
 var NIRI_FILES = ["input", "displays", "layout", "window-rules", "cursor", "animations", "misc", "binds"];
 
@@ -721,8 +721,8 @@ function niriFileOf(key) {
 
 function head(what) {
     return [
-        "// nopox: " + what,
-        "// Сгенерировано nopox-shell (Mod+S) из ~/.config/nopox/settings.json — ручные правки перезапишутся.",
+        "// ochre: " + what,
+        "// Сгенерировано ochre (Mod+S) из ~/.config/ochre/settings.json — ручные правки перезапишутся.",
         "// Свои настройки пишите в ~/.config/niri/config.kdl.",
         ""
     ];
@@ -734,7 +734,7 @@ function text(lines) {
 
 // get(key) — значение с учётом умолчаний;
 // outs — { имя: { enabled, mode, scale, transform, x, y, vrr, primary } }, только то, что задано вручную.
-// Возвращает { "input.kdl": текст, … } — все файлы папки nopox/, кроме keys.kdl (его пишет Binds).
+// Возвращает { "input.kdl": текст, … } — все файлы папки ochre/, кроме keys.kdl (его пишет Binds).
 function niriFiles(get, outs) {
     const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
     const ring = get("niri.ring");
@@ -744,8 +744,8 @@ function niriFiles(get, outs) {
     const files = {};
 
     files["main.kdl"] = text([
-        "// nopox: все настройки niri из nopox-shell — по файлу на раздел.",
-        "// Подключается из config.kdl: include \"nopox/main.kdl\". Свои бинды (keys.kdl) — отдельно, в конце config.kdl.",
+        "// ochre: все настройки niri из ochre — по файлу на раздел.",
+        "// Подключается из config.kdl: include \"ochre/main.kdl\". Свои бинды (keys.kdl) — отдельно, в конце config.kdl.",
         "",
         ...NIRI_FILES.map(n => "include " + q(n + ".kdl"))
     ]);
@@ -844,10 +844,10 @@ function niriFiles(get, outs) {
             "    opacity " + (inactive / 100).toFixed(2),
             "}",
             ""] : []),
-        "// терминалы, открытые из меню nopox (install / remove / update …), — плавающие по центру",
+        "// терминалы, открытые из меню ochre (install / remove / update …), — плавающие по центру",
         "window-rule {",
         // [.] вместо \. — в строках KDL такой escape недопустим
-        '    match app-id="^(nopox-term|dev[.]nopox[.]term)$"',
+        '    match app-id="^(ochre-term|dev[.]ochre[.]term)$"',
         "    open-floating true",
         "    default-column-width { fixed 960; }",
         "    default-window-height { fixed 600; }",
@@ -855,7 +855,7 @@ function niriFiles(get, outs) {
         "",
         "// обои quickshell видны и как фон режима обзора",
         "layer-rule {",
-        '    match namespace="^nopox-wallpaper$"',
+        '    match namespace="^ochre-wallpaper$"',
         "    place-within-backdrop true",
         "}"
     ]);
@@ -897,7 +897,7 @@ function niriFiles(get, outs) {
     ]);
 
     files["binds.kdl"] = text([
-        ...head("клавиши nopox и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl"),
+        ...head("клавиши ochre и автозапуск shell. Свои — в окне биндов (Mod+S → input/ → бинды), они в keys.kdl"),
         'spawn-at-startup "qs"',
         "",
         "binds {",
@@ -941,7 +941,7 @@ const FONT = "Terminess Nerd Font Mono";
 // иконки в цветах Gruvbox (AUR gruvbox-plus-icon-theme, ставит install.sh); без них GTK и Qt берут hicolor
 const ICONS = "Gruvbox-Plus-Dark";
 
-// accent-color в GNOME — фиксированный набор; точный цвет задаёт nopox.css
+// accent-color в GNOME — фиксированный набор; точный цвет задаёт ochre.css
 const GNOME_ACCENTS = { yellow: "yellow", orange: "orange", green: "green", aqua: "teal", blue: "blue", purple: "purple", red: "red" };
 
 // пиксели shell → пункты GTK/Qt (96 dpi)
@@ -979,7 +979,7 @@ function gtkColors(accent) {
 
 function gtkCss(colors, vars) {
     const head = [
-        "/* nopox: палитра shell для GTK — сгенерировано nopox-shell (Mod+S → look/ → темы Qt и GTK).",
+        "/* ochre: палитра shell для GTK — сгенерировано ochre (Mod+S → look/ → темы Qt и GTK).",
         "   Ручные правки перезапишутся; свои стили пишите в gtk.css после строки @import. */",
         ""
     ];
@@ -1008,22 +1008,22 @@ function qtFont(pt) {
 }
 
 // home — домашняя папка: путь к схеме в qt6ct.conf абсолютный.
-// Возвращает { путь от ~/.config: текст }. С выключенной синхронизацией nopox.css пустые — GTK как без shell;
+// Возвращает { путь от ~/.config: текст }. С выключенной синхронизацией ochre.css пустые — GTK как без shell;
 // qt6ct не трогаем: без QT_QPA_PLATFORMTHEME (misc.kdl) он не используется.
 function themeFiles(get, home) {
     if (!get("shell.theme.sync")) {
-        const off = "/* nopox: синхронизация тем выключена (Mod+S → look/ → темы Qt и GTK) */\n";
-        return { "gtk-3.0/nopox.css": off, "gtk-4.0/nopox.css": off };
+        const off = "/* ochre: синхронизация тем выключена (Mod+S → look/ → темы Qt и GTK) */\n";
+        return { "gtk-3.0/ochre.css": off, "gtk-4.0/ochre.css": off };
     }
     const accent = ACCENTS[get("shell.accent")] ?? ACCENTS.yellow;
     const colors = gtkColors(accent);
     const pt = fontPt(get);
     return {
-        "gtk-3.0/nopox.css": gtkCss(colors, false),
-        "gtk-4.0/nopox.css": gtkCss(colors, true),
-        "btop/themes/nopox.theme": btopTheme(accent),
-        "qt6ct/colors/nopox.conf": [
-            "; nopox: палитра shell для Qt — сгенерировано nopox-shell, ручные правки перезапишутся",
+        "gtk-3.0/ochre.css": gtkCss(colors, false),
+        "gtk-4.0/ochre.css": gtkCss(colors, true),
+        "btop/themes/ochre.theme": btopTheme(accent),
+        "qt6ct/colors/ochre.conf": [
+            "; ochre: палитра shell для Qt — сгенерировано ochre, ручные правки перезапишутся",
             "[ColorScheme]",
             "active_colors=" + qtColors(accent, false),
             "disabled_colors=" + qtColors(accent, true),
@@ -1031,9 +1031,9 @@ function themeFiles(get, home) {
             ""
         ].join("\n"),
         "qt6ct/qt6ct.conf": [
-            "; nopox: сгенерировано nopox-shell (Mod+S → look/ → темы Qt и GTK), ручные правки перезапишутся",
+            "; ochre: сгенерировано ochre (Mod+S → look/ → темы Qt и GTK), ручные правки перезапишутся",
             "[Appearance]",
-            "color_scheme_path=" + home + "/.config/qt6ct/colors/nopox.conf",
+            "color_scheme_path=" + home + "/.config/qt6ct/colors/ochre.conf",
             "custom_palette=true",
             "icon_theme=" + ICONS,
             "standard_dialogs=xdgdesktopportal",
@@ -1065,7 +1065,7 @@ function btopTheme(accent) {
         upload_start: c.bg2, upload_mid: c.purple, upload_end: accent,
         process_start: c.green, process_mid: c.yellow, process_end: c.red
     };
-    return ["# nopox: тема btop в цветах shell — сгенерировано nopox-shell (Mod+S → look/ → темы), ручные правки перезапишутся",
+    return ["# ochre: тема btop в цветах shell — сгенерировано ochre (Mod+S → look/ → темы), ручные правки перезапишутся",
         ...Object.keys(t).map(k => "theme[" + k + "]=" + JSON.stringify(t[k])), ""].join("\n");
 }
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>nopox-shell — документация</title>
-<meta name="description" content="nopox-shell: оболочка рабочего стола для niri на Quickshell в стиле терминала — панель как строка shell, меню как fzf, настройки как menuconfig.">
+<title>ochre — документация</title>
+<meta name="description" content="ochre: оболочка рабочего стола для niri на Quickshell в стиле терминала — панель как строка shell, меню как fzf, настройки как menuconfig.">
 <meta name="theme-color" content="#1d2021">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231d2021'/%3E%3Ctext x='2' y='13' font-family='monospace' font-size='13' fill='%23fabd2f'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
 <style>
@@ -49,7 +49,7 @@ code { color: var(--aqua); }
 .c-purple { color: var(--purple); } .c-yellow { color: var(--yellow); } .c-orange { color: var(--orange); }
 .b { font-weight: 700; }
 
-/* ── панель сверху: как bar nopox ── */
+/* ── панель сверху: как bar ochre ── */
 .topbar {
   position: fixed; inset: 0 0 auto 0; height: var(--bar); z-index: 10;
   display: flex; align-items: center; gap: 2ch; padding: 0 1.5ch;
@@ -158,8 +158,8 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 
 <header class="topbar">
   <button class="menu-btn" id="menuBtn" aria-label="Разделы" aria-expanded="false">[≡]</button>
-  <div class="left"><span class="c-acc b">nopox</span>@docs <span class="c-blue">~/docs/<span id="crumb">about</span>/</span> <span class="c-acc">❯</span> less README<span class="blink">█</span></div>
-  <div class="right"><span class="c-gray">[</span><span class="c-gray">‹</span> <span class="nf">󰙯</span> <span class="nf">󰓓</span><span class="c-gray">]</span> <span class="sep">·</span> <a href="https://github.com/nopoxxx/nopox-shell"><span class="c-gray">git</span> nopox-shell</a> <span class="sep">·</span> <span id="barClock">--:--</span></div>
+  <div class="left"><span class="c-acc b">ochre</span>@docs <span class="c-blue">~/docs/<span id="crumb">about</span>/</span> <span class="c-acc">❯</span> less README<span class="blink">█</span></div>
+  <div class="right"><span class="c-gray">[</span><span class="c-gray">‹</span> <span class="nf">󰙯</span> <span class="nf">󰓓</span><span class="c-gray">]</span> <span class="sep">·</span> <a href="https://github.com/nopoxxx/ochre"><span class="c-gray">git</span> ochre</a> <span class="sep">·</span> <span id="barClock">--:--</span></div>
 </header>
 
 <div class="layout">
@@ -196,13 +196,16 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <!-- ─────────────────────────── about ─────────────────────────── -->
 <section class="win" id="about">
   <div class="ttl">~/docs/about</div>
-  <h1>nopox-shell</h1>
+  <h1>ochre</h1>
   <p>Оболочка рабочего стола для композитора <a href="https://github.com/YaLTeR/niri">niri</a> на
   <a href="https://quickshell.org">Quickshell</a>, целиком в стиле терминала: панель — строка shell-приглашения,
   меню — <code>fzf</code>, настройки — <code>menuconfig</code>, уведомления — строки лога, блокировка — <code>getty</code>.
   Палитра Gruvbox dark hard, шрифт Terminess (Terminus). Для Arch Linux и производных.</p>
+  <p class="c-gray">Раньше назывался nopox-shell. Обновление переносит всё само: настройки — в <code>~/.config/ochre/</code>,
+  конфиг niri — в <code>~/.config/niri/ochre/</code> вместе с <code>include</code> в <code>config.kdl</code>.
+  Greeter под старым именем переустановите: <kbd>Mod+S</kbd> → <code>system/</code> → обновить greeter.</p>
 
-<div class="mock"><span class="c-acc b">nopox</span>@nopox-os <span class="c-blue">~/ws/{1,<span class="c-acc">[2]</span>}</span> <span class="c-gray">[1]</span> <span class="c-acc">❯</span> kitty  <span class="c-gray"># ~/projects</span>        <span class="c-gray">[‹</span> <span class="nf">󰙯</span> <span class="nf">󰓓</span><span class="c-gray">]</span> <span class="c-gray">·</span> <span class="c-gray">cpu</span> <span class="c-acc">▂▃▅▇</span> 4% <span class="c-gray">·</span> <span class="c-gray">mem</span> 1.7G <span class="c-gray">·</span> <span class="c-gray">vol</span> 40% <span class="c-gray">·</span> <span class="c-gray">upd</span> <span class="c-green">2</span> <span class="c-gray">·</span> <span class="c-gray">log</span> 0 <span class="c-gray">·</span> <span class="c-purple">ru</span> <span class="c-gray">·</span> <span class="c-acc">21:58</span></div>
+<div class="mock"><span class="c-acc b">user</span>@ochre <span class="c-blue">~/ws/{1,<span class="c-acc">[2]</span>}</span> <span class="c-gray">[1]</span> <span class="c-acc">❯</span> kitty  <span class="c-gray"># ~/projects</span>        <span class="c-gray">[‹</span> <span class="nf">󰙯</span> <span class="nf">󰓓</span><span class="c-gray">]</span> <span class="c-gray">·</span> <span class="c-gray">cpu</span> <span class="c-acc">▂▃▅▇</span> 4% <span class="c-gray">·</span> <span class="c-gray">mem</span> 1.7G <span class="c-gray">·</span> <span class="c-gray">vol</span> 40% <span class="c-gray">·</span> <span class="c-gray">upd</span> <span class="c-green">2</span> <span class="c-gray">·</span> <span class="c-gray">log</span> 0 <span class="c-gray">·</span> <span class="c-purple">ru</span> <span class="c-gray">·</span> <span class="c-acc">21:58</span></div>
 
   <ul>
     <li><b>панель</b> из 17 модулей по зонам left / center / right, TUI-попапы по клику;</li>
@@ -219,7 +222,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   <div class="ttl">~/docs/install/</div>
   <h2>Установка</h2>
   <p>Arch Linux и производные (CachyOS, EndeavourOS, …), от обычного пользователя:</p>
-<pre class="cmd"><code><span class="p">❯ </span>bash &lt;(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)</code></pre>
+<pre class="cmd"><code><span class="p">❯ </span>bash &lt;(curl -fsSL https://raw.githubusercontent.com/nopoxxx/ochre/main/install.sh)</code></pre>
   <p>Установщик сначала задаёт вопросы, показывает итог и только потом ставит:</p>
   <div class="tbl"><table>
     <tr><th>выбор</th><th>варианты</th></tr>
@@ -254,8 +257,8 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <pre class="cmd"><code><span class="p">❯ </span>sudo pacman -S --needed niri quickshell xwayland-satellite kitty git networkmanager pipewire \
     pipewire-pulse wireplumber upower pacman-contrib libnotify polkit-gnome ttf-terminus-nerd paru wl-clipboard \
     qt6ct adw-gtk-theme xdg-desktop-portal-gnome
-<span class="p">❯ </span>git clone https://github.com/nopoxxx/nopox-shell ~/.config/quickshell</code></pre>
-    <p>Затем подключите shell к niri — см. <a href="https://github.com/nopoxxx/nopox-shell/blob/main/extras/niri.kdl"><code>extras/niri.kdl</code></a>.</p>
+<span class="p">❯ </span>git clone https://github.com/nopoxxx/ochre ~/.config/quickshell</code></pre>
+    <p>Затем подключите shell к niri — см. <a href="https://github.com/nopoxxx/ochre/blob/main/extras/niri.kdl"><code>extras/niri.kdl</code></a>.</p>
   </details>
 </section>
 
@@ -322,7 +325,7 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
     <tr><td><code>vol</code></td><td>громкость: колёсико ±5%, клик — микшер, правый — mute</td></tr>
     <tr><td><code>bat</code></td><td>батарея ноутбука, если есть</td></tr>
     <tr><td><code>updates</code></td><td>число обновлений: клик — <code>paru -Syu</code>, правый — проверить</td></tr>
-    <tr><td><code>shellupd</code></td><td><code>nopox ↑N</code> — вышла новая версия shell, см. <a href="#update">update</a></td></tr>
+    <tr><td><code>shellupd</code></td><td><code>ochre ↑N</code> — вышла новая версия shell, см. <a href="#update">update</a></td></tr>
     <tr><td><code>notify</code></td><td><code>log N</code> / <code>dnd</code>: клик — история уведомлений, правый — «не беспокоить»</td></tr>
     <tr><td><code>kbd</code></td><td>раскладка: клик или колёсико — переключить</td></tr>
     <tr><td><code>clock</code></td><td>часы; клик — календарь как <code>cal</code></td></tr>
@@ -428,20 +431,20 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 <section class="win" id="binds">
   <div class="ttl">~/docs/settings/binds</div>
   <h2>Бинды</h2>
-  <p><code>input/</code> → <code>бинды</code>: все сочетания niri и nopox с поиском — изменить, добавить, отключить, вернуть.
+  <p><code>input/</code> → <code>бинды</code>: все сочетания niri и ochre с поиском — изменить, добавить, отключить, вернуть.
   Сочетание можно нажать или ввести текстом; перед применением конфиг проверяется <code>niri validate</code>, и если не прошёл — изменение откатывается.</p>
   <p>Бинды собираются из трёх слоёв, следующий перекрывает предыдущий:</p>
   <div class="tbl"><table>
     <tr><th>слой</th><th>файл</th><th>кто пишет</th></tr>
-    <tr><td>1. nopox</td><td><code>~/.config/niri/nopox/binds.kdl</code></td><td>shell, из настроек (терминал, браузер…)</td></tr>
+    <tr><td>1. ochre</td><td><code>~/.config/niri/ochre/binds.kdl</code></td><td>shell, из настроек (терминал, браузер…)</td></tr>
     <tr><td>2. ваши</td><td><code>~/.config/niri/config.kdl</code></td><td>вы, руками</td></tr>
-    <tr><td>3. из окна биндов</td><td><code>~/.config/niri/nopox/keys.kdl</code></td><td>shell, из окна биндов</td></tr>
+    <tr><td>3. из окна биндов</td><td><code>~/.config/niri/ochre/keys.kdl</code></td><td>shell, из окна биндов</td></tr>
   </table></div>
   <h3>мьют микрофона и звука</h3>
   <p>В <code>input/</code> → <code>клавиши</code> — строки <code>мьют микрофона</code> и <code>мьют звука</code> (наушники или колонки — устройство вывода по умолчанию).
   <kbd>↵</kbd> на строке и нажмите сочетание; <kbd>⇥</kbd> — ввести текстом (если сочетание уже занято niri, нажать его окну не получится),
   <kbd>⌫</kbd> — убрать. Работают и на экране блокировки; если сочетание занято другим биндом, подсказка внизу об этом скажет.</p>
-  <p class="note">Файлы в <code>~/.config/niri/nopox/</code> перезаписываются при каждом запуске shell — ручные правки там пропадут.
+  <p class="note">Файлы в <code>~/.config/niri/ochre/</code> перезаписываются при каждом запуске shell — ручные правки там пропадут.
   Свои бинды задавайте в окне биндов или в своём <code>config.kdl</code>.</p>
 </section>
 
@@ -503,10 +506,10 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
   <h2>Темы приложений</h2>
   <p><code>look/</code> → <code>темы Qt и GTK</code>: GTK- и Qt-приложения в той же палитре Gruvbox, с тем же акцентом и шрифтом,
   что и shell, и иконками Gruvbox Plus — через adw-gtk3 / libadwaita и qt6ct. Firefox и Chromium берут тёмную схему через портал.</p>
-  <p><code>btop</code> — тоже: тема <code>nopox</code> с рамками цвета акцента, прямыми углами и фоном терминала
+  <p><code>btop</code> — тоже: тема <code>ochre</code> с рамками цвета акцента, прямыми углами и фоном терминала
   (в <code>btop.conf</code> shell ставит <code>color_theme</code>, <code>theme_background</code> и <code>rounded_corners</code>, остальное не трогает).</p>
   <p class="c-gray">Уже открытые окна подхватывают изменения после перезапуска приложения; новые — сразу.
-  Свои стили GTK пишите в <code>gtk.css</code> после строки <code>@import "nopox.css";</code>.</p>
+  Свои стили GTK пишите в <code>gtk.css</code> после строки <code>@import "ochre.css";</code>.</p>
 </section>
 
 <!-- ─────────────────────────── lock ─────────────────────────── -->
@@ -519,13 +522,13 @@ footer { color: var(--gray); text-align: center; padding: 1em 2ch 3em; }
 
 <span class="c-gray">Arch Linux 6.x (tty1)</span>
 
-nopox-os login: <span class="c-acc">nopox</span>
+ochre login: <span class="c-acc">user</span>
 Password: <span class="blink">█</span></div>
   <p>В greeter сначала вводится имя (подставлено последнее), <kbd>Tab</kbd> — сессия, <kbd>F11</kbd> / <kbd>F12</kbd> — перезагрузка / выключение.</p>
-<pre class="cmd"><code><span class="p">❯ </span>sudo ./extras/install-greeter.sh   <span class="cm"># shell → /usr/share/nopox-shell, niri для greeter, greetd</span>
+<pre class="cmd"><code><span class="p">❯ </span>sudo ./extras/install-greeter.sh   <span class="cm"># shell → /usr/share/ochre, niri для greeter, greetd</span>
 <span class="p">❯ </span>sudo systemctl restart greetd</code></pre>
   <p>Greeter работает под пользователем <code>greeter</code> и не видит вашу домашнюю папку — поэтому сессия копирует настройки
-  и обои в <code>/var/lib/nopox-greeter/&lt;user&gt;/</code>, и greeter выглядит как shell последнего вошедшего.
+  и обои в <code>/var/lib/ochre-greeter/&lt;user&gt;/</code>, и greeter выглядит как shell последнего вошедшего.
   После обновления shell greeter переустанавливается отдельно: <code>system/</code> → <code>обновить greeter</code>.</p>
 </section>
 
@@ -539,7 +542,7 @@ Password: <span class="blink">█</span></div>
 │</span> <span class="b">friend</span>                              <span class="c-acc">│
 │</span> Ready to play?                      <span class="c-acc">│
 └─────────────────────────────────────┘</span>
-<span class="c-red">┌─[ 21:59 ERROR nopox-shell ]─────────┐
+<span class="c-red">┌─[ 21:59 ERROR ochre ]─────────┐
 │</span> <span class="b">Настройки не прочитаны</span>              <span class="c-red">│
 └─────────────────────────────────────┘</span></div>
   <p>Клик по <code>log</code> на панели — история (до 100), правый клик — «не беспокоить» (проходят только критичные).
@@ -556,7 +559,7 @@ Password: <span class="blink">█</span></div>
   Вручную:</p>
 <pre class="cmd"><code><span class="p">❯ </span>git clone https://github.com/nopoxxx/nopox-notify &amp;&amp; cd nopox-notify
 <span class="p">❯ </span>bun install &amp;&amp; bun run build   <span class="cm"># соберёт и положит в ~/.local/share/millennium/plugins/</span></code></pre>
-  <p>Затем включите <b>nopox notify</b> в Steam → Millennium → Plugins и перезапустите Steam.</p>
+  <p>Затем включите <b>ochre notify</b> в Steam → Millennium → Plugins и перезапустите Steam.</p>
 </section>
 
 <!-- ─────────────────────────── update ─────────────────────────── -->
@@ -564,7 +567,7 @@ Password: <span class="blink">█</span></div>
   <div class="ttl">~/docs/update</div>
   <h2>Обновления</h2>
   <p>Shell, установленный через <code>git clone</code>, сам раз в несколько часов делает <code>git fetch</code>. Когда вышли новые коммиты,
-  на панели появляется <code class="c-acc">nopox ↑N</code>: клик — список изменений и <code>[обновить]</code>
+  на панели появляется <code class="c-acc">ochre ↑N</code>: клик — список изменений и <code>[обновить]</code>
   (<code>git pull --ff-only</code> и перезапуск shell). Частота и уведомление — в <code>system/</code>.</p>
   <p>Обновления системы — модуль <code>upd</code> или <code>packages/ → update</code> в меню (<code>paru -Syu</code>).</p>
 </section>
@@ -576,16 +579,16 @@ Password: <span class="blink">█</span></div>
   <div class="tbl"><table>
     <tr><th>путь</th><th>что</th></tr>
     <tr><td><code>~/.config/quickshell/</code></td><td>сам shell (git-клон)</td></tr>
-    <tr><td><code>~/.config/nopox/settings.json</code></td><td>настройки — только отличия от умолчаний</td></tr>
-    <tr><td><code>~/.config/niri/nopox/*.kdl</code></td><td>конфиг niri по разделам — генерирует shell, не править</td></tr>
-    <tr><td><code>~/.config/niri/config.kdl</code></td><td>ваш конфиг niri — подключает <code>nopox/main.kdl</code> в начале и <code>nopox/keys.kdl</code> в конце</td></tr>
-    <tr><td><code>~/.config/gtk-{3,4}.0/nopox.css</code></td><td>палитра GTK, подключается первой строкой <code>gtk.css</code></td></tr>
+    <tr><td><code>~/.config/ochre/settings.json</code></td><td>настройки — только отличия от умолчаний</td></tr>
+    <tr><td><code>~/.config/niri/ochre/*.kdl</code></td><td>конфиг niri по разделам — генерирует shell, не править</td></tr>
+    <tr><td><code>~/.config/niri/config.kdl</code></td><td>ваш конфиг niri — подключает <code>ochre/main.kdl</code> в начале и <code>ochre/keys.kdl</code> в конце</td></tr>
+    <tr><td><code>~/.config/gtk-{3,4}.0/ochre.css</code></td><td>палитра GTK, подключается первой строкой <code>gtk.css</code></td></tr>
     <tr><td><code>~/.config/qt6ct/</code></td><td>палитра и шрифт Qt</td></tr>
-    <tr><td><code>~/.local/state/nopox/</code></td><td>текущие обои и режим заполнения</td></tr>
+    <tr><td><code>~/.local/state/ochre/</code></td><td>текущие обои и режим заполнения</td></tr>
     <tr><td><code>~/Pictures/Wallpapers/</code></td><td>коллекция обоев и загрузки с wallhaven</td></tr>
     <tr><td><code>~/.cache/cliphist/db</code></td><td>история буфера обмена</td></tr>
     <tr><td><code>~/Videos/Screencasts/</code></td><td>записи экрана (папка — в <code>home/</code>)</td></tr>
-    <tr><td><code>/var/lib/nopox-greeter/</code></td><td>копия настроек и обоев для greeter</td></tr>
+    <tr><td><code>/var/lib/ochre-greeter/</code></td><td>копия настроек и обоев для greeter</td></tr>
   </table></div>
 </section>
 
@@ -612,7 +615,7 @@ Password: <span class="blink">█</span></div>
   <div class="ttl">~/docs/faq</div>
   <h2>Вопросы</h2>
 
-  <h3>пропали бинды, которые я вписал в nopox/*.kdl</h3>
+  <h3>пропали бинды, которые я вписал в ochre/*.kdl</h3>
   <p>Эти файлы генерирует shell и перезаписывает при каждом запуске. Задавайте бинды в <a href="#binds">окне биндов</a>
   (сохраняются в <code>settings.json</code>) или в своём <code>~/.config/niri/config.kdl</code>.</p>
 
@@ -621,7 +624,7 @@ Password: <span class="blink">█</span></div>
   Исправьте JSON (или удалите файл — настройки сбросятся) и перезапустите shell: <code>system/ → перезапустить shell</code>.</p>
 
   <h3>как сбросить всё по умолчанию</h3>
-  <p>Удалите <code>~/.config/nopox/settings.json</code> и перезапустите shell. Отдельное значение — <kbd>r</kbd> на нём в настройках.</p>
+  <p>Удалите <code>~/.config/ochre/settings.json</code> и перезапустите shell. Отдельное значение — <kbd>r</kbd> на нём в настройках.</p>
 
   <h3>в трее у программы буква вместо значка</h3>
   <p>Программы нет в таблице значков. Её можно добавить в <code>TRAY_ICONS</code> в <code>services/settings.js</code>
@@ -633,14 +636,14 @@ Password: <span class="blink">█</span></div>
 
   <h3>хочу поправить код</h3>
   <p>Shell — обычный QML и JS в <code>~/.config/quickshell/</code>. Карта проекта, соглашения и подводные камни —
-  в <a href="https://github.com/nopoxxx/nopox-shell/blob/main/AGENTS.md"><code>AGENTS.md</code></a>.</p>
+  в <a href="https://github.com/nopoxxx/ochre/blob/main/AGENTS.md"><code>AGENTS.md</code></a>.</p>
 </section>
 
 </main>
 </div>
 
 <footer>
-  <span class="c-acc">❯</span> <a href="https://github.com/nopoxxx/nopox-shell">github.com/nopoxxx/nopox-shell</a>
+  <span class="c-acc">❯</span> <a href="https://github.com/nopoxxx/ochre">github.com/nopoxxx/ochre</a>
   <span class="c-gray">·</span> шрифт Terminess (Terminus, <a href="fonts/LICENSE.txt">OFL</a>)
 </footer>
 
@@ -652,12 +655,12 @@ Password: <span class="blink">█</span></div>
   const ACCENTS = ["yellow", "orange", "green", "aqua", "blue", "purple", "red"];
   const btn = document.getElementById("accentBtn");
   let accent = "yellow";
-  try { accent = localStorage.getItem("nopox-docs-accent") || "yellow"; } catch (e) {}
+  try { accent = localStorage.getItem("ochre-docs-accent") || "yellow"; } catch (e) {}
   if (!ACCENTS.includes(accent)) accent = "yellow";
   const applyAccent = () => {
     root.dataset.accent = accent;
     btn.textContent = "‹ " + accent + " ›";
-    try { localStorage.setItem("nopox-docs-accent", accent); } catch (e) {}
+    try { localStorage.setItem("ochre-docs-accent", accent); } catch (e) {}
   };
   btn.addEventListener("click", () => { accent = ACCENTS[(ACCENTS.indexOf(accent) + 1) % ACCENTS.length]; applyAccent(); });
   applyAccent();

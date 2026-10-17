@@ -19,7 +19,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "nopox-notify"
+    WlrLayershell.namespace: "ochre-notify"
     color: "transparent"
     implicitWidth: col.implicitWidth
     implicitHeight: Math.max(1, col.implicitHeight)

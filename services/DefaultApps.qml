@@ -8,7 +8,7 @@ import "settings.js" as S
 // Правда — в системе: при старте и после каждого применения настройки берутся из /etc/passwd
 // и xdg-settings, поэтому отменённый chsh или неудачная установка просто откатывают выбор.
 // Выбор применяется через 1.5 с после последнего изменения — пролистывание ←→ не запускает chsh на каждом шаге.
-//   оболочка — плавающий терминал: pacman -S (если нет), конфиг nopox (если своего нет), chsh -s;
+//   оболочка — плавающий терминал: pacman -S (если нет), конфиг ochre (если своего нет), chsh -s;
 //   браузер  — xdg-settings set default-web-browser; не установлен — сначала paru -S в терминале.
 Singleton {
     id: root
@@ -44,7 +44,7 @@ Singleton {
             s, s ? S.SHELL_PKGS[s] : "", Quickshell.shellDir + "/extras/shell",
             b ? b.pkg : "", desk];
         // терминал нужен для пароля (chsh, sudo) и для установки; известный браузер ставится молча
-        runner.command = s || (b && !desk) ? Term.cmd(argv, { cls: "nopox-term", hold: true }) : argv;
+        runner.command = s || (b && !desk) ? Term.cmd(argv, { cls: "ochre-term", hold: true }) : argv;
         runner.running = true;
     }
 
@@ -58,11 +58,11 @@ Singleton {
             echo "── оболочка: $s"
             command -v "$s" >/dev/null || sudo pacman -S --needed $spkgs
             case "$s" in
-                zsh) [ -f ~/.zshrc ] || { cp "$ex/zshrc" ~/.zshrc; echo "~/.zshrc: приглашение nopox"; } ;;
-                fish) install -Dm644 "$ex/nopox.fish" ~/.config/fish/conf.d/nopox.fish
+                zsh) [ -f ~/.zshrc ] || { cp "$ex/zshrc" ~/.zshrc; echo "~/.zshrc: приглашение ochre"; } ;;
+                fish) install -Dm644 "$ex/ochre.fish" ~/.config/fish/conf.d/ochre.fish
                       f=~/.config/fish/functions/fish_prompt.fish
                       [ -f "$f" ] || install -Dm644 "$ex/fish_prompt.fish" "$f" ;;
-                bash) grep -qs '>>> nopox-shell >>>' ~/.bashrc || { echo; cat "$ex/bashrc"; } >> ~/.bashrc ;;
+                bash) grep -qsE '>>> (ochre|nopox-shell) >>>' ~/.bashrc || { echo; cat "$ex/bashrc"; } >> ~/.bashrc ;;
             esac
             chsh -s "$(command -v "$s")"
             echo "готово: $s — с нового входа"

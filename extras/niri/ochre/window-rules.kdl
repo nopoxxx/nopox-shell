@@ -1,0 +1,17 @@
+// ochre: правила окон
+// Сгенерировано ochre (Mod+S) из ~/.config/ochre/settings.json — ручные правки перезапишутся.
+// Свои настройки пишите в ~/.config/niri/config.kdl.
+
+// терминалы, открытые из меню ochre (install / remove / update …), — плавающие по центру
+window-rule {
+    match app-id="^(ochre-term|dev[.]ochre[.]term)$"
+    open-floating true
+    default-column-width { fixed 960; }
+    default-window-height { fixed 600; }
+}
+
+// обои quickshell видны и как фон режима обзора
+layer-rule {
+    match namespace="^ochre-wallpaper$"
+    place-within-backdrop true
+}

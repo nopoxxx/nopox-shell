@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# nopox-shell — установщик для Arch Linux и производных (CachyOS, EndeavourOS, …)
+# ochre — установщик для Arch Linux и производных (CachyOS, EndeavourOS, …)
 #
-#   bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/nopox-shell/main/install.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/nopoxxx/ochre/main/install.sh)
 #
 # Флаги (всё, что не задано флагом, установщик спросит; с --yes — возьмёт по умолчанию):
 #   --yes                    не задавать вопросов
@@ -20,7 +20,7 @@
 # Ничего не удаляет: всё, что заменяется, переезжает в *.bak-<дата>.
 set -euo pipefail
 
-REPO=https://github.com/nopoxxx/nopox-shell
+REPO=https://github.com/nopoxxx/ochre
 BRANCH=main
 YES=0
 GREETER=ask
@@ -121,9 +121,9 @@ choose() {
     ok "$title: ${!var}"
 }
 
-# set_setting ключ значение — в ~/.config/nopox/settings.json (shell пишет его по ключу на строку)
+# set_setting ключ значение — в ~/.config/ochre/settings.json (shell пишет его по ключу на строку)
 set_setting() {
-    local f="$HOME/.config/nopox/settings.json" k=$1 v=$2
+    local f="$HOME/.config/ochre/settings.json" k=$1 v=$2
     mkdir -p "${f%/*}"
     if [ ! -s "$f" ] || ! grep -q '"' "$f"; then
         printf '{\n  "%s": "%s"\n}\n' "$k" "$v" > "$f"
@@ -177,7 +177,7 @@ vulkan_drivers() {
 printf '%s' "$Y"
 cat <<'EOF'
 
-  ┌─[ nopox-shell ]──────────────────────────────────────┐
+  ┌─[ ochre ]──────────────────────────────────────┐
   │  terminal-style shell для niri на Quickshell          │
   └───────────────────────────────────────────────────────┘
 EOF
@@ -363,7 +363,7 @@ fi
 NIRI_MIN=25.11
 niri_ver=$(niri --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)
 if [ -n "$niri_ver" ] && [ "$(printf '%s\n' "$NIRI_MIN" "$niri_ver" | sort -V | head -1)" != "$NIRI_MIN" ]; then
-    warn "niri $niri_ver старше $NIRI_MIN — конфиг nopox он не примет"
+    warn "niri $niri_ver старше $NIRI_MIN — конфиг ochre он не примет"
     if ask "Обновить систему вместе с niri (pacman -Syu)?" y; then
         sudo pacman -Syu --needed "${noconfirm[@]}" niri
         ok "niri: $(niri --version | head -1)"
@@ -479,8 +479,10 @@ else
 fi
 
 # ── сам shell ────────────────────────────────────────────────────────
-step "nopox-shell → $DEST"
-if [ -d "$DEST/.git" ] && git -C "$DEST" remote get-url origin 2>/dev/null | grep -q "nopox-shell"; then
+step "ochre → $DEST"
+if [ -d "$DEST/.git" ] && git -C "$DEST" remote get-url origin 2>/dev/null | grep -qE "nopoxxx/(ochre|nopox-shell)"; then
+    # клон ещё под старым именем репозитория (nopox-shell) — GitHub перенаправляет, но адрес лучше сменить
+    git -C "$DEST" remote set-url origin "$REPO"
     git -C "$DEST" fetch --quiet origin "$BRANCH" || die "не удалось скачать ветку $BRANCH"
     # клон мог быть на другой ветке (или его ветку удалили) — тогда переключаем на нужную
     if [ "$(git -C "$DEST" rev-parse --abbrev-ref HEAD)" != "$BRANCH" ] \
@@ -496,7 +498,17 @@ else
     git clone -q --branch "$BRANCH" "$REPO" "$DEST"
     ok "склонирован: $(git -C "$DEST" log --oneline -1)"
 fi
-info "обновления потом — сам shell: nopox ↑ на панели"
+info "обновления потом — сам shell: ochre ↑ на панели"
+
+# shell раньше назывался nopox-shell: настройки и состояние — в новые каталоги, пока set_setting не создал пустые.
+# Конфиг niri (~/.config/niri/nopox и include в config.kdl) переведёт сам shell при запуске — с проверкой niri validate.
+for pair in ".config/nopox:.config/ochre" ".local/state/nopox:.local/state/ochre"; do
+    old="$HOME/${pair%%:*}" new="$HOME/${pair#*:}"
+    if [ -d "$old" ]; then
+        mkdir -p "$new" && cp -an "$old"/. "$new"/ && rm -rf "$old"
+        ok "~/${pair%%:*} → ~/${pair#*:} (nopox-shell теперь ochre)"
+    fi
+done
 mkdir -p "$HOME/Pictures/Wallpapers"
 
 # выбор терминала, файлового менеджера и браузера — в настройки shell (Mod+Return, Mod+E, Mod+Shift+B, окна обновлений и т.п.);
@@ -509,59 +521,59 @@ set_setting shell.browser "$BROWSER"
 # ── niri ─────────────────────────────────────────────────────────────
 step "Конфиг niri"
 conf="$NIRI_DIR/config.kdl"
-# ~/.config/niri/nopox/ — по файлу на раздел (input, displays, layout, window-rules, …).
+# ~/.config/niri/ochre/ — по файлу на раздел (input, displays, layout, window-rules, …).
 # Shell перегенерирует их при запуске; стартовые нужны, чтобы niri загрузил конфиг ещё до shell.
-mkdir -p "$NIRI_DIR/nopox"
-for f in "$DEST"/extras/niri/nopox/*.kdl; do
-    [ -f "$NIRI_DIR/nopox/$(basename "$f")" ] || cp "$f" "$NIRI_DIR/nopox/"
+mkdir -p "$NIRI_DIR/ochre"
+for f in "$DEST"/extras/niri/ochre/*.kdl; do
+    [ -f "$NIRI_DIR/ochre/$(basename "$f")" ] || cp "$f" "$NIRI_DIR/ochre/"
 done
 
-if [ -f "$conf" ] && grep -q '^include "nopox/main.kdl"' "$conf"; then
-    ok "nopox уже подключён к вашему config.kdl"
-    # старый эталон держал Mod+Shift+S за встроенным скриншотом niri; config.kdl грузится после nopox/binds.kdl
-    # и перекрыл бы скриншот nopox с разметкой
+if [ -f "$conf" ] && grep -q '^include "ochre/main.kdl"' "$conf"; then
+    ok "ochre уже подключён к вашему config.kdl"
+    # старый эталон держал Mod+Shift+S за встроенным скриншотом niri; config.kdl грузится после ochre/binds.kdl
+    # и перекрыл бы скриншот ochre с разметкой
     shot_re='^[[:space:]]*(Mod\+Shift\+S|Print)[[:space:]]*\{[[:space:]]*screenshot;[[:space:]]*\}'
     if grep -qE "$shot_re" "$conf"; then
-        if ask "В config.kdl Mod+Shift+S / Print — встроенный скриншот niri; он перекрывает скриншот nopox с разметкой. Закомментировать?" y; then
+        if ask "В config.kdl Mod+Shift+S / Print — встроенный скриншот niri; он перекрывает скриншот ochre с разметкой. Закомментировать?" y; then
             cp "$conf" "$conf.bak-$STAMP"
-            sed -i -E "s#($shot_re)#// \1  // nopox: скриншот с разметкой — в nopox/binds.kdl#" "$conf"
+            sed -i -E "s#($shot_re)#// \1  // ochre: скриншот с разметкой — в ochre/binds.kdl#" "$conf"
             ok "встроенный скриншот niri отключён (Ctrl+Print / Alt+Print остались); старое — в $conf.bak-$STAMP"
         fi
     fi
-elif [ -f "$conf" ] && grep -qE '^include "nopox(-binds)?\.kdl"' "$conf"; then
-    ok "старая схема nopox — shell сам переложит её в ~/.config/niri/nopox/ при запуске"
-elif [ ! -f "$conf" ] || { [ "$KEEP_NIRI" = 0 ] && ask "Заменить ваш config.kdl конфигом nopox? Старый уйдёт в бэкап" y; }; then
+elif [ -f "$conf" ] && grep -qE '^include "nopox(/main|-binds)?\.kdl"' "$conf"; then
+    ok "подключён под старым именем nopox — shell сам переведёт его в ~/.config/niri/ochre/ при запуске"
+elif [ ! -f "$conf" ] || { [ "$KEEP_NIRI" = 0 ] && ask "Заменить ваш config.kdl конфигом ochre? Старый уйдёт в бэкап" y; }; then
     backup "$conf"
     cp "$DEST/extras/niri/config.kdl" "$conf"
-    ok "config.kdl nopox установлен"
+    ok "config.kdl ochre установлен"
 else
-    # в одном файле может быть только один binds — поэтому всё своё nopox держит во включаемых файлах;
-    # они в конце, значит одноимённые клавиши (Mod+D и т.п.) берутся из nopox
+    # в одном файле может быть только один binds — поэтому всё своё ochre держит во включаемых файлах;
+    # они в конце, значит одноимённые клавиши (Mod+D и т.п.) берутся из ochre
     cp "$conf" "$conf.bak-$STAMP"
     info "старое — в $conf.bak-$STAMP"
     {
         echo
-        echo "// >>> nopox-shell >>> (добавлено install.sh)"
-        echo 'include "nopox/main.kdl"'
-        echo 'include "nopox/keys.kdl"'
-        echo "// <<< nopox-shell <<<"
+        echo "// >>> ochre >>> (добавлено install.sh)"
+        echo 'include "ochre/main.kdl"'
+        echo 'include "ochre/keys.kdl"'
+        echo "// <<< ochre <<<"
     } >> "$conf"
-    ok "к вашему config.kdl дописаны include nopox"
+    ok "к вашему config.kdl дописаны include ochre"
     warn "флаги в ваших секциях input / layout (например, tap) окно настроек (Mod+S) выключить не сможет"
 fi
 
-# Mod+Shift+V — история буфера nopox; в старом эталоне и в стандартном конфиге niri там фокус плавающих окон,
-# а config.kdl, подключённый после nopox/binds.kdl (и старая схема после миграции), перекрыл бы бинд nopox
+# Mod+Shift+V — история буфера ochre; в старом эталоне и в стандартном конфиге niri там фокус плавающих окон,
+# а config.kdl, подключённый после ochre/binds.kdl (и старая схема после миграции), перекрыл бы бинд ochre
 clip_re='^([[:space:]]*)Mod\+Shift\+V([[:space:]]*\{[[:space:]]*switch-focus-between-floating-and-tiling;[[:space:]]*\})'
 if grep -qE "$clip_re" "$conf"; then
-    if ask "В config.kdl Mod+Shift+V — фокус плавающих окон; он перекрывает историю буфера nopox. Перенести на Mod+Ctrl+V?" y; then
+    if ask "В config.kdl Mod+Shift+V — фокус плавающих окон; он перекрывает историю буфера ochre. Перенести на Mod+Ctrl+V?" y; then
         [ -f "$conf.bak-$STAMP" ] || cp "$conf" "$conf.bak-$STAMP"
         if grep -qE '^[[:space:]]*Mod\+Ctrl\+V[[:space:]]' "$conf"; then
             # Mod+Ctrl+V уже занят: второй такой бинд в одном блоке niri не примет — просто отключаем
-            sed -i -E "s#$clip_re#\1// Mod+Shift+V\2   // nopox: история буфера#" "$conf"
+            sed -i -E "s#$clip_re#\1// Mod+Shift+V\2   // ochre: история буфера#" "$conf"
             ok "Mod+Shift+V — история буфера (фокус плавающих окон отключён: Mod+Ctrl+V у вас занят)"
         else
-            sed -i -E "s#$clip_re#\1Mod+Ctrl+V\2   // Mod+Shift+V — история буфера nopox#" "$conf"
+            sed -i -E "s#$clip_re#\1Mod+Ctrl+V\2   // Mod+Shift+V — история буфера ochre#" "$conf"
             ok "фокус плавающих окон — Mod+Ctrl+V, Mod+Shift+V — история буфера"
         fi
     fi
@@ -589,8 +601,8 @@ if [ ! -f "$dst" ]; then
     install -Dm644 "$src" "$dst"
     ok "конфиг в цветах Gruvbox + Terminess"
 elif cmp -s "$dst" "$src"; then
-    ok "уже стоит конфиг nopox"
-elif ask "Заменить ваш конфиг $TERMINAL на Gruvbox + Terminess от nopox?" n; then
+    ok "уже стоит конфиг ochre"
+elif ask "Заменить ваш конфиг $TERMINAL на Gruvbox + Terminess от ochre?" n; then
     backup "$dst"
     install -Dm644 "$src" "$dst"
     ok "конфиг заменён"
@@ -602,7 +614,7 @@ fi
 ff="$HOME/.config/fastfetch/config.jsonc"
 if [ ! -f "$ff" ]; then
     install -Dm644 "$DEST/extras/fastfetch/config.jsonc" "$ff"
-    ok "fastfetch: конфиг nopox"
+    ok "fastfetch: конфиг ochre"
 fi
 
 # ── оболочка ─────────────────────────────────────────────────────────
@@ -611,10 +623,10 @@ case "$SHELL_CHOICE" in
     zsh)
         if [ ! -f "$HOME/.zshrc" ]; then
             cp "$DEST/extras/shell/zshrc" "$HOME/.zshrc"
-            ok "~/.zshrc: приглашение как панель nopox, подсказки, подсветка"
-        elif grep -q "nopox-shell" "$HOME/.zshrc"; then
-            ok "~/.zshrc уже от nopox"
-        elif ask "Заменить ваш ~/.zshrc на nopox (приглашение как панель, подсказки, подсветка)?" n; then
+            ok "~/.zshrc: приглашение как панель ochre, подсказки, подсветка"
+        elif grep -qE "ochre|nopox-shell" "$HOME/.zshrc"; then
+            ok "~/.zshrc уже от ochre"
+        elif ask "Заменить ваш ~/.zshrc на ochre (приглашение как панель, подсказки, подсветка)?" n; then
             backup "$HOME/.zshrc"
             cp "$DEST/extras/shell/zshrc" "$HOME/.zshrc"
             ok "~/.zshrc заменён"
@@ -624,20 +636,21 @@ case "$SHELL_CHOICE" in
         ;;
     fish)
         fp="$HOME/.config/fish/functions/fish_prompt.fish"
-        install -Dm644 "$DEST/extras/shell/nopox.fish" "$HOME/.config/fish/conf.d/nopox.fish"
-        if [ ! -f "$fp" ] || grep -q "nopox-shell" "$fp"; then
+        install -Dm644 "$DEST/extras/shell/ochre.fish" "$HOME/.config/fish/conf.d/ochre.fish"
+        rm -f "$HOME/.config/fish/conf.d/nopox.fish"   # то же под старым именем
+        if [ ! -f "$fp" ] || grep -qE "ochre|nopox-shell" "$fp"; then
             install -Dm644 "$DEST/extras/shell/fish_prompt.fish" "$fp"
-            ok "приглашение fish как панель nopox"
-        elif ask "Заменить ваше приглашение fish на nopox?" n; then
+            ok "приглашение fish как панель ochre"
+        elif ask "Заменить ваше приглашение fish на ochre?" n; then
             backup "$fp"
             install -Dm644 "$DEST/extras/shell/fish_prompt.fish" "$fp"
             ok "приглашение fish заменено"
         fi
         ;;
     bash)
-        if grep -q ">>> nopox-shell >>>" "$HOME/.bashrc" 2>/dev/null; then
-            ok "~/.bashrc уже с приглашением nopox"
-        elif ask "Добавить в ~/.bashrc приглашение как панель nopox?" y; then
+        if grep -qE ">>> (ochre|nopox-shell) >>>" "$HOME/.bashrc" 2>/dev/null; then
+            ok "~/.bashrc уже с приглашением ochre"
+        elif ask "Добавить в ~/.bashrc приглашение как панель ochre?" y; then
             { echo; cat "$DEST/extras/shell/bashrc"; } >> "$HOME/.bashrc"
             ok "добавлено в ~/.bashrc"
         fi
@@ -746,7 +759,7 @@ if [ "$STEAM_NOTIFY" != no ] && pacman -Qq steam &>/dev/null; then
                     fs.writeFileSync(file, JSON.stringify(cfg, null, 2) + "\n");' "$MCFG"; then
                     ok "плагин включён"
                 else
-                    warn "$MCFG не разбирается — включите nopox notify вручную: Steam → Millennium → Plugins"
+                    warn "$MCFG не разбирается — включите ochre notify вручную: Steam → Millennium → Plugins"
                 fi
                 pgrep -x steam >/dev/null && warn "Steam запущен — перезапустите его, чтобы подхватить плагин"
             else
@@ -760,7 +773,7 @@ fi
 
 # ── greeter ──────────────────────────────────────────────────────────
 step "Greeter (экран входа)"
-if [ "$GREETER" = no ] || ! ask "Поставить greeter nopox для greetd?" y; then
+if [ "$GREETER" = no ] || ! ask "Поставить greeter ochre для greetd?" y; then
     info "пропущено — потом можно: sudo $DEST/extras/install-greeter.sh"
 else
     sudo pacman -S --needed --noconfirm greetd
@@ -770,7 +783,7 @@ else
     if [ "$dm" = "greetd.service" ]; then
         ok "greetd уже включён"
     elif [ -n "$dm" ]; then
-        if ask "Сейчас вход через $dm. Заменить его на greetd с greeter nopox?" n; then
+        if ask "Сейчас вход через $dm. Заменить его на greetd с greeter ochre?" n; then
             sudo systemctl disable "$dm"
             sudo systemctl enable greetd
             ok "greetd включён вместо $dm — заработает после перезагрузки"
@@ -810,5 +823,5 @@ cat <<EOF
   ${A}Mod+A${N}        меню home        ${A}Mod+Shift+V${N}   история буфера
   ${A}Mod+Shift+/${N}  все клавиши niri ${A}Mod+Alt+R${N}     запись экрана
 
-  ${D}документация: https://nopoxxx.github.io/nopox-shell/${N}
+  ${D}документация: https://nopoxxx.github.io/ochre/${N}
 EOF

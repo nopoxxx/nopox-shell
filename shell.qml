@@ -4,9 +4,9 @@ import qs.services
 
 ShellRoot {
     // синглтоны создаются при первом обращении — проверка обновлений должна работать,
-    // даже если модуль nopox ↑ убран с панели
+    // даже если модуль ochre ↑ убран с панели
     readonly property var _shellUpdate: ShellUpdate
-    readonly property var _binds: Binds   // пишет nopox/keys.kdl при старте
+    readonly property var _binds: Binds   // пишет ochre/keys.kdl при старте
     readonly property var _appTheme: AppTheme   // темы GTK и Qt вслед за shell
     readonly property var _defaultApps: DefaultApps   // оболочка и браузер — из системы в настройки
     readonly property var _muteNotify: MuteNotify   // уведомление при мьюте микрофона и звука

@@ -1,2 +1,2 @@
-# nopox-shell: fish
+# ochre: fish
 set -g fish_greeting ""

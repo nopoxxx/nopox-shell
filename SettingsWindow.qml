@@ -31,7 +31,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-settings"
+            WlrLayershell.namespace: "ochre-settings"
 
             readonly property var sections: S.sections(Settings.outputs, Settings.get("shell.bar.layout"), Settings.get("shell.home.layout"))
             property int section: 0
@@ -87,7 +87,7 @@ Scope {
                 case "lockPreview": ipc("lock", "preview"); break;
                 case "home": ipc("home", "open"); break;
                 case "record": ipc("record", "toggle"); break;
-                case "notifyTest": Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "Проверка уведомления", "так выглядит анимация " + Settings.get("shell.notify.anim")]); break;
+                case "notifyTest": Quickshell.execDetached(["notify-send", "-a", "ochre", "Проверка уведомления", "так выглядит анимация " + Settings.get("shell.notify.anim")]); break;
                 case "wifi": Term.float(["nmtui"]); break;
                 case "audio": Quickshell.execDetached(["pavucontrol"]); break;
                 case "editNiri": Term.edit(Quickshell.env("HOME") + "/.config/niri/config.kdl"); break;
@@ -253,7 +253,7 @@ Scope {
                 if (r.type === "module") return r.hint;
                 const file = S.niriFileOf(r.key);
                 // файл первым: подсказка длинная и обрезается справа
-                const parts = [file ? "niri/nopox/" + file : "", r.hint ?? ""];
+                const parts = [file ? "niri/ochre/" + file : "", r.hint ?? ""];
                 if (r.type === "combo" && value(r)) {
                     if (!S.COMBO_RE.test(value(r))) parts.unshift("не похоже на сочетание (Mod+Shift+M) — бинд не создан");
                     const other = Binds.conflict(value(r), r.action);

@@ -5,13 +5,13 @@ import Quickshell.Services.Greetd
 import QtQuick
 import qs.services
 
-// Точка входа greeter: qs -p /usr/share/nopox-shell/greeter.qml (с NOPOX_GREETER=1).
+// Точка входа greeter: qs -p /usr/share/ochre/greeter.qml (с OCHRE_GREETER=1).
 // Работает внутри отдельного niri под пользователем greeter — см. extras/greeter/.
 // Вид берётся из настроек пользователя, которые синхронизирует GreeterSync из его сессии.
 ShellRoot {
     id: root
 
-    readonly property string libDir: "/var/lib/nopox-greeter"
+    readonly property string libDir: "/var/lib/ochre-greeter"
     readonly property string stateDir: libDir + "/.greeter"
 
     property string user: ""
@@ -128,7 +128,7 @@ ShellRoot {
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        WlrLayershell.namespace: "nopox-greeter"
+        WlrLayershell.namespace: "ochre-greeter"
         color: Theme.bg
 
         Image {

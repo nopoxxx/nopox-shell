@@ -1,0 +1,6 @@
+// ochre: свои бинды — окно биндов (Mod+S → input/ → бинды), из ~/.config/ochre/settings.json.
+// Подключается в config.kdl последним (include "ochre/keys.kdl") и перекрывает одноимённые бинды.
+// Ручные правки перезапишутся.
+
+binds {
+}

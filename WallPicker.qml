@@ -37,7 +37,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-wallpicker"
+            WlrLayershell.namespace: "ochre-wallpicker"
 
             readonly property int cols: 4
             readonly property int visibleRows: 3

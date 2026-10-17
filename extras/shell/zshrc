@@ -1,4 +1,4 @@
-# nopox-shell: zsh
+# ochre: zsh
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
@@ -13,7 +13,7 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh 2>/dev/null
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/null
 
-# приглашение как панель nopox: user@host ~/путь ❯ — красный ❯, если команда завершилась ошибкой
+# приглашение как панель ochre: user@host ~/путь ❯ — красный ❯, если команда завершилась ошибкой
 PROMPT='%B%F{green}%n%f%b%F{8}@%f%B%F{cyan}%m%f%b %F{blue}%~%f %(?.%F{yellow}.%F{red})❯%f '
 
 alias ls='ls --color=auto'

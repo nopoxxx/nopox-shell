@@ -3,19 +3,22 @@ import Quickshell.Io
 import QtQuick
 import qs.services
 
-// Копирует настройки, обои и режим заполнения в /var/lib/nopox-greeter/$USER —
+// Копирует настройки, обои и режим заполнения в /var/lib/ochre-greeter/$USER —
 // greeter (под пользователем greeter) не может читать домашнюю папку, а оттуда — может.
-// Каталог создаёт extras/install-greeter.sh; без него ничего не делает.
+// Каталог создаёт extras/install-greeter.sh; без него ничего не делает. Greeter, поставленный ещё под именем
+// nopox-shell, читает /var/lib/nopox-greeter — пишем туда, пока его не переустановят.
 Scope {
     Timer {
         id: debounce
         interval: 2000
-        onTriggered: sync.running = true
+        // до загрузки настроек settings.json по новому пути ещё нет — не затереть копию greeter
+        onTriggered: if (Settings.writable) sync.running = true
     }
 
     Connections {
         target: Settings
         function onValuesChanged() { debounce.restart(); }
+        function onWritableChanged() { debounce.restart(); }
     }
 
     Connections {
@@ -29,7 +32,8 @@ Scope {
     Process {
         id: sync
         command: ["sh", "-c", `
-            d=/var/lib/nopox-greeter/$USER
+            d=/var/lib/ochre-greeter/$USER
+            [ -d "$d" ] || d=/var/lib/nopox-greeter/$USER
             [ -d "$d" ] && [ -w "$d" ] || exit 0
             if [ -f "$1" ]; then cp -f "$1" "$d/settings.json"; else rm -f "$d/settings.json"; fi
             if [ -n "$2" ] && [ -f "$2" ]; then cp -f "$2" "$d/wallpaper"; else rm -f "$d/wallpaper"; fi

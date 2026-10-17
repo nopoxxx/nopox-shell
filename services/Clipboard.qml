@@ -15,7 +15,7 @@ Singleton {
     property bool loading: false
 
     readonly property bool watching: available && !Settings.greeterMode
-    readonly property string cacheDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/nopox-clip"
+    readonly property string cacheDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/ochre-clip"
 
     // проверяется при старте и при каждом открытии окна, пока не найден: cliphist могли поставить после запуска shell
     Process {

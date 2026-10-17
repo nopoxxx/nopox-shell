@@ -3,7 +3,7 @@ import Quickshell
 import QtQuick
 import qs.services
 
-// Gruvbox dark (hard) — единая палитра nopox-os
+// Gruvbox dark (hard) — единая палитра ochre
 Singleton {
     readonly property color bg: "#1d2021"
     readonly property color bg1: "#3c3836"

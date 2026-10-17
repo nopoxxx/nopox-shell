@@ -7,7 +7,7 @@ import qs.services
 import "services/settings.js" as S
 
 // Мониторы: карта расположения и параметры выбранного выхода.
-// Изменения применяются сразу (через nopox/displays.kdl), но 15 секунд ждут подтверждения —
+// Изменения применяются сразу (через ochre/displays.kdl), но 15 секунд ждут подтверждения —
 // без него откатываются, даже если окно закрыто. Как в GNOME: защита от чёрного экрана.
 //   qs ipc call displays toggle
 Scope {
@@ -36,7 +36,7 @@ Scope {
         Settings.replacePrefix("niri.out.", snapshot);
         snapshot = null;
         countdown.stop();
-        Quickshell.execDetached(["notify-send", "-a", "nopox-shell", "Мониторы", "Изменения не подтверждены — вернул как было"]);
+        Quickshell.execDetached(["notify-send", "-a", "ochre", "Мониторы", "Изменения не подтверждены — вернул как было"]);
     }
 
     Timer {
@@ -174,7 +174,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "nopox-displays"
+            WlrLayershell.namespace: "ochre-displays"
 
             property int sel: 0
             readonly property var outputs: Settings.outputs

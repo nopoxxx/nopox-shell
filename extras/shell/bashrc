@@ -1,11 +1,11 @@
-# >>> nopox-shell >>>
-# приглашение как панель nopox: user@host ~/путь ❯ — красный ❯, если команда завершилась ошибкой
-__nopox_ps1() {
+# >>> ochre >>>
+# приглашение как панель ochre: user@host ~/путь ❯ — красный ❯, если команда завершилась ошибкой
+__ochre_ps1() {
     local s=$? c='\[\e[33m\]'
     [ $s -ne 0 ] && c='\[\e[31m\]'
     PS1="\[\e[1;32m\]\u\[\e[0;90m\]@\[\e[1;36m\]\h\[\e[0m\] \[\e[34m\]\w\[\e[0m\] ${c}❯\[\e[0m\] "
 }
-PROMPT_COMMAND=__nopox_ps1
+PROMPT_COMMAND=__ochre_ps1
 [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 alias ls='ls --color=auto' grep='grep --color=auto' ll='ls -lah'
-# <<< nopox-shell <<<
+# <<< ochre <<<

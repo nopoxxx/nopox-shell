@@ -3,13 +3,13 @@ import qs
 import qs.bar
 import qs.services
 
-// nopox ↑3 — новые коммиты nopox-shell на GitHub. Клик: список и [обновить], правый клик: проверить сейчас.
+// ochre ↑3 — новые коммиты ochre на GitHub. Клик: список и [обновить], правый клик: проверить сейчас.
 // Без обновлений скрыт.
 Seg {
     id: root
 
     available: ShellUpdate.behind > 0 || ShellUpdate.updating || popup.open
-    label: "nopox"
+    label: "ochre"
     value: ShellUpdate.updating ? "…" : "↑" + ShellUpdate.behind
     valueColor: Theme.accent
     bold: true

@@ -86,10 +86,10 @@ Singleton {
             if (Settings.get("shell.rec.notify"))
                 Quickshell.execDetached(["sh", "-c", `
                     if [ -s "$1" ]; then
-                        a=$(notify-send -a nopox-shell -i video-x-generic -A open=папка "Запись сохранена" "$1")
+                        a=$(notify-send -a ochre -i video-x-generic -A open=папка "Запись сохранена" "$1")
                         [ "$a" = open ] && xdg-open "$(dirname "$1")"
                     else
-                        notify-send -a nopox-shell -u critical "Запись не удалась" "wf-recorder завершился с кодом $2"
+                        notify-send -a ochre -u critical "Запись не удалась" "wf-recorder завершился с кодом $2"
                     fi`, "sh", root.file, String(code)]);
         }
     }

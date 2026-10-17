@@ -1,4 +1,4 @@
-# nopox-shell: приглашение как панель nopox — user@host ~/путь ❯ (красный ❯, если команда завершилась ошибкой)
+# ochre: приглашение как панель ochre — user@host ~/путь ❯ (красный ❯, если команда завершилась ошибкой)
 function fish_prompt
     set -l st $status
     set_color --bold green; echo -n $USER; set_color normal

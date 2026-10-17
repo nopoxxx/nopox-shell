@@ -70,7 +70,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-            WlrLayershell.namespace: "nopox-osd"
+            WlrLayershell.namespace: "ochre-osd"
             mask: Region {}
 
             TextMetrics {
